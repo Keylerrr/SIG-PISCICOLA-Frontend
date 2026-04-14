@@ -2,23 +2,20 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Settings, User, Fish, UserRoundPlus} from 'lucide-react';
+import { LogOut, Settings, User, Fish, UserRoundPlus } from 'lucide-react';
 
 export function Navbar() {
   const router = useRouter();
-  const [userData, setUserData] = useState({ name: "Cargando...", rol: "Usuario" });
-
-  useEffect(() => {
-    const userString = localStorage.getItem("user");
-    if (userString) {
-      try {
-        const parsedUser = JSON.parse(userString);
-        setUserData(parsedUser);
-      } catch (error) {
-        console.error("Error al parsear el usuario", error);
-      }
+  const [userData, setUserData] = useState(() => {
+    try {
+      const userString = localStorage.getItem("user");
+      return userString
+        ? JSON.parse(userString)
+        : { name: "Cargando...", rol: "Usuario" };
+    } catch {
+      return { name: "Cargando...", rol: "Usuario" };
     }
-  }, []);
+  });
 
   const handleLogout = () => {
     localStorage.clear();
@@ -37,20 +34,20 @@ export function Navbar() {
     <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          
-          <button 
+
+          <button
             onClick={handleHome}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            
-            <img src="./images/PongaseTrucha.png" alt="" className="w-12 h-12"/> 
+
+            <img src="./images/PongaseTrucha.png" alt="" className="w-12 h-12" />
             <span className="text-xl font-bold text-slate-800">
               Póngase Trucha
             </span>
           </button>
 
           <div className="flex items-center gap-4">
-            
+
             <div className="flex items-center gap-3 px-4 py-2 bg-slate-50 rounded-lg">
               <div className="bg-blue-100 p-2 rounded-full">
                 <User className="w-5 h-5 text-blue-600" />
