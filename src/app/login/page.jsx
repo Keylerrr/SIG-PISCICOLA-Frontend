@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, Mail, Loader2 } from 'lucide-react';
-import { AlertCircleIcon } from "lucide-react"
+import { CheckCircle2Icon, AlertCircleIcon } from "lucide-react"
 import {
   Alert,
   AlertDescription,
@@ -11,11 +11,23 @@ import {
 } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Field, 
-  FieldGroup, 
-  FieldLabel 
+import {
+  Field,
+  FieldGroup,
+  FieldLabel
 } from "@/components/ui/field";
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,6 +35,40 @@ export default function Login() {
   const [loginError, setLoginError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [recoverEmail, setRecoverEmail] = useState('');
+  const [openRecovery, setOpenRecovery] = useState(false);
+  const [recoverSuccess, setRecoverSuccess] = useState(false);
+  const [errorRecovery, setErrorRecovery] = useState(false);
+
+
+  const handleRecover = async (e) => {
+    e.preventDefault();
+
+    try {
+      // const res = await fetch("", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     email: recoverEmail,
+      //   }),
+      // });
+
+      // const data = await res.json();
+
+      // if (!res.ok) {
+      //   console.log("Error:", data);
+      //    setErrorRecovery(true);
+      //   return;
+      // }
+      setRecoverSuccess(true);
+      setOpenRecovery(false);
+      console.log("Correo enviado:");
+    } catch (error) {
+      console.error("Error en recuperación:", error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,9 +103,8 @@ export default function Login() {
       localStorage.setItem("access", data.tokens.access);
       localStorage.setItem("refresh", data.tokens.refresh);
       localStorage.setItem("user", JSON.stringify(data.user));
-
       router.push('/home');
-    } catch (error){
+    } catch (error) {
       console.error("Error en el login:", error);
       setLoginError(true);
       setIsLoading(false);
@@ -68,7 +113,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
-      
+
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
@@ -79,25 +124,44 @@ export default function Login() {
       )}
 
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-        
+
         <div className="flex justify-center mb-3">
-            <img src="./images/PongaseTrucha.png" alt="Logo" className="w-30 h-30"/>  
+          <img src="./images/PongaseTrucha.png" alt="Logo" className="w-30 h-30" />
         </div>
 
         <h1 className="text-3xl font-bold text-center mb-2 text-slate-800">Póngase Trucha</h1>
         <p className="text-center text-slate-600 mb-4">Gestión de Acuicultura</p>
-        
+
         {loginError && (
           <Alert variant="destructive" className="max-w-md mb-4">
             <AlertCircleIcon />
             <AlertTitle>Inicio de sesion fallido :(</AlertTitle>
             <AlertDescription>
-              No se pudo iniciar sesio. Revisa tus credenciales.
+              No se pudo iniciar sesion. Revisa tus credenciales.
             </AlertDescription>
           </Alert>
         )}
 
         <form onSubmit={handleSubmit}>
+          {recoverSuccess && (
+            <Alert className="mb-4">
+              <CheckCircle2Icon />
+              <AlertTitle>Correo enviado</AlertTitle>
+              <AlertDescription>
+                Revisa tu bandeja de entrada para recuperar tu contraseña.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {errorRecovery && (
+            <Alert className="mb-4">
+              <AlertCircleIcon />
+              <AlertTitle>No se pudo enviar el correo</AlertTitle>
+              <AlertDescription>
+                Ocurrio un error, vuelve a intentarlo
+              </AlertDescription>
+            </Alert>
+          )}
           <FieldGroup className="space-y-5">
             <Field>
               <FieldLabel htmlFor="email" className="text-xl">Correo Electrónico</FieldLabel>
@@ -117,7 +181,7 @@ export default function Login() {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="password"  className="text-xl">Contraseña</FieldLabel>
+              <FieldLabel htmlFor="password" className="text-xl">Contraseña</FieldLabel>
               <div className="relative">
                 <Lock className="absolute left-3 top-2 w-5 h-5 text-slate-400 z-10" />
                 <Input
@@ -127,14 +191,14 @@ export default function Login() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required 
+                  required
                   className="pl-10 text-black border-slate-300 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </Field>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg font-medium transition-all"
             >
               Iniciar Sesión
@@ -143,12 +207,53 @@ export default function Login() {
           </FieldGroup>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-slate-200">
-          <p className="text-xs text-slate-500 text-center leading-relaxed">
-            Para más información contáctenos<br />
-            <span className="font-medium text-slate-600">andresfelipemope@ufps.edu.co</span><br />
-            <span className="font-medium text-slate-600">keylersneiderac@ufps.edu.co</span>
-          </p>
+        <div className="w-full mt-6 pt-6 border-t border-slate-200 flex justify-center">
+          <Dialog open={openRecovery} onOpenChange={setOpenRecovery}>
+            <DialogTrigger asChild>
+              <Button variant="outline" onClick={() => setOpenRecovery(true)}>
+                Recuperar Contraseña
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-sm">
+
+              <form onSubmit={handleRecover}>
+                <DialogHeader>
+                  <DialogTitle>Recuperar contraseña</DialogTitle>
+                  <DialogDescription>
+                    Digite su correo electronico
+                  </DialogDescription>
+                </DialogHeader>
+
+                <FieldGroup>
+                  <Field>
+                    <Label htmlFor="correo">Correo</Label>
+                    <Input
+                      id="correo"
+                      type="email"
+                      placeholder="usuario@ejemplo.com"
+                      required
+                      value={recoverEmail}
+                      onChange={(e) => setRecoverEmail(e.target.value)}
+                    />
+                  </Field>
+                </FieldGroup>
+
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline">
+                      Cancelar
+                    </Button>
+                  </DialogClose>
+
+                  <Button type="submit">
+                    Enviar
+                  </Button>
+                </DialogFooter>
+
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
