@@ -23,11 +23,11 @@ export function Navbar() {
   };
 
   const handleSettings = () => {
-    router.push('/configuracion');
+    router.push('/register');
   };
 
   const handleHome = () => {
-    router.push('/dashboard');
+    router.push('/home');
   };
 
   return (
