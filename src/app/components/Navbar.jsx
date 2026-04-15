@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Settings, User, Fish, UserRoundPlus } from 'lucide-react';
+import { LogOut, Settings, User, Fish, UserRoundCog } from 'lucide-react';
 
 export function Navbar() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export function Navbar() {
   };
 
   const handleSettings = () => {
-    router.push('/register');
+    router.push('/manageUsers');
   };
 
   const handleHome = () => {
@@ -66,7 +66,7 @@ export function Navbar() {
               onClick={handleSettings}
               className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <UserRoundPlus className="w-5 h-5" />
+              <UserRoundCog className="w-5 h-5" />
             </button>
 
             <button
