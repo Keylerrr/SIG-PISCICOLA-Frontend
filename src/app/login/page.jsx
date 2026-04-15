@@ -45,23 +45,23 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      // const res = await fetch("", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify({
-      //     email: recoverEmail,
-      //   }),
-      // });
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/reset-pasword/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: recoverEmail,
+        }),
+      });
 
-      // const data = await res.json();
+      const data = await res.json();
 
-      // if (!res.ok) {
-      //   console.log("Error:", data);
-      //    setErrorRecovery(true);
-      //   return;
-      // }
+      if (!res.ok) {
+        console.log("Error:", data);
+         setErrorRecovery(true);
+        return;
+      }
       setRecoverSuccess(true);
       setOpenRecovery(false);
       console.log("Correo enviado:");
@@ -227,7 +227,7 @@ export default function Login() {
 
                 <FieldGroup>
                   <Field>
-                    <Label htmlFor="correo">Correo</Label>
+                    
                     <Input
                       id="correo"
                       type="email"
