@@ -207,7 +207,10 @@ export default function Login() {
           </FieldGroup>
         </form>
 
-        <div className="w-full mt-6 pt-6 border-t border-slate-200 flex justify-center">
+        <div className="w-full mt-6 pt-6 border-t border-slate-200 flex justify-center flex-col items-center gap-4">
+          <div className="text-sm text-slate-600">
+            ¿Olvidaste tu contraseña?
+          </div>
           <Dialog open={openRecovery} onOpenChange={setOpenRecovery}>
             <DialogTrigger asChild>
               <Button variant="outline" onClick={() => setOpenRecovery(true)}>
