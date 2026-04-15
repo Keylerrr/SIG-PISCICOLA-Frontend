@@ -40,12 +40,11 @@ export default function Login() {
   const [recoverSuccess, setRecoverSuccess] = useState(false);
   const [errorRecovery, setErrorRecovery] = useState(false);
 
-
   const handleRecover = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/reset-pasword/", {
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/reset-password/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -221,16 +220,15 @@ export default function Login() {
             <DialogContent className="sm:max-w-sm">
 
               <form onSubmit={handleRecover}>
-                <DialogHeader>
+                <DialogHeader className="my-3">
                   <DialogTitle>Recuperar contraseña</DialogTitle>
                   <DialogDescription>
                     Digite su correo electronico
                   </DialogDescription>
                 </DialogHeader>
 
-                <FieldGroup>
+                <FieldGroup className="mb-6">
                   <Field>
-                    
                     <Input
                       id="correo"
                       type="email"
