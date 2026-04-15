@@ -20,8 +20,8 @@ export const metadata = {
 export default function HomeLayout({ children }) {
   return (
     <>
-        <Navbar/>
-        {children}
+      <Navbar />
+      {children}
     </>
   );
 }
