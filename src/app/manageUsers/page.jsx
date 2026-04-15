@@ -13,9 +13,68 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Field, FieldGroup } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 
-export default function MaganeUsers() {
+export default function ManageUsers() {
   const router = useRouter();
+  const [nombres, setNombres] = useState("")
+  const [apellidos, setApellidos] = useState("")
+  const [numero, setNumero] = useState("")
+  const [correo, setCorreo] = useState("")
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (!nombres || !apellidos || !numero || !correo) {
+      alert("Todos los campos son obligatorios")
+      return
+    }
+
+    try {
+
+      const token = localStorage.getItem("access")
+      console.log("TOKEN:", token)
+
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/workers/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          nombres,
+          apellidos,
+          correo,
+          numero
+        }),
+      })
+
+      if (!res.ok) throw new Error("Error al guardar")
+
+      console.log("Usuario guardado")
+
+      // setNombres("")
+      // setApellidos("")
+      // setNumero("")
+      // setCorreo("")
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -31,12 +90,65 @@ export default function MaganeUsers() {
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
-            <button
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg"
-            >
-              <Plus className="w-4 h-4" />
-              Nuevo Usuario
-            </button>
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg">
+                  <Plus className="w-4 h-4" />
+                  Agregar Nuevo Usuario
+                </button>
+              </DialogTrigger>
+
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Agregar Usuario</DialogTitle>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit}>
+                  <FieldGroup>
+                    <Field>
+                      <Label>Nombres</Label>
+                      <Input
+                        value={nombres}
+                        onChange={(e) => setNombres(e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Field>
+                      <Label>Apellidos</Label>
+                      <Input
+                        value={apellidos}
+                        onChange={(e) => setApellidos(e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Field>
+                      <Label>Número de celular</Label>
+                      <Input
+                        value={numero}
+                        onChange={(e) => setNumero(e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Field>
+                      <Label>Correo electrónico</Label>
+                      <Input
+                        value={correo}
+                        onChange={(e) => setCorreo(e.target.value)}
+                        required
+                      />
+                    </Field>
+                  </FieldGroup>
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant="outline">Cancelar</Button>
+                    </DialogClose>
+                    <Button type="submit">Guardar</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="grid grid-cols-3 gap-4 mt-6 text-center">
