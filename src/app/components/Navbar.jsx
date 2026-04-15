@@ -11,9 +11,9 @@ export function Navbar() {
       const userString = localStorage.getItem("user");
       return userString
         ? JSON.parse(userString)
-        : { name: "Cargando...", rol: "Usuario" };
+        : { name: "Cargando...", role: "Usuario" };
     } catch {
-      return { name: "Cargando...", rol: "Usuario" };
+      return { name: "Cargando...", role: "Usuario" };
     }
   });
 
@@ -56,8 +56,8 @@ export function Navbar() {
                 <p className="text-sm font-medium text-slate-800">
                   {userData.name}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {userData.rol}
+                <p className="text-xs text-slate-500 capitalize">
+                  {userData.role}
                 </p>
               </div>
             </div>
