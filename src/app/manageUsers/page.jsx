@@ -44,16 +44,21 @@ export default function ManageUsers() {
     }
 
     try {
-      const res = await fetch("http://localhost:8080/api/usuarios", {
+
+      const token = localStorage.getItem("access")
+      console.log("TOKEN:", token)
+
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/workers/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           nombres,
           apellidos,
-          numero,
           correo,
+          numero
         }),
       })
 
@@ -61,10 +66,10 @@ export default function ManageUsers() {
 
       console.log("Usuario guardado")
 
-      setNombres("")
-      setApellidos("")
-      setNumero("")
-      setCorreo("")
+      // setNombres("")
+      // setApellidos("")
+      // setNumero("")
+      // setCorreo("")
 
     } catch (error) {
       console.error(error)
