@@ -27,7 +27,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -39,9 +38,11 @@ export default function Login() {
   const [openRecovery, setOpenRecovery] = useState(false);
   const [recoverSuccess, setRecoverSuccess] = useState(false);
   const [errorRecovery, setErrorRecovery] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const handleRecover = async (e) => {
     e.preventDefault();
+    setIsSending(true);
 
     try {
       const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/reset-password/", {
@@ -58,11 +59,13 @@ export default function Login() {
 
       if (!res.ok) {
         console.log("Error:", data);
-         setErrorRecovery(true);
+        setIsSending(false);
+        setErrorRecovery(true);
         return;
       }
       setRecoverSuccess(true);
       setOpenRecovery(false);
+      setIsSending(false);
       console.log("Correo enviado:");
     } catch (error) {
       console.error("Error en recuperación:", error);
@@ -91,7 +94,7 @@ export default function Login() {
 
       const data = await res.json();
 
-      if(!res.ok){
+      if (!res.ok) {
         setIsLoading(false);
         setLoginError(true);
         return;
@@ -118,6 +121,17 @@ export default function Login() {
           <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
             <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
             <p className="mt-4 font-medium text-slate-700">Iniciando sesión...</p>
+          </div>
+        </div>
+      )}
+
+      {isSending && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
+            <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
+            <p className="mt-4 font-medium text-slate-700">
+              Enviando correo con instrucciones...
+            </p>
           </div>
         </div>
       )}
