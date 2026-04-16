@@ -17,9 +17,31 @@ export function Navbar() {
     }
   });
 
-  const handleLogout = () => {
-    localStorage.clear();
-    router.push('/');
+  const handleLogout = async (e) => {
+     e.preventDefault()
+
+    try {
+
+      const token = localStorage.getItem("access")
+
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      })
+
+      if (!res.ok) throw new Error("Error al cerrar sesion")
+      
+      //console.log(res)
+
+      localStorage.clear();
+      router.push('/');
+
+    } catch (error) {
+      console.error(error)
+    }
   };
 
   const handleSettings = () => {
