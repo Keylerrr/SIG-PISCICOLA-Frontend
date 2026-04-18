@@ -1,166 +1,218 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+
 
 export default function FarmRegisterPage() {
-  const [formData, setFormData] = useState({
-    nombre: '',
-    nit: '',
-    propietario: '',
-    departamento: '',
-    municipio: '',
-    vereda: '',
-    coordenadas: '',
-    areaTotal: '',
-    descripcion: '',
-    activa: false,
-  });
+  const[nombre,setNombre]=useState("");
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-  };
+  const[departamentos,setDepartmentos]=useState([]);
+  const[selectedDepartment, setSelectedDepartment] = useState("");
+
+  const[ciudades,setCiudades]=useState([]);
+  const[selectedCity, setSelectedCity] = useState("");
+
+  const[direccion,setDireccion]=useState("");
+  const[totalArea,setArea]=useState("");
+
+  const[managers,setManagers]=useState([])
+  const[selectedManager, setSelectedManager] = useState("");
+
+  useEffect(() => {
+    const token = localStorage.getItem("access")
+    //MANAGERS
+    fetch("https://backend-pongase-trucha.onrender.com/managers/",{
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al traer managers");
+        return res.json();
+    }).then((data) => {
+      setManagers(data);
+    }).catch((err) => console.error(err));
+
+    //DEPARTAMENTOS
+    fetch("https://backend-pongase-trucha.onrender.com/farm/departments",{
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al traer departamentos");
+        return res.json();
+    }).then((data) => {
+      setDepartmentos(data);
+    }).catch((err) => console.error(err));
+  }, []);
+  
+  useEffect(() => {
+    const token = localStorage.getItem("access")
+    //CIUDADES
+    fetch(`http://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}`,{
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al traer las ciudades");
+        return res.json();
+    }).then((data) => {
+      setCiudades(data);
+    }).catch((err) => console.error(err));
+  }, [selectedDepartment])
+
+  const handleReset = (e) => {
+    setNombre("")
+    setSelectedDepartment("")
+    setSelectedCity("")
+    setDireccion("")
+    setArea("")
+    setSelectedManager("")
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    // TODO: Implementar la conexión con el endpoint de la base de datos para hacer POST
-    // Ejemplo: const response = await fetch('/api/farms', { method: 'POST', body: JSON.stringify(formData) });
-    console.log('Datos a enviar:', formData);
-  };
+    const token = localStorage.getItem("access")
+    try {
+      console.log("aca estamos")
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: nombre,
+          department: Number(selectedDepartment),
+          city: Number(selectedCity),
+          address: direccion,
+          total_area_ha: totalArea,
+          manager_id: Number(selectedManager)
+        })
+      });
+      const data = await res.json();
 
+      if (!res.ok) console.log("Error:", data);
+      else handleReset(e);
+    } catch (error) {
+      console.error("Error en recuperación:", error);
+    }
+  }
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Registro de Granja</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="nombre" className="block text-sm font-medium">Nombre</label>
-          <input
-            type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="nit" className="block text-sm font-medium">NIT</label>
-          <input
-            type="text"
-            id="nit"
-            name="nit"
-            value={formData.nit}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="propietario" className="block text-sm font-medium">Propietario</label>
-          <input
-            type="text"
-            id="propietario"
-            name="propietario"
-            value={formData.propietario}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="departamento" className="block text-sm font-medium">Departamento</label>
-          <input
-            type="text"
-            id="departamento"
-            name="departamento"
-            value={formData.departamento}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="municipio" className="block text-sm font-medium">Municipio</label>
-          <input
-            type="text"
-            id="municipio"
-            name="municipio"
-            value={formData.municipio}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="vereda" className="block text-sm font-medium">Vereda</label>
-          <input
-            type="text"
-            id="vereda"
-            name="vereda"
-            value={formData.vereda}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="coordenadas" className="block text-sm font-medium">Coordenadas</label>
-          <input
-            type="text"
-            id="coordenadas"
-            name="coordenadas"
-            value={formData.coordenadas}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="areaTotal" className="block text-sm font-medium">Área Total (Hectáreas)</label>
-          <input
-            type="number"
-            id="areaTotal"
-            name="areaTotal"
-            value={formData.areaTotal}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="descripcion" className="block text-sm font-medium">Descripción</label>
-          <textarea
-            id="descripcion"
-            name="descripcion"
-            value={formData.descripcion}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md p-2"
-          />
-        </div>
-        <div>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="activa"
-              checked={formData.activa}
-              onChange={handleChange}
-              className="mr-2"
-            />
-            Activa
-          </label>
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-        >
-          Registrar Granja
-        </button>
-      </form>
-    </div>
-  );
+    <FieldGroup className="px-15 py-10">
+      {/* NAME */}
+      <Field>
+        <FieldLabel htmlFor="fieldgroup-name">Name</FieldLabel>
+        <Input 
+        required
+        id="fieldgroup-name" 
+        placeholder="Fulano Detal"
+        onChange={(e) => setNombre(e.target.value)}
+        value={nombre}/>
+      </Field>
+
+      {/* DEPARTMENT */}
+      <Field>
+        <FieldLabel>Managers</FieldLabel>
+        <Select onValueChange={setSelectedDepartment} value={selectedManager}>
+        <SelectTrigger>
+          <SelectValue placeholder="Choose a department" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {departamentos.map((departamento) => (
+              <SelectItem key={departamento.id} value={String(departamento.id)}>
+                {departamento.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      </Field>
+
+      {/* CITY */}
+      <Field>
+        <FieldLabel>Managers</FieldLabel>
+        <Select onValueChange={setSelectedCity} value={selectedCity}>
+        <SelectTrigger>
+          <SelectValue placeholder="Choose a city" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {ciudades.map((ciudad) => (
+              <SelectItem key={ciudad.id} value={String(ciudad.id)}>
+                {ciudad.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      </Field>
+
+      {/* ADDRESS */}
+      <Field>
+        <FieldLabel htmlFor="fieldgroup-address">Address</FieldLabel>
+        <Input
+          required
+          id="fieldgroup-address"
+          placeholder="Cll x #y - z"
+          onChange={(e) => setDireccion(e.target.value)}
+          value={direccion}/>
+      </Field>
+
+      {/* TOTAL AREA HA */}
+      <Field>
+        <FieldLabel htmlFor="fieldgroup-area">Total Area</FieldLabel>
+        <Input
+          id="fieldgroup-area"
+          type="number"
+          placeholder="12.5"
+          onChange={(e) => setArea(e.target.value)}
+          value={totalArea}/>
+      </Field>
+
+      {/* MANAGER ID */}
+      <Field>
+        <FieldLabel>Managers</FieldLabel>
+        <Select onValueChange={setSelectedManager} value={selectedManager}>
+        <SelectTrigger>
+          <SelectValue placeholder="Choose a manager" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            {managers.map((manager) => (
+              <SelectItem key={manager.id} value={String(manager.id)}>
+                {manager.name}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      </Field>
+
+      <Field orientation="horizontal">
+        <Button onClick={handleReset}> Reset </Button>
+        <Button onClick={handleSubmit}>Submit</Button>
+      </Field>
+    </FieldGroup>
+  )
 }
