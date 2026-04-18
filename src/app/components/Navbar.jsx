@@ -6,16 +6,21 @@ import { LogOut, Settings, User, Fish, UserRoundCog } from 'lucide-react';
 
 export function Navbar() {
   const router = useRouter();
-  const [userData, setUserData] = useState(() => {
+  const [userData, setUserData] = useState({
+    name: "Cargando...",
+    role: "Usuario"
+  });
+
+  useEffect(() => {
     try {
       const userString = localStorage.getItem("user");
-      return userString
-        ? JSON.parse(userString)
-        : { name: "Cargando...", role: "Usuario" };
+      if (userString) {
+        setUserData(JSON.parse(userString));
+      }
     } catch {
-      return { name: "Cargando...", role: "Usuario" };
+      setUserData({ name: "Cargando...", role: "Usuario" });
     }
-  });
+  }, []);
 
   const handleLogout = async (e) => {
      e.preventDefault()
@@ -62,7 +67,7 @@ export function Navbar() {
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
 
-            <img src="./images/PongaseTrucha.png" alt="" className="w-12 h-12" />
+            <img src="/images/PongaseTrucha.png" alt="" className="w-12 h-12" />
             <span className="text-xl font-bold text-slate-800">
               Póngase Trucha
             </span>
