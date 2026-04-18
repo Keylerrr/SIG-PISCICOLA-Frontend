@@ -83,8 +83,8 @@ export default function FarmRegisterPage() {
 
   const handleReset = (e) => {
     setNombre("")
-    setDepartmento("")
-    setCiudad("")
+    setSelectedDepartment("")
+    setSelectedCity("")
     setDireccion("")
     setArea("")
     setSelectedManager("")
