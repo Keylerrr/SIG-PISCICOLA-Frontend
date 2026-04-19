@@ -136,7 +136,7 @@ export function FarmRegisterForm({op, idProp, nombreProp, departamentoProp, ciud
           manager_name: managers.find(m => m.manager_id === Number(selectedManager))?.name
         })
       });
-      // if (res.ok) window.location.reload();
+      if (res.ok) window.location.reload();
     } catch (error) {
       console.error("Error en la edición de la granja:", error);
     }
