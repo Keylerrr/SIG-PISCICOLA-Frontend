@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 
-export default function FarmRegisterPage() {
+export function FarmRegisterForm() {
   const[nombre,setNombre]=useState("");
 
   const[departamentos,setDepartmentos]=useState([]);
@@ -35,6 +35,7 @@ export default function FarmRegisterPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("access")
+
     //MANAGERS
     fetch("https://backend-pongase-trucha.onrender.com/managers/",{
       method: "GET",
@@ -50,7 +51,7 @@ export default function FarmRegisterPage() {
     }).catch((err) => console.error(err));
 
     //DEPARTAMENTOS
-    fetch("https://backend-pongase-trucha.onrender.com/farm/departments",{
+    fetch("https://backend-pongase-trucha.onrender.com/farm/departments/",{
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -60,14 +61,16 @@ export default function FarmRegisterPage() {
       if (!res.ok) throw new Error("Error al traer departamentos");
         return res.json();
     }).then((data) => {
-      setDepartmentos(data);
+      setDepartmentos(data.departments);
+      console.log(data)
     }).catch((err) => console.error(err));
   }, []);
   
   useEffect(() => {
     const token = localStorage.getItem("access")
+    if(selectedDepartment === "") return;
     //CIUDADES
-    fetch(`http://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}`,{
+    fetch(`https://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}/cities/`,{
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -77,11 +80,11 @@ export default function FarmRegisterPage() {
       if (!res.ok) throw new Error("Error al traer las ciudades");
         return res.json();
     }).then((data) => {
-      setCiudades(data);
+      setCiudades(data.cities);
     }).catch((err) => console.error(err));
   }, [selectedDepartment])
 
-  const handleReset = (e) => {
+  const handleReset = () => {
     setNombre("")
     setSelectedDepartment("")
     setSelectedCity("")
@@ -91,57 +94,54 @@ export default function FarmRegisterPage() {
   }
 
   const handleSubmit = async (e) => {
+    e.preventDefault();
     const token = localStorage.getItem("access")
     try {
       console.log("aca estamos")
       const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           name: nombre,
-          department: Number(selectedDepartment),
-          city: Number(selectedCity),
+          department: selectedDepartment,
+          city: selectedCity,
           address: direccion,
-          total_area_ha: totalArea,
-          manager_id: Number(selectedManager)
+          total_area_ha: Number(totalArea),
+          manager_id: Number(selectedManager),
         })
       });
-      const data = await res.json();
-
-      if (!res.ok) console.log("Error:", data);
-      else handleReset(e);
+      if (res.ok) handleReset();
     } catch (error) {
-      console.error("Error en recuperación:", error);
+      console.error("Error en registro de granja:", error);
     }
   }
   return (
-    <FieldGroup className="px-15 py-10">
+    <FieldGroup>
       {/* NAME */}
       <Field>
         <FieldLabel htmlFor="fieldgroup-name">Name</FieldLabel>
         <Input 
-        required
         id="fieldgroup-name" 
         placeholder="Fulano Detal"
-        onChange={(e) => setNombre(e.target.value)}
-        value={nombre}/>
+        value={nombre}
+        onChange={(e) => setNombre(e.target.value)}/>
       </Field>
 
       {/* DEPARTMENT */}
       <Field>
-        <FieldLabel>Managers</FieldLabel>
-        <Select onValueChange={setSelectedDepartment} value={selectedManager}>
+        <FieldLabel>Department</FieldLabel>
+        <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
         <SelectTrigger>
           <SelectValue placeholder="Choose a department" />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
             {departamentos.map((departamento) => (
-              <SelectItem key={departamento.id} value={String(departamento.id)}>
-                {departamento.name}
+              <SelectItem key={departamento.key} value={String(departamento.key)}>
+                {departamento.label}
               </SelectItem>
             ))}
           </SelectGroup>
@@ -151,7 +151,7 @@ export default function FarmRegisterPage() {
 
       {/* CITY */}
       <Field>
-        <FieldLabel>Managers</FieldLabel>
+        <FieldLabel>City</FieldLabel>
         <Select onValueChange={setSelectedCity} value={selectedCity}>
         <SelectTrigger>
           <SelectValue placeholder="Choose a city" />
@@ -159,8 +159,8 @@ export default function FarmRegisterPage() {
         <SelectContent>
           <SelectGroup>
             {ciudades.map((ciudad) => (
-              <SelectItem key={ciudad.id} value={String(ciudad.id)}>
-                {ciudad.name}
+              <SelectItem key={ciudad} value={ciudad}>
+                {ciudad}
               </SelectItem>
             ))}
           </SelectGroup>
@@ -172,11 +172,10 @@ export default function FarmRegisterPage() {
       <Field>
         <FieldLabel htmlFor="fieldgroup-address">Address</FieldLabel>
         <Input
-          required
           id="fieldgroup-address"
           placeholder="Cll x #y - z"
-          onChange={(e) => setDireccion(e.target.value)}
-          value={direccion}/>
+          value={direccion}
+          onChange={(e) => setDireccion(e.target.value)}/>
       </Field>
 
       {/* TOTAL AREA HA */}
@@ -186,8 +185,8 @@ export default function FarmRegisterPage() {
           id="fieldgroup-area"
           type="number"
           placeholder="12.5"
-          onChange={(e) => setArea(e.target.value)}
-          value={totalArea}/>
+          value={totalArea}
+          onChange={(e) => setArea(e.target.value)}/>
       </Field>
 
       {/* MANAGER ID */}
@@ -200,7 +199,7 @@ export default function FarmRegisterPage() {
         <SelectContent>
           <SelectGroup>
             {managers.map((manager) => (
-              <SelectItem key={manager.id} value={String(manager.id)}>
+              <SelectItem key={manager.id} value={manager.id}>
                 {manager.name}
               </SelectItem>
             ))}
@@ -210,8 +209,8 @@ export default function FarmRegisterPage() {
       </Field>
 
       <Field orientation="horizontal">
-        <Button onClick={handleReset}> Reset </Button>
-        <Button onClick={handleSubmit}>Submit</Button>
+        <Button onClick={handleReset}>Borrar</Button>
+        <Button onClick={handleSubmit}>Subir</Button>
       </Field>
     </FieldGroup>
   )
