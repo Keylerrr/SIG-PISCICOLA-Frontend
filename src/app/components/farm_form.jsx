@@ -122,7 +122,7 @@ export function FarmRegisterForm() {
     <FieldGroup>
       {/* NAME */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-name">Name</FieldLabel>
+        <FieldLabel htmlFor="fieldgroup-name">Nombre</FieldLabel>
         <Input 
         id="fieldgroup-name" 
         placeholder="Fulano Detal"
@@ -132,7 +132,7 @@ export function FarmRegisterForm() {
 
       {/* DEPARTMENT */}
       <Field>
-        <FieldLabel>Department</FieldLabel>
+        <FieldLabel>Departamento</FieldLabel>
         <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
         <SelectTrigger>
           <SelectValue placeholder="Choose a department" />
@@ -151,7 +151,7 @@ export function FarmRegisterForm() {
 
       {/* CITY */}
       <Field>
-        <FieldLabel>City</FieldLabel>
+        <FieldLabel>Ciudad</FieldLabel>
         <Select onValueChange={setSelectedCity} value={selectedCity}>
         <SelectTrigger>
           <SelectValue placeholder="Choose a city" />
@@ -170,7 +170,7 @@ export function FarmRegisterForm() {
 
       {/* ADDRESS */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-address">Address</FieldLabel>
+        <FieldLabel htmlFor="fieldgroup-address">Dirección</FieldLabel>
         <Input
           id="fieldgroup-address"
           placeholder="Cll x #y - z"
@@ -180,7 +180,7 @@ export function FarmRegisterForm() {
 
       {/* TOTAL AREA HA */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-area">Total Area</FieldLabel>
+        <FieldLabel htmlFor="fieldgroup-area">Área total en hectáreas</FieldLabel>
         <Input
           id="fieldgroup-area"
           type="number"
