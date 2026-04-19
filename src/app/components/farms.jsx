@@ -23,7 +23,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-
+import { FarmRegisterForm } from "./farm_form";
 import { Toaster, toast } from "sonner"
 
 export function Farms() {
@@ -121,8 +121,40 @@ export function Farms() {
                                     <MapPin /> {departamentos.find(d => d.key === g.department)?.label} - {g.city}
                                 </CardDescription>
 
-                                <CardAction className="flex gap-3">
-                                    <Pencil className="text-blue-600 cursor-pointer" />
+                                <CardAction>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Pencil className="text-blue-600 cursor-pointer" />
+                                        </AlertDialogTrigger>
+
+                                        <AlertDialogContent className="sm:max-w-2xl">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    ¿Editar granja?
+                                                </AlertDialogTitle>
+
+                                                <AlertDialogDescription>
+                                                    Cambie los datos a continuación para editar la informacio de la granja {" "}
+                                                    <span className="font-bold">{g.name}.</span>
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <FarmRegisterForm
+                                                op={0}
+                                                idProp={g.id}
+                                                nombreProp={g.name}
+                                                departamentoProp={g.department}
+                                                ciudadProp={g.city}
+                                                direccionProp={g.address}
+                                                areaProp={g.total_area_ha}
+                                                managerProp={g.manager_id}
+                                            />
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Cancelar
+                                                </AlertDialogCancel>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
 
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>

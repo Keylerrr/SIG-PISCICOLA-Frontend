@@ -18,20 +18,20 @@ import {
 import { Input } from "@/components/ui/input"
 
 
-export function FarmRegisterForm() {
-  const [nombre, setNombre] = useState("");
+export function FarmRegisterForm({op, idProp, nombreProp, departamentoProp, ciudadProp, direccionProp, areaProp, managerProp}) {
+  const [nombre, setNombre] = useState(nombreProp);
 
   const [departamentos, setDepartmentos] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState(departamentoProp);
 
   const [ciudades, setCiudades] = useState([]);
-  const [selectedCity, setSelectedCity] = useState("");
+  const [selectedCity, setSelectedCity] = useState(ciudadProp);
 
-  const [direccion, setDireccion] = useState("");
-  const [totalArea, setArea] = useState("");
+  const [direccion, setDireccion] = useState(direccionProp);
+  const [totalArea, setArea] = useState(areaProp);
 
   const [managers, setManagers] = useState([])
-  const [selectedManager, setSelectedManager] = useState("");
+  const [selectedManager, setSelectedManager] = useState(managerProp);
 
   useEffect(() => {
     const token = localStorage.getItem("access")
@@ -94,10 +94,8 @@ export function FarmRegisterForm() {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
     const token = localStorage.getItem("access")
     try {
-      console.log("aca estamos")
       const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
         method: "POST",
         headers: {
@@ -110,15 +108,37 @@ export function FarmRegisterForm() {
           city: selectedCity,
           address: direccion,
           total_area_ha: Number(totalArea),
-          manager_id: Number(selectedManager),
+          manager_id: Number(selectedManager)
         })
       });
-      if (res.ok) {
-        handleReset();
-        window.location.reload();
-      }
+      if (res.ok) window.location.reload();
     } catch (error) {
       console.error("Error en registro de granja:", error);
+    }
+  }
+
+  const handleEdit = async (e) => {
+    const token = localStorage.getItem("access")
+    try {
+      const res = await fetch(`https://backend-pongase-trucha.onrender.com/farm/${idProp}/`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          name: nombre,
+          department: selectedDepartment,
+          city: selectedCity,
+          address: direccion,
+          total_area_ha: Number(totalArea),
+          manager_id: Number(selectedManager),
+          manager_name: managers.find(m => m.manager_id === Number(selectedManager))?.name
+        })
+      });
+      // if (res.ok) window.location.reload();
+    } catch (error) {
+      console.error("Error en la edición de la granja:", error);
     }
   }
   return (
@@ -213,7 +233,7 @@ export function FarmRegisterForm() {
 
       <Field orientation="horizontal">
         <Button onClick={handleReset}>Borrar</Button>
-        <Button onClick={handleSubmit}>Subir</Button>
+        <Button onClick={op === 1 ? handleSubmit : handleEdit}>Subir</Button>
       </Field>
     </FieldGroup>
   )

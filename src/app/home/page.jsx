@@ -46,7 +46,16 @@ export default function Home() {
                                     Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
                                 </DialogDescription>
                             </DialogHeader>
-                            <FarmRegisterForm />
+                            <FarmRegisterForm 
+                                op={1}
+                                idProp={""}
+                                nombreProp={""}
+                                departamentoProp={""}
+                                ciudadProp={""}
+                                direccionProp={""}
+                                areaProp={""}
+                                managerProp={""}
+                            />
                         </DialogContent>
                     </form>
                 </Dialog>
