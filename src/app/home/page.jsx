@@ -46,12 +46,6 @@ export default function Home() {
                             </DialogDescription>
                         </DialogHeader>
                         <FarmRegisterForm/>
-                        <DialogFooter>
-                            <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                            </DialogClose>
-                            <Button type="submit">Guardar granja</Button>
-                        </DialogFooter>
                         </DialogContent>
                     </form>
                 </Dialog>
