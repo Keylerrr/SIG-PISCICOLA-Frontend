@@ -36,7 +36,6 @@ export function Farms({ search }) {
         async function fetchGranja() {
             try {
                 const token = localStorage.getItem("access")
-                console.log("TOKEN:", token)
 
                 const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
                     method: "GET",

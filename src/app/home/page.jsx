@@ -24,7 +24,7 @@ export default function Home() {
     const [search, setSearch] = useState("");
 
     return (
-        <div className="">
+        <div className="min-h-screen bg-slate-50">
             <div className="max-w-5xl mx-auto flex justify-between items-center py-6 px-4">
                 <div>
                     <h1 className="text-4xl font-bold">Granjas Piscícolas</h1>
@@ -63,20 +63,22 @@ export default function Home() {
                 </Dialog>
             </div>
 
-
-            <Field className="max-w-5xl mx-auto">
-                <FieldLabel htmlFor="input-button-group" className="text-xl">Search</FieldLabel>
-                <ButtonGroup>
-                    <Input
-                        id="input-button-group"
-                        placeholder="Type to search..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    <Button className="text-md">Search</Button>
-                </ButtonGroup>
-            </Field>
-
+            <div className="px-4 sm:px-6 lg:px-8 mt-4">
+                <Field className="max-w-5xl mx-auto">
+                    <FieldLabel htmlFor="input-button-group" className="text-xl">
+                        Search
+                    </FieldLabel>
+                    <ButtonGroup>
+                        <Input
+                            id="input-button-group"
+                            placeholder="Type to search..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        <Button className="text-md">Search</Button>
+                    </ButtonGroup>
+                </Field>
+            </div>
 
             <div className="max-w-5xl mx-auto">
                 <Farms search={search} />
