@@ -26,8 +26,11 @@ import {
 import { FarmRegisterForm } from "./farm_form";
 import { Toaster, toast } from "sonner"
 
-export function Farms() {
+export function Farms({ search }) {
     const [granjas, SetGranjas] = useState([]);
+    const filteredGranjas = granjas.filter((g) =>
+        g.name.toLowerCase().includes((search || "").toLowerCase().trim())
+    );
 
     useEffect(() => {
         async function fetchGranja() {
@@ -61,9 +64,10 @@ export function Farms() {
         fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
             method: "GET",
             headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-        }}).then((res) => {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            }
+        }).then((res) => {
             if (!res.ok) throw new Error("Error al traer departamentos");
             return res.json();
         }).then((data) => {
@@ -107,9 +111,14 @@ export function Farms() {
 
     return (
         <>
-            <Toaster position="top-right"/>
+            <Toaster position="top-right" />
             <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
-                {granjas.map((g) => (
+                {filteredGranjas.length === 0 && search.trim() && (
+                    <p className="text-center col-span-full text-gray-500 text-lg">
+                
+                    </p>
+                )}
+                {filteredGranjas.map((g) => (
                     <div key={g.id}>
                         <Card className="group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
                             <CardHeader>
