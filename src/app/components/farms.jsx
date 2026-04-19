@@ -23,11 +23,14 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-
+import { FarmRegisterForm } from "./farm_form";
 import { Toaster, toast } from "sonner"
 
-export function Farms() {
+export function Farms({ search }) {
     const [granjas, SetGranjas] = useState([]);
+    const filteredGranjas = granjas.filter((g) =>
+        g.name.toLowerCase().includes((search || "").toLowerCase().trim())
+    );
 
     useEffect(() => {
         async function fetchGranja() {
@@ -61,9 +64,10 @@ export function Farms() {
         fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
             method: "GET",
             headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-        }}).then((res) => {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            }
+        }).then((res) => {
             if (!res.ok) throw new Error("Error al traer departamentos");
             return res.json();
         }).then((data) => {
@@ -107,29 +111,66 @@ export function Farms() {
 
     return (
         <>
-            <Toaster position="top-right"/>
+            <Toaster position="top-right" />
             <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
-                {granjas.map((g) => (
+                {filteredGranjas.length === 0 && search.trim() && (
+                    <p className="text-center col-span-full text-gray-500 text-lg">
+
+                    </p>
+                )}
+                {filteredGranjas.map((g) => (
                     <div key={g.id}>
                         <Card className="group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
                             <CardHeader>
                                 <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
-                                    {g.name}
+                                    <a href={`/home/granja/${g.id}/`}>{g.name}</a>
                                 </CardTitle>
 
                                 <CardDescription className="gap-2 font-bold text-md flex items-center">
                                     <MapPin /> {departamentos.find(d => d.key === g.department)?.label} - {g.city}
                                 </CardDescription>
 
-                                <CardAction className="flex gap-3">
-                                    <Pencil className="text-blue-600 cursor-pointer" />
+                                <CardAction>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Pencil className="text-blue-600 cursor-pointer" />
+                                        </AlertDialogTrigger>
+
+                                        <AlertDialogContent className="sm:max-w-2xl">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    ¿Editar granja?
+                                                </AlertDialogTitle>
+
+                                                <AlertDialogDescription>
+                                                    Cambie los datos a continuación para editar la informacio de la granja {" "}
+                                                    <span className="font-bold">{g.name}.</span>
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <FarmRegisterForm
+                                                op={0}
+                                                idProp={g.id}
+                                                nombreProp={g.name}
+                                                departamentoProp={g.department}
+                                                ciudadProp={g.city}
+                                                direccionProp={g.address}
+                                                areaProp={g.total_area_ha}
+                                                managerProp={g.manager_id}
+                                            />
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Cancelar
+                                                </AlertDialogCancel>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
 
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Trash className="text-red-600 cursor-pointer" />
                                         </AlertDialogTrigger>
 
-                                        <AlertDialogContent>
+                                        <AlertDialogContent className="sm:max-w-2xl">
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>
                                                     ¿Eliminar granja?
