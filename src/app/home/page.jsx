@@ -6,14 +6,14 @@ import { Farms } from "../components/farms";
 import { FarmRegisterForm } from "../components/farm_form";
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Field, FieldGroup } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -30,30 +30,30 @@ export default function Home() {
                         Selecciona una granja para gestionar sus estanques y producción
                     </p>
                 </div>
-        <Dialog>
+                <Dialog>
                     <form>
                         <DialogTrigger asChild>
-                        <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
-                        variant="outline">
-                            <Plus />
-                            Agregar Granja
-                        </Button>
+                            <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
+                                variant="outline">
+                                <Plus />
+                                Agregar Granja
+                            </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Agregar Granja</DialogTitle>
-                            <DialogDescription>
-                            Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <FarmRegisterForm/>
+                            <DialogHeader>
+                                <DialogTitle>Agregar Granja</DialogTitle>
+                                <DialogDescription>
+                                    Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <FarmRegisterForm />
                         </DialogContent>
                     </form>
                 </Dialog>
             </div>
 
             <div className="max-w-5xl mx-auto">
-                <Farms/>
+                <Farms />
             </div>
         </div>
     );
