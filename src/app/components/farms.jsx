@@ -170,7 +170,7 @@ export function Farms({ search }) {
                                             <Trash className="text-red-600 cursor-pointer" />
                                         </AlertDialogTrigger>
 
-                                        <AlertDialogContent>
+                                        <AlertDialogContent className="sm:max-w-2xl">
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>
                                                     ¿Eliminar granja?
