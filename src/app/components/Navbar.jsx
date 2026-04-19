@@ -23,7 +23,7 @@ export function Navbar() {
   }, []);
 
   const handleLogout = async (e) => {
-     e.preventDefault()
+    e.preventDefault()
 
     try {
 
@@ -38,7 +38,7 @@ export function Navbar() {
       })
 
       if (!res.ok) throw new Error("Error al cerrar sesion")
-      
+
       //console.log(res)
 
       localStorage.clear();

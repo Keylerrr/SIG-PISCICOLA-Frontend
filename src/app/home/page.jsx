@@ -48,7 +48,7 @@ export default function Home() {
                                     Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
                                 </DialogDescription>
                             </DialogHeader>
-                            <FarmRegisterForm 
+                            <FarmRegisterForm
                                 op={1}
                                 idProp={""}
                                 nombreProp={""}
@@ -68,18 +68,18 @@ export default function Home() {
                 <FieldLabel htmlFor="input-button-group" className="text-xl">Search</FieldLabel>
                 <ButtonGroup>
                     <Input
-                        id="input-button-group" 
+                        id="input-button-group"
                         placeholder="Type to search..."
-                        value ={search}
-                        onChange={(e)=>setSearch(e.target.value)}
-                        />
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
                     <Button className="text-md">Search</Button>
                 </ButtonGroup>
             </Field>
 
 
             <div className="max-w-5xl mx-auto">
-                <Farms search={search}/>
+                <Farms search={search} />
             </div>
         </div>
     );

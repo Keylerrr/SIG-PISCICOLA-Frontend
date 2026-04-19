@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 
-export function FarmRegisterForm({op, idProp, nombreProp, departamentoProp, ciudadProp, direccionProp, areaProp, managerProp}) {
+export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciudadProp, direccionProp, areaProp, managerProp }) {
   const [nombre, setNombre] = useState(nombreProp);
 
   const [departamentos, setDepartmentos] = useState([]);

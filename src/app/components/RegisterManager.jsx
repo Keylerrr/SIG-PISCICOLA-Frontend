@@ -84,7 +84,7 @@ export function RegisterManager() {
         let data = null;
         try {
           data = await res.json();
-        } catch {}
+        } catch { }
 
         if (!res.ok) {
           throw new Error(data?.message || "Error al guardar");
