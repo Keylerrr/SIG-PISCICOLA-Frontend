@@ -38,24 +38,24 @@ export default function Home() {
                         Selecciona una granja para gestionar sus estanques y producción
                     </p>
                 </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <form>
-                        <DialogTrigger asChild>
-                        <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
-                        variant="outline">
-                            <Plus />
-                            Agregar Granja
-                        </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Agregar Granja</DialogTitle>
-                            <DialogDescription>
-                            Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <FarmRegisterForm onFarmCreated={handleFarmCreated}/>
-                        </DialogContent>
+        <           Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                        <form>
+                            <DialogTrigger asChild>
+                            <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
+                            variant="outline">
+                                <Plus />
+                                Agregar Granja
+                            </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>Agregar Granja</DialogTitle>
+                                <DialogDescription>
+                                Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <FarmRegisterForm onFarmCreated={handleFarmCreated}/>
+                            </DialogContent>
                     </form>
                 </Dialog>
             </div>
