@@ -32,38 +32,68 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
 
   const [managers, setManagers] = useState([])
   const [selectedManager, setSelectedManager] = useState(managerProp);
+  const [role, setRole] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("access")
+    const token = localStorage.getItem("access");
 
-    //MANAGERS
-    fetch("https://backend-pongase-trucha.onrender.com/managers/", {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      }
-    }).then((res) => {
-      if (!res.ok) throw new Error("Error al traer managers");
-      return res.json();
-    }).then((data) => {
-      setManagers(data);
-    }).catch((err) => console.error(err));
+    if (!token) return;
 
-    //DEPARTAMENTOS
-    fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      setRole(payload.role);
+    } catch (err) {
+      console.error("Token inválido");
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access");
+    if (!token) return;
+
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const role = payload.role;
+
+      // 🔥 SOLO ADMIN PUEDE TRAER MANAGERS
+      if (role === "admin") {
+        fetch("https://backend-pongase-trucha.onrender.com/managers/", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error("Error al traer managers");
+            return res.json();
+          })
+          .then((data) => {
+            setManagers(data);
+          })
+          .catch((err) => console.error(err));
       }
-    }).then((res) => {
-      if (!res.ok) throw new Error("Error al traer departamentos");
-      return res.json();
-    }).then((data) => {
-      setDepartmentos(data.departments);
-      console.log(data)
-    }).catch((err) => console.error(err));
+
+      // 🔥 DEPARTAMENTOS (esto sí siempre)
+      fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("Error al traer departamentos");
+          return res.json();
+        })
+        .then((data) => {
+          setDepartmentos(data.departments);
+        })
+        .catch((err) => console.error(err));
+
+    } catch (err) {
+      console.error("Token inválido");
+    }
   }, []);
 
   useEffect(() => {
@@ -145,10 +175,10 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
     <FieldGroup>
       {/* NAME */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-name">Nombre</FieldLabel>
+        <FieldLabel htmlFor="fieldgroup-name">Nombre de la Granja</FieldLabel>
         <Input
           id="fieldgroup-name"
-          placeholder="Fulano Detal"
+          placeholder="Escribe algo..."
           value={nombre}
           onChange={(e) => setNombre(e.target.value)} />
       </Field>
@@ -158,7 +188,7 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
         <FieldLabel>Departamento</FieldLabel>
         <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose a department" />
+            <SelectValue placeholder="Elige un departamento" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -177,7 +207,7 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
         <FieldLabel>Ciudad</FieldLabel>
         <Select onValueChange={setSelectedCity} value={selectedCity}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose a city" />
+            <SelectValue placeholder="Elige una ciudad" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -207,29 +237,37 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
         <Input
           id="fieldgroup-area"
           type="number"
-          placeholder="12.5"
+          placeholder="0"
           value={totalArea}
           onChange={(e) => setArea(e.target.value)} />
       </Field>
 
       {/* MANAGER ID */}
-      <Field>
-        <FieldLabel>Managers</FieldLabel>
-        <Select onValueChange={setSelectedManager} value={selectedManager}>
-          <SelectTrigger>
-            <SelectValue placeholder="Choose a manager" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              {managers.map((manager) => (
-                <SelectItem key={manager.manager_id} value={manager.manager_id}>
-                  {manager.name} {manager.lastname}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
-      </Field>
+      {role === "admin" && (
+        <Field>
+          <FieldLabel>Dueño</FieldLabel>
+          <Select
+            onValueChange={setSelectedManager}
+            value={selectedManager}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Elige el dueño" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {managers.map((manager) => (
+                  <SelectItem
+                    key={manager.manager_id}
+                    value={String(manager.manager_id)}
+                  >
+                    {manager.name} {manager.lastname}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
 
       <Field orientation="horizontal">
         <Button onClick={handleReset}>Borrar</Button>
