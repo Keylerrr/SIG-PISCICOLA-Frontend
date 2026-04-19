@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 
-export function FarmRegisterForm() {
+export function FarmRegisterForm({ onFarmCreated }) {
   const[nombre,setNombre]=useState("");
 
   const[departamentos,setDepartmentos]=useState([]);
@@ -113,7 +113,10 @@ export function FarmRegisterForm() {
           manager_id: Number(selectedManager),
         })
       });
-      if (res.ok) handleReset();
+      if (res.ok) {
+        handleReset();
+        onFarmCreated?.();
+      }
     } catch (error) {
       console.error("Error en registro de granja:", error);
     }
@@ -199,7 +202,7 @@ export function FarmRegisterForm() {
         <SelectContent>
           <SelectGroup>
             {managers.map((manager) => (
-              <SelectItem key={manager.id} value={manager.id}>
+              <SelectItem key={manager.manager_id} value={manager.manager_id}>
                 {manager.name}
               </SelectItem>
             ))}
