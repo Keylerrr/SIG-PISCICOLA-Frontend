@@ -19,25 +19,25 @@ import { Input } from "@/components/ui/input"
 
 
 export function FarmRegisterForm() {
-  const[nombre,setNombre]=useState("");
+  const [nombre, setNombre] = useState("");
 
-  const[departamentos,setDepartmentos]=useState([]);
-  const[selectedDepartment, setSelectedDepartment] = useState("");
+  const [departamentos, setDepartmentos] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
-  const[ciudades,setCiudades]=useState([]);
-  const[selectedCity, setSelectedCity] = useState("");
+  const [ciudades, setCiudades] = useState([]);
+  const [selectedCity, setSelectedCity] = useState("");
 
-  const[direccion,setDireccion]=useState("");
-  const[totalArea,setArea]=useState("");
+  const [direccion, setDireccion] = useState("");
+  const [totalArea, setArea] = useState("");
 
-  const[managers,setManagers]=useState([])
-  const[selectedManager, setSelectedManager] = useState("");
+  const [managers, setManagers] = useState([])
+  const [selectedManager, setSelectedManager] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("access")
 
     //MANAGERS
-    fetch("https://backend-pongase-trucha.onrender.com/managers/",{
+    fetch("https://backend-pongase-trucha.onrender.com/managers/", {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -45,13 +45,13 @@ export function FarmRegisterForm() {
       }
     }).then((res) => {
       if (!res.ok) throw new Error("Error al traer managers");
-        return res.json();
+      return res.json();
     }).then((data) => {
       setManagers(data);
     }).catch((err) => console.error(err));
 
     //DEPARTAMENTOS
-    fetch("https://backend-pongase-trucha.onrender.com/farm/departments/",{
+    fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -59,18 +59,18 @@ export function FarmRegisterForm() {
       }
     }).then((res) => {
       if (!res.ok) throw new Error("Error al traer departamentos");
-        return res.json();
+      return res.json();
     }).then((data) => {
       setDepartmentos(data.departments);
       console.log(data)
     }).catch((err) => console.error(err));
   }, []);
-  
+
   useEffect(() => {
     const token = localStorage.getItem("access")
-    if(selectedDepartment === "") return;
+    if (selectedDepartment === "") return;
     //CIUDADES
-    fetch(`https://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}/cities/`,{
+    fetch(`https://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}/cities/`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${token}`,
@@ -78,7 +78,7 @@ export function FarmRegisterForm() {
       }
     }).then((res) => {
       if (!res.ok) throw new Error("Error al traer las ciudades");
-        return res.json();
+      return res.json();
     }).then((data) => {
       setCiudades(data.cities);
     }).catch((err) => console.error(err));
@@ -113,7 +113,10 @@ export function FarmRegisterForm() {
           manager_id: Number(selectedManager),
         })
       });
-      if (res.ok) handleReset();
+      if (res.ok) {
+        handleReset();
+        window.location.reload();
+      }
     } catch (error) {
       console.error("Error en registro de granja:", error);
     }
@@ -122,90 +125,90 @@ export function FarmRegisterForm() {
     <FieldGroup>
       {/* NAME */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-name">Name</FieldLabel>
-        <Input 
-        id="fieldgroup-name" 
-        placeholder="Fulano Detal"
-        value={nombre}
-        onChange={(e) => setNombre(e.target.value)}/>
+        <FieldLabel htmlFor="fieldgroup-name">Nombre</FieldLabel>
+        <Input
+          id="fieldgroup-name"
+          placeholder="Fulano Detal"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)} />
       </Field>
 
       {/* DEPARTMENT */}
       <Field>
-        <FieldLabel>Department</FieldLabel>
+        <FieldLabel>Departamento</FieldLabel>
         <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
-        <SelectTrigger>
-          <SelectValue placeholder="Choose a department" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {departamentos.map((departamento) => (
-              <SelectItem key={departamento.key} value={String(departamento.key)}>
-                {departamento.label}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {departamentos.map((departamento) => (
+                <SelectItem key={departamento.key} value={String(departamento.key)}>
+                  {departamento.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </Field>
 
       {/* CITY */}
       <Field>
-        <FieldLabel>City</FieldLabel>
+        <FieldLabel>Ciudad</FieldLabel>
         <Select onValueChange={setSelectedCity} value={selectedCity}>
-        <SelectTrigger>
-          <SelectValue placeholder="Choose a city" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {ciudades.map((ciudad) => (
-              <SelectItem key={ciudad} value={ciudad}>
-                {ciudad}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a city" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {ciudades.map((ciudad) => (
+                <SelectItem key={ciudad} value={ciudad}>
+                  {ciudad}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </Field>
 
       {/* ADDRESS */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-address">Address</FieldLabel>
+        <FieldLabel htmlFor="fieldgroup-address">Dirección</FieldLabel>
         <Input
           id="fieldgroup-address"
           placeholder="Cll x #y - z"
           value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}/>
+          onChange={(e) => setDireccion(e.target.value)} />
       </Field>
 
       {/* TOTAL AREA HA */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-area">Total Area</FieldLabel>
+        <FieldLabel htmlFor="fieldgroup-area">Área total en hectáreas</FieldLabel>
         <Input
           id="fieldgroup-area"
           type="number"
           placeholder="12.5"
           value={totalArea}
-          onChange={(e) => setArea(e.target.value)}/>
+          onChange={(e) => setArea(e.target.value)} />
       </Field>
 
       {/* MANAGER ID */}
       <Field>
         <FieldLabel>Managers</FieldLabel>
         <Select onValueChange={setSelectedManager} value={selectedManager}>
-        <SelectTrigger>
-          <SelectValue placeholder="Choose a manager" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {managers.map((manager) => (
-              <SelectItem key={manager.id} value={manager.id}>
-                {manager.name}
-              </SelectItem>
-            ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
+          <SelectTrigger>
+            <SelectValue placeholder="Choose a manager" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {managers.map((manager) => (
+                <SelectItem key={manager.manager_id} value={manager.manager_id}>
+                  {manager.name} {manager.lastname}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </Field>
 
       <Field orientation="horizontal">
