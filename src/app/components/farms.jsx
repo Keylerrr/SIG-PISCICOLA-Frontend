@@ -54,6 +54,24 @@ export function Farms() {
         fetchGranja();
     }, []);
 
+    const [departamentos, setDepartmentos] = useState([]);
+    useEffect(() => {
+        const token = localStorage.getItem("access")
+        //DEPARTAMENTOS
+        fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
+            method: "GET",
+            headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+        }}).then((res) => {
+            if (!res.ok) throw new Error("Error al traer departamentos");
+            return res.json();
+        }).then((data) => {
+            setDepartmentos(data.departments);
+            console.log(data)
+        }).catch((err) => console.error(err));
+    }, []);
+
     const handleDelete = async (id) => {
         const token = localStorage.getItem("access");
         await toast.promise(
@@ -100,7 +118,7 @@ export function Farms() {
                                 </CardTitle>
 
                                 <CardDescription className="gap-2 font-bold text-md flex items-center">
-                                    <MapPin /> {g.department} - {g.city}
+                                    <MapPin /> {departamentos.find(d => d.key === g.department)?.label} - {g.city}
                                 </CardDescription>
 
                                 <CardAction className="flex gap-3">
@@ -147,7 +165,7 @@ export function Farms() {
                             <CardFooter className="flex items-center justify-between">
                                 <div>
                                     <p className="text-2xl font-bold text-blue-600">
-                                        {g.total_area_ha} m²
+                                        {g.total_area_ha} ha
                                     </p>
                                     <p className="text-md text-slate-500">
                                         Area Total

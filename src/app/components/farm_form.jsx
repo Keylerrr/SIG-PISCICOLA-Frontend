@@ -203,7 +203,7 @@ export function FarmRegisterForm() {
             <SelectGroup>
               {managers.map((manager) => (
                 <SelectItem key={manager.manager_id} value={manager.manager_id}>
-                  {manager.name}
+                  {manager.name} {manager.lastname}
                 </SelectItem>
               ))}
             </SelectGroup>
