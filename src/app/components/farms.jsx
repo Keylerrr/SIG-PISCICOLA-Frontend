@@ -130,71 +130,75 @@ export function Farms({ search }) {
                                 </CardDescription>
 
                                 <CardAction>
-                                    <AlertDialog>
+                                    <div className="flex items-center gap-3">
+                                        
+                                        <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Pencil className="text-blue-600 cursor-pointer" />
                                         </AlertDialogTrigger>
 
                                         <AlertDialogContent className="sm:max-w-2xl">
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>
-                                                    ¿Editar granja?
-                                                </AlertDialogTitle>
+                                            <AlertDialogTitle>
+                                                ¿Editar granja?
+                                            </AlertDialogTitle>
 
-                                                <AlertDialogDescription>
-                                                    Cambie los datos a continuación para editar la informacio de la granja {" "}
-                                                    <span className="font-bold">{g.name}.</span>
-                                                </AlertDialogDescription>
+                                            <AlertDialogDescription>
+                                                Cambie los datos a continuación para editar la informacio de la granja{" "}
+                                                <span className="font-bold">{g.name}.</span>
+                                            </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <FarmRegisterForm
-                                                op={0}
-                                                idProp={g.id}
-                                                nombreProp={g.name}
-                                                departamentoProp={g.department}
-                                                ciudadProp={g.city}
-                                                direccionProp={g.address}
-                                                areaProp={g.total_area_ha}
-                                                managerProp={g.manager_id}
+                                            op={0}
+                                            idProp={g.id}
+                                            nombreProp={g.name}
+                                            departamentoProp={g.department}
+                                            ciudadProp={g.city}
+                                            direccionProp={g.address}
+                                            areaProp={g.total_area_ha}
+                                            managerProp={g.manager_id}
                                             />
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>
-                                                    Cancelar
-                                                </AlertDialogCancel>
+                                            <AlertDialogCancel>
+                                                Cancelar
+                                            </AlertDialogCancel>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
-                                    </AlertDialog>
+                                        </AlertDialog>
 
-                                    <AlertDialog>
+                                        <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Trash className="text-red-600 cursor-pointer" />
                                         </AlertDialogTrigger>
 
                                         <AlertDialogContent className="sm:max-w-2xl">
                                             <AlertDialogHeader>
-                                                <AlertDialogTitle>
-                                                    ¿Eliminar granja?
-                                                </AlertDialogTitle>
+                                            <AlertDialogTitle>
+                                                ¿Eliminar granja?
+                                            </AlertDialogTitle>
 
-                                                <AlertDialogDescription>
-                                                    Esta acción no se puede deshacer. Se eliminará la granja{" "}
-                                                    <span className="font-bold">{g.name}</span>.
-                                                </AlertDialogDescription>
+                                            <AlertDialogDescription>
+                                                Esta acción no se puede deshacer. Se eliminará la granja{" "}
+                                                <span className="font-bold">{g.name}</span>.
+                                            </AlertDialogDescription>
                                             </AlertDialogHeader>
 
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>
-                                                    Cancelar
-                                                </AlertDialogCancel>
+                                            <AlertDialogCancel>
+                                                Cancelar
+                                            </AlertDialogCancel>
 
-                                                <AlertDialogAction
-                                                    onClick={() => handleDelete(g.id)}
-                                                    className="bg-red-600 hover:bg-red-700"
-                                                >
-                                                    Eliminar
-                                                </AlertDialogAction>
+                                            <AlertDialogAction
+                                                onClick={() => handleDelete(g.id)}
+                                                className="bg-red-600 hover:bg-red-700"
+                                            >
+                                                Eliminar
+                                            </AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
-                                    </AlertDialog>
+                                        </AlertDialog>
+
+                                    </div>
                                 </CardAction>
                             </CardHeader>
 
