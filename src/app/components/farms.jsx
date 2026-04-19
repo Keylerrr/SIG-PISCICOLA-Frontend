@@ -123,7 +123,7 @@ export function Farms({ search }) {
                         <Card className="group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
                             <CardHeader>
                                 <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
-                                    {g.name}
+                                    <a href={`/home/granja/${g.id}/`}>{g.name}</a>
                                 </CardTitle>
 
                                 <CardDescription className="gap-2 font-bold text-md flex items-center">

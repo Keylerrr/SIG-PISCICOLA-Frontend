@@ -2,7 +2,7 @@
 const nextConfig = {
   /* config options here */
   //reactCompiler: true,
-  output: 'export',
+  //output: 'export',
 };
 
 export default nextConfig;
