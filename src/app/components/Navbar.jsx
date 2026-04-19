@@ -1,10 +1,12 @@
 "use client";
 
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LogOut, Settings, User, Fish, UserRoundCog } from 'lucide-react';
 
 export function Navbar() {
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const [userData, setUserData] = useState({
     name: "Cargando...",
@@ -24,6 +26,8 @@ export function Navbar() {
 
   const handleLogout = async (e) => {
     e.preventDefault()
+    setIsLoading(true);
+
 
     try {
 
@@ -37,7 +41,10 @@ export function Navbar() {
         }
       })
 
-      if (!res.ok) throw new Error("Error al cerrar sesion")
+      if (!res.ok){
+        setIsLoading(false);
+        throw new Error("Error al cerrar sesion")
+      }
 
       //console.log(res)
 
@@ -46,6 +53,7 @@ export function Navbar() {
 
     } catch (error) {
       console.error(error)
+      setIsLoading(false)
     }
   };
 
@@ -57,8 +65,20 @@ export function Navbar() {
     router.push('/home');
   };
 
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+          <p className="text-lg font-semibold">Cerrando sesión...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
 
