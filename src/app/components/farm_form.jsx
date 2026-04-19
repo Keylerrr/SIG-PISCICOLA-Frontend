@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input"
 
 
-export function FarmRegisterForm({ onFarmCreated }) {
+export function FarmRegisterForm() {
   const[nombre,setNombre]=useState("");
 
   const[departamentos,setDepartmentos]=useState([]);
@@ -115,7 +115,7 @@ export function FarmRegisterForm({ onFarmCreated }) {
       });
       if (res.ok) {
         handleReset();
-        onFarmCreated?.();
+        window.location.reload();
       }
     } catch (error) {
       console.error("Error en registro de granja:", error);

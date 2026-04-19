@@ -21,14 +21,6 @@ import { Label } from "@/components/ui/label"
 
 
 export default function Home() {
-    const [refetchTrigger, setRefetchTrigger] = useState(0);
-    const [dialogOpen, setDialogOpen] = useState(false);
-
-    const handleFarmCreated = () => {
-        setRefetchTrigger(prev => prev + 1);
-        setDialogOpen(false);
-    }
-
     return (
         <div className="">
             <div className="max-w-5xl mx-auto flex justify-between items-center py-6 px-4">
@@ -38,7 +30,7 @@ export default function Home() {
                         Selecciona una granja para gestionar sus estanques y producción
                     </p>
                 </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog>
                     <form>
                         <DialogTrigger asChild>
                         <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
@@ -54,14 +46,14 @@ export default function Home() {
                             Escribe la información de la granja que vas a agregar. Haz click en guardar granja cuando hayas terminado.
                             </DialogDescription>
                         </DialogHeader>
-                        <FarmRegisterForm onFarmCreated={handleFarmCreated}/>
+                        <FarmRegisterForm/>
                         </DialogContent>
                     </form>
                 </Dialog>
             </div>
 
             <div className="max-w-5xl mx-auto">
-                <Farms key={refetchTrigger}/>
+                <Farms/>
             </div>
         </div>
     );
