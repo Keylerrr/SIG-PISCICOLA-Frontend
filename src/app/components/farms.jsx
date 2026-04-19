@@ -12,6 +12,18 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 export function Farms() {
     const [granjas, SetGranjas] = useState([]);
 
@@ -40,6 +52,31 @@ export function Farms() {
         fetchGranja();
     }, []);
 
+    const handleDelete = async (id) => {
+        const token = localStorage.getItem("access");
+        try {
+            const res = await fetch(`https://backend-pongase-trucha.onrender.com/farm/${id}/`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                console.log("Error:", data);
+                return;
+            }
+
+            window.location.reload()
+            console.log("Granja eliminada correctamente");
+        } catch (error) {
+            console.error("Error en la eliminacion de la granaj:", error);
+        }
+    }
+
     return (
         <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
             {granjas.map((g) => (
@@ -51,12 +88,33 @@ export function Farms() {
                                 <MapPin /> {g.department} - {g.city}
                             </CardDescription>
                             <CardAction className="flex gap-3">
-                                <Pencil className="text-blue-600 cursor-pointer"/>
-                                <Trash className="text-red-600 cursor-pointer"/>
+                                <Pencil className="text-blue-600 cursor-pointer" />
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Trash className="text-red-600 cursor-pointer" />
+                                    </AlertDialogTrigger>
+
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Eliminar granja?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta acción no se puede deshacer. Se eliminará la granja{" "}
+                                                <span className="font-bold">{g.name}</span>.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(g.id)}>
+                                                Eliminar
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </CardAction>
                         </CardHeader>
                         <CardContent className="flex gap-2 text-xl">
-                            <UserRound/> {g.manager_name}
+                            <UserRound /> {g.manager_name}
                         </CardContent>
                         <CardFooter className="flex items-center justify-between">
                             <div>
