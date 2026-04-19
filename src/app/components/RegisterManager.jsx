@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,43 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export function RegisterManager() {
+  const [managers, setManagers] = useState([]);
+
   const [nombres, setNombres] = useState("");
   const [apellidos, setApellidos] = useState("");
   const [numero, setNumero] = useState("");
   const [correo, setCorreo] = useState("");
   const [open, setOpen] = useState(false);
+
+  // 🔥 TRAER MANAGERS
+  const fetchManagers = async () => {
+    const token = localStorage.getItem("access");
+    if (!token) return;
+
+    try {
+      const res = await fetch(
+        "https://backend-pongase-trucha.onrender.com/managers/",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error();
+
+      const data = await res.json();
+      setManagers(data);
+    } catch (err) {
+      console.error(err);
+      toast.error("Error cargando gerentes");
+    }
+  };
+
+  // 🔥 CARGA INICIAL
+  useEffect(() => {
+    fetchManagers();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,41 +87,39 @@ export function RegisterManager() {
         } catch {}
 
         if (!res.ok) {
-          throw new Error(data?.message || "Error al guardar gerente");
+          throw new Error(data?.message || "Error al guardar");
         }
+
+        // 🔥 REFRESH REAL
+        await fetchManagers();
 
         return data;
       }),
       {
         loading: "Creando gerente...",
-        success: (data) => {
-          // limpiar campos
+        success: () => {
           setNombres("");
           setApellidos("");
           setNumero("");
           setCorreo("");
-
-          // cerrar modal
           setOpen(false);
 
-          return data?.message || "Gerente creado correctamente";
+          return "Gerente creado";
         },
-        error: (err) => err.message || "Error al guardar gerente",
+        error: (err) => err.message || "Error al guardar",
       }
     );
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6">
+    <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Gestión de Gerentes</h1>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <button
-              onClick={() => setOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg"
-            >
+            <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg">
               <Plus className="w-4 h-4" />
               Agregar
             </button>
@@ -149,6 +179,23 @@ export function RegisterManager() {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+
+      {/* 🔥 LISTADO */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {managers.length === 0 ? (
+          <p className="text-gray-500">No hay gerentes aún</p>
+        ) : (
+          managers.map((m) => (
+            <div key={m.manager_id} className="border rounded-lg p-4 group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+              <p className="font-bold group-hover:text-blue-600">
+                {m.name} {m.lastname}
+              </p>
+              <p className="text-sm text-gray-500">{m.email}</p>
+              <p className="text-sm">{m.phone}</p>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
