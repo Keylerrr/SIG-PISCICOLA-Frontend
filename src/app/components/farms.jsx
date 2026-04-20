@@ -110,11 +110,11 @@ export function Farms({ search }) {
 
     return (
         <>
-            <Toaster position="top-right" />
+            <Toaster position="top-center" />
             <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
                 {filteredGranjas.length === 0 && search.trim() && (
                     <p className="text-center col-span-full text-gray-500 text-lg">
-
+                        No se encontraron granjas 😢
                     </p>
                 )}
                 {filteredGranjas.map((g) => (

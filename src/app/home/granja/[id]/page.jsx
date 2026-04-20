@@ -3,16 +3,18 @@
 import { use, useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
+import { Ponds } from "@/app/components/ponds";
 
 export default function Granja({ params }) {
     const { id } = use(params);
     const [granja, setGranja] = useState([]);
     const [departamentos, setDepartmentos] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("access")
-        //DEPARTAMENTOS
+
         fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
             method: "GET",
             headers: {
@@ -48,6 +50,16 @@ export default function Granja({ params }) {
 
     return (
         <div className="min-h-screen bg-slate-50">
+            {
+                granja.length === 0 && departamentos.length === 0 && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
+                        <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
+                            <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
+                            <p className="mt-4 font-medium text-slate-700">Cargando Granja...</p>
+                        </div>
+                    </div>
+                )
+            }
             <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
                 <a
                     href={"/home"}
@@ -64,7 +76,7 @@ export default function Granja({ params }) {
                     </h1>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
                         <div className="bg-slate-50 p-4 rounded-lg">
-                            Ubicación <br />
+                            Departamento <br />
                             <p className="font-bold">
                                 {departamentos.find(d => d.key === granja.department)?.label}
                             </p>
@@ -83,19 +95,22 @@ export default function Granja({ params }) {
                 </div>
             </div>
             <div className="mt-6 px-4 sm:px-6 lg:px-8">
-                <div className="flex max-w-5xl mx-auto justify-between">
+                <div className="flex  justify-between">
                     <div>
-                        <h1 className="font-bold text-2xl">Estanques</h1>
-                        <p className="text-lg">Selecciona un estanque para ver especies y calidad del agua</p>
+                        <h1 className="font-bold text-3xl">Estanques</h1>
+                        <p className="text-xl">Selecciona un estanque para ver especies y calidad del agua</p>
                     </div>
                     <div>
-                        <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
+                        <Button className="text-2xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
                             variant="outline">
                             <Plus />
                             Agregar Granja
                         </Button>
                     </div>
                 </div>
+            </div>
+            <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+                <Ponds id={id}/>
             </div>
         </div>
     );
