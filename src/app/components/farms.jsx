@@ -11,7 +11,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,7 +26,7 @@ import { FarmRegisterForm } from "./farm_form";
 import { Toaster, toast } from "sonner"
 
 export function Farms({ search }) {
-    const [granjas, SetGranjas] = useState([]);
+    const [granjas, setGranjas] = useState([]);
     const filteredGranjas = granjas.filter((g) =>
         g.name.toLowerCase().includes((search || "").toLowerCase().trim())
     );
@@ -48,7 +47,7 @@ export function Farms({ search }) {
                 if (!res.ok) throw new Error("Error al obtener la informacion de las granajas")
 
                 const data = await res.json();
-                SetGranjas(data);
+                setGranjas(data);
             } catch (error) {
                 console.error(error)
             }
@@ -100,7 +99,7 @@ export function Farms({ search }) {
             {
                 loading: "Eliminando granja...",
                 success: (data) => {
-                    SetGranjas(prev => prev.filter(g => g.id !== id));
+                    setGranjas(prev => prev.filter(g => g.id !== id));
                     return data?.message || "Granja eliminada correctamente";
                 },
                 error: (err) => err.message || "Error al eliminar granja",
@@ -131,73 +130,71 @@ export function Farms({ search }) {
 
                                 <CardAction>
                                     <div className="flex items-center gap-3">
-                                        
                                         <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Pencil className="text-blue-600 cursor-pointer" />
-                                        </AlertDialogTrigger>
+                                            <AlertDialogTrigger asChild>
+                                                <Pencil className="text-blue-600 cursor-pointer" />
+                                            </AlertDialogTrigger>
 
-                                        <AlertDialogContent className="sm:max-w-2xl">
-                                            <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                                ¿Editar granja?
-                                            </AlertDialogTitle>
+                                            <AlertDialogContent className="sm:max-w-2xl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>
+                                                        ¿Editar granja?
+                                                    </AlertDialogTitle>
 
-                                            <AlertDialogDescription>
-                                                Cambie los datos a continuación para editar la informacio de la granja{" "}
-                                                <span className="font-bold">{g.name}.</span>
-                                            </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <FarmRegisterForm
-                                            op={0}
-                                            idProp={g.id}
-                                            nombreProp={g.name}
-                                            departamentoProp={g.department}
-                                            ciudadProp={g.city}
-                                            direccionProp={g.address}
-                                            areaProp={g.total_area_ha}
-                                            managerProp={g.manager_id}
-                                            />
-                                            <AlertDialogFooter>
-                                            <AlertDialogCancel>
-                                                Cancelar
-                                            </AlertDialogCancel>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
+                                                    <AlertDialogDescription>
+                                                        Cambie los datos a continuación para editar la informacio de la granja{" "}
+                                                        <span className="font-bold">{g.name}.</span>
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <FarmRegisterForm
+                                                    op={0}
+                                                    idProp={g.id}
+                                                    nombreProp={g.name}
+                                                    departamentoProp={g.department}
+                                                    ciudadProp={g.city}
+                                                    direccionProp={g.address}
+                                                    areaProp={g.total_area_ha}
+                                                    managerProp={g.manager_id}
+                                                />
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>
+                                                        Cancelar
+                                                    </AlertDialogCancel>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
                                         </AlertDialog>
 
                                         <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Trash className="text-red-600 cursor-pointer" />
-                                        </AlertDialogTrigger>
+                                            <AlertDialogTrigger asChild>
+                                                <Trash className="text-red-600 cursor-pointer" />
+                                            </AlertDialogTrigger>
 
-                                        <AlertDialogContent className="sm:max-w-2xl">
-                                            <AlertDialogHeader>
-                                            <AlertDialogTitle>
-                                                ¿Eliminar granja?
-                                            </AlertDialogTitle>
+                                            <AlertDialogContent className="sm:max-w-2xl">
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>
+                                                        ¿Eliminar granja?
+                                                    </AlertDialogTitle>
 
-                                            <AlertDialogDescription>
-                                                Esta acción no se puede deshacer. Se eliminará la granja{" "}
-                                                <span className="font-bold">{g.name}</span>.
-                                            </AlertDialogDescription>
-                                            </AlertDialogHeader>
+                                                    <AlertDialogDescription>
+                                                        Esta acción no se puede deshacer. Se eliminará la granja{" "}
+                                                        <span className="font-bold">{g.name}</span>.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
 
-                                            <AlertDialogFooter>
-                                            <AlertDialogCancel>
-                                                Cancelar
-                                            </AlertDialogCancel>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>
+                                                        Cancelar
+                                                    </AlertDialogCancel>
 
-                                            <AlertDialogAction
-                                                onClick={() => handleDelete(g.id)}
-                                                className="bg-red-600 hover:bg-red-700"
-                                            >
-                                                Eliminar
-                                            </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
+                                                    <AlertDialogAction
+                                                        onClick={() => handleDelete(g.id)}
+                                                        className="bg-red-600 hover:bg-red-700"
+                                                    >
+                                                        Eliminar
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
                                         </AlertDialog>
-
                                     </div>
                                 </CardAction>
                             </CardHeader>
