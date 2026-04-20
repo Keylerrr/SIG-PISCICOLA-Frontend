@@ -8,6 +8,7 @@ import { Ponds } from "@/app/components/ponds";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
+import { PondRegisterForm } from "@/app/components/pond_form";
 import {
     Select,
     SelectContent,
@@ -16,6 +17,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 export default function Granja({ params }) {
     const { id } = use(params);
@@ -113,11 +124,36 @@ export default function Granja({ params }) {
                         <p className="text-xl">Selecciona un estanque para ver especies y calidad del agua</p>
                     </div>
                     <div>
-                        <Button className="text-2xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
-                            variant="outline">
-                            <Plus />
-                            Agregar Estanque
-                        </Button>
+                        <Dialog>
+                            <form>
+                                <DialogTrigger asChild>
+                                    <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
+                                        variant="outline">
+                                        <Plus />
+                                        Agregar Estanque
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Agregar Estanque</DialogTitle>
+                                        <DialogDescription>
+                                            Escribe la información del estanque que vas a agregar. Haz click en guardar estanque cuando hayas terminado.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <PondRegisterForm
+                                        op={1}
+                                        idProp={""}
+                                        idFarmProp={id}
+                                        nombreProp={""}
+                                        capacidadProp={""}
+                                        areaProp={""}
+                                        volumenProp={""}
+                                        profundidadProp={""}
+                                        descripcionProp={""}
+                                    />
+                                </DialogContent>
+                            </form>
+                        </Dialog>
                     </div>
                 </div>
             </div>
