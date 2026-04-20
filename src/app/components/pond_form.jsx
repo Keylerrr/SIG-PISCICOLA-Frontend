@@ -100,13 +100,6 @@ export function PondRegisterForm({
       description: descripcion,
     };
 
-    if (role === "admin") {
-      payload.manager_id = Number(selectedManager);
-      payload.manager_name = managers.find(
-        m => m.manager_id === Number(selectedManager)
-      )?.name;
-    }
-
     try {
       const res = await fetch(`https://backend-pongase-trucha.onrender.com/ponds/${idProp}/`, {
         method: "PATCH",
