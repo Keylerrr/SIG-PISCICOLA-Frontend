@@ -175,7 +175,7 @@ export default function Granja({ params }) {
                             </ButtonGroup>
                         </Field>
                     </div>
-                    <div className="w-full sm:w-[200px]">
+                    <div className="w-full sm:w-50">
                         <Select value={filter} onValueChange={setFilter}>
                             <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Filtrar" />

@@ -115,7 +115,7 @@ export function Ponds({ id, search, filter }) {
                                 <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
                                     {e.name}
                                 </CardTitle>
-                                <CardDescription className="gap-2 font-bold text-lg flex items-center gap-2">Código: {e.code}</CardDescription>
+                                <CardDescription className="gap-2 font-bold text-lg flex items-center">Código: {e.code}</CardDescription>
                                 <CardAction>
                                     <div className="flex items-center gap-3">
                                         <AlertDialog>
