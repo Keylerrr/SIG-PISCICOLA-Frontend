@@ -84,11 +84,11 @@ export function Navbar() {
 
           <button
             onClick={handleHome}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity hover:cursor-pointer"
           >
 
             <img src="/images/PongaseTrucha.png" alt="" className="w-12 h-12" />
-            <span className="text-xl font-bold text-slate-800">
+            <span className="text-xl font-bold text-[#4F8FB3]">
               Póngase Trucha
             </span>
           </button>
@@ -96,29 +96,30 @@ export function Navbar() {
           <div className="flex items-center gap-4">
 
             <div className="flex items-center gap-3 px-4 bg-slate-50 rounded-lg">
-              <div className="bg-blue-100 p-2 rounded-full">
-                <User className="w-5 h-5 text-blue-600" />
+              <div className="bg-[#ffe4d2] p-2 rounded-full">
+                <User className="w-5 h-5 text-[#f4b183]" />
               </div>
               <div className="text-left">
                 <p className="font-bold text-md text-slate-800">
                   {userData.name}
                 </p>
-                <p className="font-bold text-md capitalize">
+                <p className="text-sm capitalize">
                   {userData.role}
                 </p>
               </div>
             </div>
 
             <button
+              title='Gestionar Usuarios'
               onClick={handleSettings}
-              className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-2 text-[#6ec3b1] hover:bg-[#e3fff9] rounded-lg transition-colors hover:cursor-pointer"
             >
               <UserRoundCog className="w-5 h-5" />
             </button>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors hover:cursor-pointer"
             >
               <LogOut className="w-5 h-5" />
               <span className="text-md font-bold">Salir</span>
