@@ -134,7 +134,17 @@ export function Ponds({ id, search, filter }) {
                                                         <span className="font-bold">{ }.</span>
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
-                                                
+                                                <PondRegisterForm
+                                                    op={0}
+                                                    idProp={e.id}
+                                                    idFarmProp={id}
+                                                    nombreProp={e.name}
+                                                    capacidadProp={e.capacity}
+                                                    areaProp={e.area}
+                                                    volumenProp={e.volume}
+                                                    profundidadProp={e.depth}
+                                                    descripcionProp={e.description}
+                                                />
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>
                                                         Cancelar
@@ -159,17 +169,6 @@ export function Ponds({ id, search, filter }) {
                                                         <span className="font-bold">{e.name}</span>.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
-                                                <PondRegisterForm
-                                                    op={0}
-                                                    idProp={e.id}
-                                                    idFarmProp={id}
-                                                    nombreProp={e.name}
-                                                    capacidadProp={e.capacity}
-                                                    areaProp={e.area}
-                                                    volumenProp={e.volume}
-                                                    profundidadProp={e.depth}
-                                                    descripcionProp={e.description}
-                                                />
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>
                                                         Cancelar

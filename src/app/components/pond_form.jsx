@@ -27,25 +27,12 @@ export function PondRegisterForm({
   // 🔥 SAFE VALUES (evita null)
   const safe = (v) => v ?? "";
 
-  const [nombre, ] = useState(safe(nombreProp))
+  const [nombre, setNombre] = useState(safe(nombreProp))
   const [capacidad, setCapacidad] = useState(safe(capacidadProp))
   const [area, setArea] = useState(safe(areaProp))
   const [volumen, setVolumen] = useState(safe(volumenProp))
   const [profundidad, setProfundidad] = useState(safe(profundidadProp))
   const [descripcion, setDescripcion] = useState(safe(descripcionProp));
-
-  // 🔥 OBTENER ROLE
-  useEffect(() => {
-    const token = localStorage.getItem("access");
-    if (!token) return;
-
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      setRole(payload.role);
-    } catch {
-      console.error("Token inválido");
-    }
-  }, []);
 
   // RESET
   const handleReset = () => {
@@ -126,22 +113,22 @@ export function PondRegisterForm({
       
       <Field>
         <FieldLabel>Capacidad</FieldLabel>
-        <Input value={capacidad} onChange={(e) => setCapacidad(e.target.value)} />
+        <Input type="number" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} />
       </Field>
 
       <Field>
         <FieldLabel>Área</FieldLabel>
-        <Input value={area} onChange={(e) => setArea(e.target.value)} />
+        <Input type="number" value={area} onChange={(e) => setArea(e.target.value)} />
       </Field>
 
       <Field>
         <FieldLabel>Volumen</FieldLabel>
-        <Input value={volumen} onChange={(e) => setVolumen(e.target.value)} />
+        <Input type="number" value={volumen} onChange={(e) => setVolumen(e.target.value)} />
       </Field>
 
       <Field>
         <FieldLabel>Profundidad</FieldLabel>
-        <Input value={profundidad} onChange={(e) => setProfundidad(e.target.value)} />
+        <Input type="number" value={profundidad} onChange={(e) => setProfundidad(e.target.value)} />
       </Field>
 
       <Field>
