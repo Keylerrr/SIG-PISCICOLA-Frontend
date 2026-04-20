@@ -23,6 +23,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Toaster, toast } from "sonner"
+import { PondRegisterForm } from "./pond_form";
 
 export function Ponds({ id, search, filter }) {
     const [estanques, setEstanques] = useState([])
@@ -133,16 +134,7 @@ export function Ponds({ id, search, filter }) {
                                                         <span className="font-bold">{ }.</span>
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
-                                                {/* <FarmRegisterForm
-                                                    op={0}
-                                                    idProp={g.id}
-                                                    nombreProp={g.name}
-                                                    departamentoProp={g.department}
-                                                    ciudadProp={g.city}
-                                                    direccionProp={g.address}
-                                                    areaProp={g.total_area_ha}
-                                                    managerProp={g.manager_id}
-                                                /> */}
+                                                
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>
                                                         Cancelar
@@ -167,7 +159,17 @@ export function Ponds({ id, search, filter }) {
                                                         <span className="font-bold">{e.name}</span>.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
-
+                                                <PondRegisterForm
+                                                    op={0}
+                                                    idProp={e.id}
+                                                    idFarmProp={id}
+                                                    nombreProp={e.name}
+                                                    capacidadProp={e.capacity}
+                                                    areaProp={e.area}
+                                                    volumenProp={e.volume}
+                                                    profundidadProp={e.depth}
+                                                    descripcionProp={e.description}
+                                                />
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>
                                                         Cancelar
