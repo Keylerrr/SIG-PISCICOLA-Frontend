@@ -137,7 +137,7 @@ export default function Granja({ params }) {
                                     <DialogHeader>
                                         <DialogTitle>Agregar Estanque</DialogTitle>
                                         <DialogDescription>
-                                            Escribe la información del estanque que vas a agregar. Haz click en guardar estanque cuando hayas terminado.
+                                            Escribe la información del estanque que vas a agregar. Haz click en crear cuando hayas terminado.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <PondRegisterForm

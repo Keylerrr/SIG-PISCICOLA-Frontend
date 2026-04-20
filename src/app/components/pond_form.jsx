@@ -37,11 +37,11 @@ export function PondRegisterForm({
   // RESET
   const handleReset = () => {
     setNombre("");
-    setSelectedDepartment("");
-    setSelectedCity("");
-    setDireccion("");
+    setCapacidad("");
     setArea("");
-    setSelectedManager("");
+    setVolumen("");
+    setProfundidad("");
+    setDescripcion("");
   };
 
   // SUBMIT
@@ -107,7 +107,7 @@ export function PondRegisterForm({
     <FieldGroup>
 
       <Field>
-        <FieldLabel>Nombre de la Granja</FieldLabel>
+        <FieldLabel>Nombre del Estanque</FieldLabel>
         <Input value={nombre} onChange={(e) => setNombre(e.target.value)} />
       </Field>
       
