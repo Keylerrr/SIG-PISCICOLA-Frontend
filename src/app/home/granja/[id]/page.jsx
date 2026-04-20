@@ -95,7 +95,7 @@ export default function Granja({ params }) {
                 </div>
             </div>
             <div className="mt-6 px-4 sm:px-6 lg:px-8">
-                <div className="flex  justify-between">
+                <div className="max-w-5xl mx-auto flex justify-between">
                     <div>
                         <h1 className="font-bold text-3xl">Estanques</h1>
                         <p className="text-xl">Selecciona un estanque para ver especies y calidad del agua</p>
@@ -104,7 +104,7 @@ export default function Granja({ params }) {
                         <Button className="text-2xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
                             variant="outline">
                             <Plus />
-                            Agregar Granja
+                            Agregar Estanque
                         </Button>
                     </div>
                 </div>
