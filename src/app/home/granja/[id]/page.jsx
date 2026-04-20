@@ -5,12 +5,24 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { ButtonGroup } from "@/components/ui/button-group"
+import { Input } from "@/components/ui/input"
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 export default function Granja({ params }) {
     const { id } = use(params);
     const [granja, setGranja] = useState([]);
     const [departamentos, setDepartmentos] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [search, setSearch] = useState("");
+    const [filter, setFilter] = useState("");
 
     useEffect(() => {
         const token = localStorage.getItem("access")
@@ -109,8 +121,45 @@ export default function Granja({ params }) {
                     </div>
                 </div>
             </div>
+            <div className="mt-4 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4 sm:items-end sm:justify-between">
+                    <div className="w-full sm:flex-1">
+                        <Field className="text-xl">
+                            <FieldLabel htmlFor="input-button-group" className="text-xl">
+                                Buscar
+                            </FieldLabel>
+                            <ButtonGroup>
+                                <Input
+                                    id="input-button-group"
+                                    placeholder="Escriba el nombre del estanque..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                                <Button className="text-md">Search</Button>
+                            </ButtonGroup>
+                        </Field>
+                    </div>
+                    <div className="w-full sm:w-[200px]">
+                        <Select value={filter} onValueChange={setFilter}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Filtrar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="all">Todos</SelectItem>
+                                    <SelectItem value="active">Activo</SelectItem>
+                                    <SelectItem value="inactive">Inactivo</SelectItem>
+                                    <SelectItem value="cleaning">En Limpieza</SelectItem>
+                                    <SelectItem value="in_use">En Uso</SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                </div>
+            </div>
             <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-                <Ponds id={id}/>
+                <Ponds id={id} search={search} filter={filter}/>
             </div>
         </div>
     );

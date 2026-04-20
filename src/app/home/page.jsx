@@ -16,9 +16,8 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
 export default function Home() {
     const [search, setSearch] = useState("");
@@ -35,7 +34,7 @@ export default function Home() {
                 <Dialog>
                     <form>
                         <DialogTrigger asChild>
-                            <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-2"
+                            <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
                                 variant="outline">
                                 <Plus />
                                 Agregar Granja

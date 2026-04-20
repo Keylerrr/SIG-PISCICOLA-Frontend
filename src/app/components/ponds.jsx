@@ -24,8 +24,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Toaster, toast } from "sonner"
 
-export function Ponds({ id }) {
+export function Ponds({ id, search, filter }) {
     const [estanques, setEstanques] = useState([])
+    const filteredEstanques = estanques.filter((e) =>
+        e.name.toLowerCase().includes((search || "").toLowerCase().trim())
+    );
     const statusStyles = {
         active: "bg-green-100 text-green-700",
         inactive: "bg-red-100 text-red-700",
@@ -33,10 +36,10 @@ export function Ponds({ id }) {
         cleaning: "bg-yellow-100 text-yellow-700",
     };
     const statusLabels = {
-        active: "Active",
-        inactive: "Inactive",
-        in_use: "In Use",
-        cleaning: "Cleaning",
+        active: "Activo",
+        inactive: "Inactivo",
+        in_use: "En Uso",
+        cleaning: "En Limpieza",
     };
 
     useEffect(() => {
@@ -44,7 +47,7 @@ export function Ponds({ id }) {
         async function fetchEstanques() {
             try {
                 const token = localStorage.getItem("access")
-                const res = await fetch(`https://backend-pongase-trucha.onrender.com/ponds/?farm_id=${id}`, {
+                const res = await fetch(`https://backend-pongase-trucha.onrender.com/ponds/?farm_id=${id}&status=${filter}`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -60,7 +63,7 @@ export function Ponds({ id }) {
             }
         }
         fetchEstanques();
-    }, []);
+    }, [filter]);
 
     const handleDelete = async (ide) => {
         const token = localStorage.getItem("access");
@@ -87,10 +90,7 @@ export function Ponds({ id }) {
             {
                 loading: "Eliminando estanque...",
                 success: (data) => {
-                    setEstanques(prev => prev.filter(g => g.id !== id));
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 500);
+                    setEstanques(prev => prev.filter(e => e.id !== ide));
                     return data?.message || "Estanque eliminada correctamente";
                 },
                 error: (err) => err.message || "Error al eliminar estanque",
@@ -102,7 +102,12 @@ export function Ponds({ id }) {
         <>
             <Toaster position="top-center" />
             <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
-                {estanques.map((e) => (
+                {filteredEstanques.length === 0 && search.trim() && (
+                    <p className="text-center col-span-full text-gray-500 text-lg">
+                        No se encontraron estanques 😢
+                    </p>
+                )}
+                {filteredEstanques.map((e) => (
                     <div key={e.id}>
                         <Card className="group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
                             <CardHeader>
