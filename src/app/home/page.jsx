@@ -66,12 +66,12 @@ export default function Home() {
             <div className="px-4 sm:px-6 lg:px-8 mt-4">
                 <Field className="max-w-5xl mx-auto">
                     <FieldLabel htmlFor="input-button-group" className="text-xl">
-                        Search
+                        Buscar
                     </FieldLabel>
                     <ButtonGroup>
                         <Input
                             id="input-button-group"
-                            placeholder="Type to search..."
+                            placeholder="Escriba el nombre de la granja..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
