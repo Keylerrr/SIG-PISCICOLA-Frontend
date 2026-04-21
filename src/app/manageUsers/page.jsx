@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useFlags } from "@/hooks/useFlags";
 
 import { RegisterWorker } from "../components/RegisterWorker";
 import { RegisterManager } from "../components/RegisterManager";
@@ -11,26 +12,16 @@ import { Toaster } from "sonner";
 
 export default function ManageUsersPage() {
   const router = useRouter();
-  const [role, setRole] = useState(null);
+  const { flags, loading } = useFlags();
+  const canCreateManager = flags.users?.createManager ?? false;
 
-  useEffect(() => {
-    const token = localStorage.getItem("access");
-
-    if (!token) return;
-
-    try {
-      const payload = token.split(".")[1];
-      const decoded = JSON.parse(atob(payload));
-
-      console.log("ROL DEL USUARIO:", decoded.role);
-
-      setRole(decoded.role);
-    } catch (err) {
-      console.error("Error decodificando token", err);
-    }
-  }, []);
-
-  if (role === null) return null;
+  if (loading) {
+    return (
+      <div className="p-4 text-gray-500">
+        Cargando permisos...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -45,7 +36,7 @@ export default function ManageUsersPage() {
           Volver a la Página de Inicio
         </button>
 
-        {role === "admin" && <RegisterManager />}
+        {canCreateManager && <RegisterManager />}
 
         <RegisterWorker />
       </div>

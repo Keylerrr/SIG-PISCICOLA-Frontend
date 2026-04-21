@@ -12,6 +12,9 @@ export function useFlags() {
             assignManager: false,
             edit: false,
         },
+        users: {
+            createManager: false,
+        }
     });
 
     const [loading, setLoading] = useState(true);
@@ -33,7 +36,10 @@ export function useFlags() {
 
             const computedFlags = getFlags(user);
 
-            setFlags(computedFlags);
+            setFlags(prev => ({
+                ...prev,
+                ...computedFlags,
+            }));
         } catch (error) {
             console.error("Error leyendo token:", error)
         } finally {
