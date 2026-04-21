@@ -1,8 +1,13 @@
 'use client';
 
+import { useFlags } from '@/hooks/useFlags';
 import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Button } from "@/components/ui/button"
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field"
 import {
   Select,
   SelectContent,
@@ -10,118 +15,97 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
-export function FarmRegisterForm({
-  op,
-  idProp,
-  nombreProp,
-  departamentoProp,
-  ciudadProp,
-  direccionProp,
-  areaProp,
-  managerProp
-}) {
-  // 🔥 SAFE VALUES (evita null)
+
+export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciudadProp, direccionProp, areaProp, managerProp }) {
   const safe = (v) => v ?? "";
 
   const [nombre, setNombre] = useState(safe(nombreProp));
+
+  const [departamentos, setDepartmentos] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(safe(departamentoProp));
+
+  const [ciudades, setCiudades] = useState([]);
   const [selectedCity, setSelectedCity] = useState(safe(ciudadProp));
+
   const [direccion, setDireccion] = useState(safe(direccionProp));
   const [totalArea, setArea] = useState(safe(areaProp));
+
+  const [managers, setManagers] = useState([])
   const [selectedManager, setSelectedManager] = useState(
     managerProp ? String(managerProp) : ""
   );
 
-  const [departamentos, setDepartmentos] = useState([]);
-  const [ciudades, setCiudades] = useState([]);
-  const [managers, setManagers] = useState([]);
-  const [role, setRole] = useState(null);
+  const { flags, loading } = useFlags();
+  const canAssignManager = flags.farm.assignManager;
 
-  // 🔥 OBTENER ROLE
   useEffect(() => {
-    const token = localStorage.getItem("access");
-    if (!token) return;
+    const token = localStorage.getItem("access")
 
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      setRole(payload.role);
-    } catch {
-      console.error("Token inválido");
-    }
-  }, []);
-
-  // FETCH DATA
-  useEffect(() => {
-    const token = localStorage.getItem("access");
-    if (!token) return;
-
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      const userRole = payload.role;
-
-      // SOLO ADMIN TRAE MANAGERS
-      if (userRole === "admin") {
-        fetch("https://backend-pongase-trucha.onrender.com/managers/", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-          .then(res => {
-            if (!res.ok) throw new Error();
-            return res.json();
-          })
-          .then(setManagers)
-          .catch(() => console.error("Error managers"));
-      }
-
-      // DEPARTAMENTOS
-      fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
+    //MANAGERS
+    if (canAssignManager) {
+      fetch("https://backend-pongase-trucha.onrender.com/managers/", {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
-        },
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
       })
-        .then(res => res.json())
-        .then(data => setDepartmentos(data.departments))
-        .catch(() => console.error("Error departamentos"));
-
-    } catch {
-      console.error("Token inválido");
+        .then((res) => {
+          if (!res.ok) throw new Error("Error al traer managers");
+          return res.json();
+        })
+        .then((data) => {
+          setManagers(data);
+        })
+        .catch((err) => console.error(err));
     }
-  }, []);
+  }, [canAssignManager]);
 
-  // CIUDADES
   useEffect(() => {
     const token = localStorage.getItem("access");
-    if (!selectedDepartment) return;
 
-    fetch(`https://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}/cities/`, {
+    fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     })
       .then(res => res.json())
-      .then(data => setCiudades(data.cities))
-      .catch(() => console.error("Error ciudades"));
+      .then(data => setDepartmentos(data.departments))
+      .catch(console.error);
+  }, []);
 
-  }, [selectedDepartment]);
+  useEffect(() => {
+    const token = localStorage.getItem("access")
+    if (selectedDepartment === "") return;
+    //CIUDADES
+    fetch(`https://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}/cities/`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      }
+    }).then((res) => {
+      if (!res.ok) throw new Error("Error al traer las ciudades");
+      return res.json();
+    }).then((data) => {
+      setCiudades(data.cities);
+    }).catch((err) => console.error(err));
+  }, [selectedDepartment])
 
-  // RESET
   const handleReset = () => {
-    setNombre("");
-    setSelectedDepartment("");
-    setSelectedCity("");
-    setDireccion("");
-    setArea("");
-    setSelectedManager("");
-  };
+    setNombre("")
+    setSelectedDepartment("")
+    setSelectedCity("")
+    setDireccion("")
+    setArea("")
+    setSelectedManager("")
+  }
 
-  // SUBMIT
-  const handleSubmit = async () => {
-    const token = localStorage.getItem("access");
-
+  const handleSubmit = async (e) => {
+    const token = localStorage.getItem("access")
     const payload = {
       name: nombre,
       department: selectedDepartment,
@@ -130,31 +114,26 @@ export function FarmRegisterForm({
       total_area_ha: Number(totalArea),
     };
 
-    // SOLO ADMIN ENVÍA MANAGER
-    if (role === "admin") {
+    if (canAssignManager) {
       payload.manager_id = Number(selectedManager);
     }
-
     try {
       const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
-
       if (res.ok) window.location.reload();
-    } catch (err) {
-      console.error("Error registro:", err);
+    } catch (error) {
+      console.error("Error en registro de granja:", error);
     }
-  };
+  }
 
-  // EDIT
-  const handleEdit = async () => {
-    const token = localStorage.getItem("access");
-
+  const handleEdit = async (e) => {
+    const token = localStorage.getItem("access")
     const payload = {
       name: nombre,
       department: selectedDepartment,
@@ -163,48 +142,53 @@ export function FarmRegisterForm({
       total_area_ha: Number(totalArea),
     };
 
-    if (role === "admin") {
+    if (canAssignManager) {
       payload.manager_id = Number(selectedManager);
       payload.manager_name = managers.find(
         m => m.manager_id === Number(selectedManager)
       )?.name;
     }
-
     try {
       const res = await fetch(`https://backend-pongase-trucha.onrender.com/farm/${idProp}/`, {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
-
       if (res.ok) window.location.reload();
-    } catch (err) {
-      console.error("Error edición:", err);
+    } catch (error) {
+      console.error("Error en la edición de la granja:", error);
     }
-  };
+  }
+
+  if (loading) return null;
 
   return (
     <FieldGroup>
-
+      {/* NAME */}
       <Field>
-        <FieldLabel>Nombre de la Granja</FieldLabel>
-        <Input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <FieldLabel htmlFor="fieldgroup-name">Nombre</FieldLabel>
+        <Input
+          id="fieldgroup-name"
+          placeholder="Fulano Detal"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)} />
       </Field>
 
+      {/* DEPARTMENT */}
       <Field>
         <FieldLabel>Departamento</FieldLabel>
         <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
           <SelectTrigger>
-            <SelectValue placeholder="Departamento" />
+            <SelectValue placeholder="Choose a department" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {departamentos.map((d) => (
-                <SelectItem key={d.key} value={String(d.key)}>
-                  {d.label}
+              {departamentos.map((departamento) => (
+                <SelectItem key={departamento.key} value={String(departamento.key)}>
+                  {departamento.label}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -212,60 +196,70 @@ export function FarmRegisterForm({
         </Select>
       </Field>
 
+      {/* CITY */}
       <Field>
         <FieldLabel>Ciudad</FieldLabel>
         <Select onValueChange={setSelectedCity} value={selectedCity}>
           <SelectTrigger>
-            <SelectValue placeholder="Ciudad" />
+            <SelectValue placeholder="Choose a city" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {ciudades.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
+              {ciudades.map((ciudad) => (
+                <SelectItem key={ciudad} value={ciudad}>
+                  {ciudad}
+                </SelectItem>
               ))}
             </SelectGroup>
           </SelectContent>
         </Select>
       </Field>
 
+      {/* ADDRESS */}
       <Field>
-        <FieldLabel>Dirección</FieldLabel>
-        <Input value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+        <FieldLabel htmlFor="fieldgroup-address">Dirección</FieldLabel>
+        <Input
+          id="fieldgroup-address"
+          placeholder="Cll x #y - z"
+          value={direccion}
+          onChange={(e) => setDireccion(e.target.value)} />
       </Field>
 
+      {/* TOTAL AREA HA */}
       <Field>
-        <FieldLabel>Área (ha)</FieldLabel>
-        <Input type="number" value={totalArea} onChange={(e) => setArea(e.target.value)} />
+        <FieldLabel htmlFor="fieldgroup-area">Área total en hectáreas</FieldLabel>
+        <Input
+          id="fieldgroup-area"
+          type="number"
+          placeholder="12.5"
+          value={totalArea}
+          onChange={(e) => setArea(e.target.value)} />
       </Field>
 
-      {/*SOLO ADMIN VE ESTO */}
-      {role === "admin" && (
-        <Field>
-          <FieldLabel>Dueño</FieldLabel>
+      {canAssignManager &&
+        (<Field>
+          <FieldLabel>Managers</FieldLabel>
           <Select onValueChange={setSelectedManager} value={selectedManager}>
             <SelectTrigger>
-              <SelectValue placeholder="Elegir manager" />
+              <SelectValue placeholder="Choose a manager" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {managers.map((m) => (
-                  <SelectItem key={m.manager_id} value={String(m.manager_id)}>
-                    {m.name} {m.lastname}
+                {managers.map((manager) => (
+                  <SelectItem key={manager.manager_id} value={String(manager.manager_id)}>
+                    {manager.name} {manager.lastname}
                   </SelectItem>
                 ))}
               </SelectGroup>
             </SelectContent>
           </Select>
-        </Field>
-      )}
+        </Field>)
+      }
 
       <Field orientation="horizontal">
         <Button onClick={handleReset}>Borrar</Button>
-        <Button onClick={op === 1 ? handleSubmit : handleEdit}>
-          {op === 1 ? "Crear" : "Actualizar"}
-        </Button>
+        <Button onClick={op === 1 ? handleSubmit : handleEdit}>Subir</Button>
       </Field>
-
     </FieldGroup>
-  );
+  )
 }
