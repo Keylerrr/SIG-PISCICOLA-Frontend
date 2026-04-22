@@ -41,7 +41,7 @@ export function Navbar() {
         }
       })
 
-      if (!res.ok){
+      if (!res.ok) {
         setIsLoading(false);
         throw new Error("Error al cerrar sesion")
       }

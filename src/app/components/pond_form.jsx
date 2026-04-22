@@ -181,7 +181,7 @@ export function PondRegisterForm({
           </SelectContent>
         </Select>
       </Field>
-      
+
       <Field>
         <FieldLabel>Capacidad</FieldLabel>
         <Input type="number" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} />

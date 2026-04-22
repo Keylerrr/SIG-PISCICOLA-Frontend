@@ -195,7 +195,7 @@ export default function Granja({ params }) {
                 </div>
             </div>
             <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-                <Ponds id={id} search={search} filter={filter}/>
+                <Ponds id={id} search={search} filter={filter} />
             </div>
         </div>
     );

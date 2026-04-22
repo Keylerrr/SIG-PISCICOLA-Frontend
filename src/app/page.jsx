@@ -11,7 +11,7 @@ export default function Page() {
     if (token) {
       router.push("/home");
     }
-    else{
+    else {
       router.push("/login");
     }
   }, [router]);
