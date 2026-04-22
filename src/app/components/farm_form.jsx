@@ -104,7 +104,39 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
     setSelectedManager("")
   }
 
+  // VALIDATION
+  const validate = () => {
+    if (!nombre.trim()) {
+      alert("El nombre no puede estar vacío.");
+      return false;
+    }
+    if (!selectedDepartment) {
+      alert("Debe seleccionar un departamento.");
+      return false;
+    }
+    if (!selectedCity) {
+      alert("Debe seleccionar una ciudad.");
+      return false;
+    }
+    if (!direccion.trim()) {
+      alert("La dirección no puede estar vacía.");
+      return false;
+    }
+    const area = parseFloat(totalArea);
+    if (isNaN(area) || area <= 0) {
+      alert("El área total debe ser un número positivo válido.");
+      return false;
+    }
+    if (!selectedManager && canAssignManager) {
+      alert("Debe seleccionar un manager.");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
+    if (!validate()) return;
+
     const token = localStorage.getItem("access")
     const payload = {
       name: nombre,
@@ -133,6 +165,8 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
   }
 
   const handleEdit = async (e) => {
+    if (!validate()) return;
+
     const token = localStorage.getItem("access")
     const payload = {
       name: nombre,
@@ -182,7 +216,7 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
         <FieldLabel>Departamento</FieldLabel>
         <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose a department" />
+            <SelectValue placeholder="Escoja un departamento" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -201,7 +235,7 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
         <FieldLabel>Ciudad</FieldLabel>
         <Select onValueChange={setSelectedCity} value={selectedCity}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose a city" />
+            <SelectValue placeholder="Escoja una ciudad" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -241,7 +275,7 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
           <FieldLabel>Managers</FieldLabel>
           <Select onValueChange={setSelectedManager} value={selectedManager}>
             <SelectTrigger>
-              <SelectValue placeholder="Choose a manager" />
+              <SelectValue placeholder="Escoja un manager" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>

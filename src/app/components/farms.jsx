@@ -213,9 +213,9 @@ export function Farms({ search }) {
                                     </p>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-green-500">
+                                {/* <div className="flex items-center gap-2 text-green-500">
                                     <Activity /> Activo
-                                </div>
+                                </div> */}
                             </CardFooter>
                         </Card>
                     </div>

@@ -78,7 +78,7 @@ export default function Granja({ params }) {
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
                         <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
                             <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
-                            <p className="mt-4 font-medium text-slate-700">Cargando Granja...</p>
+                            <p className="mt-4 font-medium text-slate-700">Cargando estanques...</p>
                         </div>
                     </div>
                 )

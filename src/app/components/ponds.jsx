@@ -1,7 +1,7 @@
 "use client"
 
 import { use, useEffect, useState } from "react";
-import { Droplet, RulerDimensionLine, Pencil, Trash } from 'lucide-react'
+import { Droplet, RulerDimensionLine, Pencil, Trash, Activity } from 'lucide-react'
 import {
     Card,
     CardAction,
@@ -22,14 +22,31 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldTitle,
+} from "@/components/ui/field"
+import { Switch } from "@/components/ui/switch"
 import { Toaster, toast } from "sonner"
 import { PondRegisterForm } from "./pond_form";
 
 export function Ponds({ id, search, filter }) {
     const [estanques, setEstanques] = useState([])
+    const [disabledPonds, setDisabledPonds] = useState({})
     const filteredEstanques = estanques.filter((e) =>
         e.name.toLowerCase().includes((search || "").toLowerCase().trim())
     );
+    
+    const togglePondDisabled = (pondId) => {
+        setDisabledPonds(prev => ({
+            ...prev,
+            [pondId]: !prev[pondId]
+        }));
+    };
     const statusStyles = {
         active: "bg-green-100 text-green-700",
         inactive: "bg-red-100 text-red-700",
@@ -110,7 +127,7 @@ export function Ponds({ id, search, filter }) {
                 )}
                 {filteredEstanques.map((e) => (
                     <div key={e.id}>
-                        <Card className="group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                        <Card className={`group border border-gray-200 hover:border-blue-500 hover:shadow-lg ${disabledPonds[e.id] ? "bg-gray-200" : ""} hover:-translate-y-1 transition-all duration-200`}>
                             <CardHeader>
                                 <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
                                     {e.name}
@@ -119,19 +136,21 @@ export function Ponds({ id, search, filter }) {
                                 <CardAction>
                                     <div className="flex items-center gap-3">
                                         <AlertDialog>
+                                            {!disabledPonds[e.id] && (
                                             <AlertDialogTrigger asChild>
-                                                <Pencil className="text-blue-600 cursor-pointer" />
-                                            </AlertDialogTrigger>
+                                                <Pencil className={`cursor-pointer ${disabledPonds[e.id] ? "text-gray-400 cursor-not-allowed" : "text-blue-600"}`} />
+                                            </AlertDialogTrigger>)}
 
+                                            
                                             <AlertDialogContent className="sm:max-w-2xl">
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>
-                                                        ¿Editar granja?
+                                                        ¿Editar estanque?
                                                     </AlertDialogTitle>
 
                                                     <AlertDialogDescription>
-                                                        Cambie los datos a continuación para editar la informacio de la granja{" "}
-                                                        <span className="font-bold">{ }.</span>
+                                                        Cambie los datos a continuación para editar la informacio del estanque{" "}
+                                                        <span className="font-bold">{e.name}</span>.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <PondRegisterForm
@@ -139,6 +158,7 @@ export function Ponds({ id, search, filter }) {
                                                     idProp={e.id}
                                                     idFarmProp={id}
                                                     nombreProp={e.name}
+                                                    estadoProp={e.status}
                                                     capacidadProp={e.capacity}
                                                     areaProp={e.area}
                                                     volumenProp={e.volume}
@@ -190,11 +210,14 @@ export function Ponds({ id, search, filter }) {
                                 <p className="flex gap-2"><Droplet /> Volumen: <span className="text-blue-500">{e.volume} m³</span></p>
                                 <p className="flex gap-2"><RulerDimensionLine /> Área: <span className="text-blue-500">{e.area} m²</span></p>
                             </CardContent>
-                            <CardFooter>
-                                <p className={`capitalize px-3 py-1 rounded-full text-sm font-semibold
+                            <CardFooter className="flex items-center justify-between gap-4">
+                                <p className={`whitespace-nowrap capitalize px-3 py-1 rounded-full text-sm font-semibold
                                         ${statusStyles[e.status] || "bg-gray-100 text-gray-700"}`}>
                                     {statusLabels[e.status]}
                                 </p>
+                                <div className={`inline-flex h-6 w-11 items-center rounded-full transition-colors ${disabledPonds[e.id] ? "bg-red-500" : "bg-green-500"} cursor-pointer`} onClick={() => togglePondDisabled(e.id)}>
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${disabledPonds[e.id] ? "translate-x-6" : "translate-x-1"}`} />
+                                </div>
                             </CardFooter>
                         </Card>
                     </div>
