@@ -1,11 +1,11 @@
-import { Comic_Neue } from "next/font/google";
+import { Ubuntu } from "next/font/google";
 import "./globals.css";
 
-const comicNeue = Comic_Neue({
+const ubuntu = Ubuntu({
   subsets: ["latin"],
-  weight: ["300", "400", "700"],
+  weight: ["300", "400", "500", "700"],
   style: ["normal", "italic"],
-  variable: "--font-comic",
+  variable: "--font-ubuntu",
 });
 
 export const metadata = {
@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${comicNeue.variable} h-full antialiased`}
+      className={`${ubuntu.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
         {children}
