@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# SIG-Piscicola (Póngase Trucha)
 
-## Getting Started
+## Propósito del Proyecto
 
-First, run the development server:
+**SIG-Piscicola** (Sistema de Información Geográfica/Gerencial - Piscícola) es una plataforma desarrollada para el proyecto *Póngase Trucha*. Su objetivo principal es proveer herramientas de gestión e información para la industria piscícola, facilitando el control, la visualización de datos y el manejo eficiente de los recursos en la cría y producción de truchas (y/u otras especies).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Cómo Ejecutar el Proyecto
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Este proyecto está construido con [Next.js](https://nextjs.org/) y puede ser ejecutado tanto localmente usando Node/npm como a través de Docker. A continuación, se detallan las instrucciones para ambos métodos.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Opción 1: Ejecución Local (NPM)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Para ejecutar el proyecto localmente en modo desarrollo, asegúrate de tener Node.js instalado.
 
-## Learn More
+1. **Instalar dependencias:**
+   Es crucial utilizar `npm ci` para instalar las dependencias exactas definidas en el `package-lock.json`. **JAMÁS utilices `npm install`**, ya que esto podría modificar las versiones de las dependencias y causar inconsistencias.
+   ```bash
+   npm ci
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+2. **Ejecutar el servidor de desarrollo:**
+   Una vez instaladas las dependencias, levanta el entorno de desarrollo con el siguiente comando:
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. **Acceder a la aplicación:**
+   Abre tu navegador web y visita [http://localhost:3000](http://localhost:3000).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+### Opción 2: Ejecución con Docker
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Si prefieres aislar el entorno de ejecución, puedes utilizar Docker.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Construir la imagen de Docker (Build):**
+   Asegúrate de estar en el directorio raíz del proyecto (donde se encuentra el `Dockerfile`) y ejecuta el siguiente comando para construir la imagen. Le asignaremos el nombre `sig-piscicola`.
+   ```bash
+   docker build -t sig-piscicola .
+   ```
+
+2. **Ejecutar el contenedor:**
+   Una vez que la imagen se haya construido correctamente, levanta un contenedor mapeando el puerto `3000` de tu máquina al puerto `3000` del contenedor:
+   ```bash
+   docker run -p 3000:3000 piscicola-next
+   ```
+
+3. **Acceder a la aplicación:**
+   Al igual que en la ejecución local, la aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
