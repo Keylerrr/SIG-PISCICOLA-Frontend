@@ -45,7 +45,7 @@ export default function Login() {
     setIsSending(true);
 
     try {
-      const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/reset-password/", {
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/api/auth/reset-password/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export default function Login() {
 
     try {
       const res = await fetch(
-        "https://backend-pongase-trucha.onrender.com/auth/login/",
+        "https://backend-pongase-trucha.onrender.com/api/auth/login/",
         {
           method: "POST",
           headers: {
@@ -94,6 +94,8 @@ export default function Login() {
 
       const data = await res.json();
 
+      console.log(data);
+
       if (!res.ok) {
         setIsLoading(false);
         setLoginError(true);
@@ -104,7 +106,7 @@ export default function Login() {
 
       localStorage.setItem("access", data.tokens.access);
       localStorage.setItem("refresh", data.tokens.refresh);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      //localStorage.setItem("user", JSON.stringify(data.user));
       router.push('/home');
     } catch (error) {
       console.error("Error en el login:", error);
