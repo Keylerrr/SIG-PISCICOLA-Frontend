@@ -72,7 +72,7 @@ export default function Login() {
     }
   };
 
-  /*const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoginError(false);
     setIsLoading(true);
@@ -111,19 +111,6 @@ export default function Login() {
       setLoginError(true);
       setIsLoading(false);
     }
-  };*/
-
-  //HANDLE SUBMIT FALSO NO BACKEND
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    localStorage.setItem("access", "fake");
-    localStorage.setItem("refresh", "fake");
-    localStorage.setItem("user", JSON.stringify({
-      email: "demo@demo.com"
-    }));
-
-    router.push("/home");
   };
 
   return (
