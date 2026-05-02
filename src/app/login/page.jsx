@@ -74,6 +74,7 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoginError(false);
     setIsLoading(true);
 
@@ -87,27 +88,44 @@ export default function Login() {
           },
           body: JSON.stringify({
             email,
-            password
+            password,
           }),
         }
       );
 
       const data = await res.json();
 
-      console.log(data);
-
       if (!res.ok) {
-        setIsLoading(false);
         setLoginError(true);
+        setIsLoading(false);
         return;
       }
 
-      console.log("Respuesta:", data);
+      const res2 = await fetch(
+        "https://backend-pongase-trucha.onrender.com/api/users/me/",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${data.tokens.access}`,
+          },
+        }
+      );
 
+      const data2 = await res2.json();
+
+      if (!res2.ok) {
+        setLoginError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data2));
       localStorage.setItem("access", data.tokens.access);
       localStorage.setItem("refresh", data.tokens.refresh);
-      //localStorage.setItem("user", JSON.stringify(data.user));
-      router.push('/home');
+
+      router.push("/home");
+
     } catch (error) {
       console.error("Error en el login:", error);
       setLoginError(true);
