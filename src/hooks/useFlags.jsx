@@ -14,6 +14,7 @@ export function useFlags() {
         },
         users: {
             createManager: false,
+            assignManager: false,
         }
     });
 
@@ -28,11 +29,7 @@ export function useFlags() {
         }
 
         try {
-            const payload = JSON.parse(atob(token.split(".")[1]));
-
-            const user = {
-                role: payload.role,
-            };
+            const user = JSON.parse(localStorage.getItem("user"));
 
             const computedFlags = getFlags(user);
 

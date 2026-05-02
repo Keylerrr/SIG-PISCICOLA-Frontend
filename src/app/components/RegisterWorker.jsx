@@ -2,8 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
+import { useFlags } from "@/hooks/useFlags";
 
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -21,11 +30,68 @@ import { toast } from "sonner";
 export function RegisterWorker() {
   const [workers, setWorkers] = useState([]);
 
-  const [nombres, setNombres] = useState("");
-  const [apellidos, setApellidos] = useState("");
-  const [numero, setNumero] = useState("");
+  const { flags, loading } = useFlags();
+  const canAssignManager = flags?.users?.assignManager;
+
   const [correo, setCorreo] = useState("");
+  const [farms, setFarms] = useState([]);
+  const [selectedFarm, setSelectedFarm] = useState("");
+  
+  const [managers, setManagers] = useState([]);
+  const [selectedManager, setSelectedManager] = useState("");
+
   const [open, setOpen] = useState(false);
+
+  // 🔥 TRAER MANAGERS
+  useEffect(() => {
+    if (!canAssignManager) return;
+
+    const token = localStorage.getItem("access");
+    fetch("https://backend-pongase-trucha.onrender.com/api/users/productor/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al traer productores");
+        return res.json();
+      })
+      .then((data) => setManagers(data))
+      .catch(console.error);
+  }, [canAssignManager]);
+
+  // 🔥 TRAER GRANJAS
+  useEffect(() => {
+    if (loading) return;
+
+    const fetchFarms = async () => {
+      const token = localStorage.getItem("access");
+      if (!token) return;
+
+      try {
+        let url = "https://backend-pongase-trucha.onrender.com/api/farms/";
+
+        if (canAssignManager) {
+          if (!selectedManager) {
+            setFarms([]);
+            return;
+          }
+          url = `https://backend-pongase-trucha.onrender.com/api/farms/productor/${selectedManager}/`;
+        }
+
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (!res.ok) throw new Error("Error al traer granjas");
+        
+        const data = await res.json();
+        setFarms(data);
+      } catch (err) {
+        console.error("Error cargando granjas:", err);
+      }
+    };
+
+    fetchFarms();
+  }, [loading, canAssignManager, selectedManager]);
 
   // 🔥 FUNCIÓN GLOBAL PARA TRAER WORKERS
   const fetchWorkers = async () => {
@@ -34,7 +100,7 @@ export function RegisterWorker() {
 
     try {
       const res = await fetch(
-        "https://backend-pongase-trucha.onrender.com/workers/",
+        "https://backend-pongase-trucha.onrender.com/api/workers/",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -60,7 +126,7 @@ export function RegisterWorker() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!nombres || !apellidos || !numero || !correo) {
+    if (!correo || !selectedFarm) {
       toast.error("Todos los campos son obligatorios");
       return;
     }
@@ -68,17 +134,15 @@ export function RegisterWorker() {
     const token = localStorage.getItem("access");
 
     await toast.promise(
-      fetch("https://backend-pongase-trucha.onrender.com/workers/", {
+      fetch("https://backend-pongase-trucha.onrender.com/api/invitations/operario/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: nombres,
-          lastname: apellidos,
           email: correo,
-          phone: numero,
+          farm_id: Number(selectedFarm),
         }),
       }).then(async (res) => {
         let data = null;
@@ -98,18 +162,27 @@ export function RegisterWorker() {
       {
         loading: "Creando trabajador...",
         success: () => {
-          setNombres("");
-          setApellidos("");
-          setNumero("");
           setCorreo("");
+          setSelectedFarm("");
           setOpen(false);
 
-          return "Trabajador creado";
+          return "Invitación enviada";
         },
         error: (err) => err.message || "Error al guardar",
       }
     );
   };
+
+  const handleOpenChange = (newOpen) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setCorreo("");
+      setSelectedManager("");
+      setSelectedFarm("");
+    }
+  };
+
+  if (loading) return null;
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
@@ -117,7 +190,7 @@ export function RegisterWorker() {
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Gestión de Trabajadores</h1>
 
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             <button className="flex items-center gap-2 bg-cyan-500 text-white px-4 py-2 rounded-lg">
               <Plus className="w-4 h-4" />
@@ -133,36 +206,59 @@ export function RegisterWorker() {
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <FieldGroup>
                 <Field>
-                  <Label>Nombres</Label>
+                  <Label>Correo del Operario</Label>
                   <Input
-                    value={nombres}
-                    onChange={(e) => setNombres(e.target.value)}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <Label>Apellidos</Label>
-                  <Input
-                    value={apellidos}
-                    onChange={(e) => setApellidos(e.target.value)}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <Label>Celular</Label>
-                  <Input
-                    value={numero}
-                    onChange={(e) => setNumero(e.target.value)}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <Label>Correo</Label>
-                  <Input
+                    type="email"
+                    placeholder="correo@correo.com"
                     value={correo}
                     onChange={(e) => setCorreo(e.target.value)}
                     required
                   />
+                </Field>
+
+                {canAssignManager && (
+                  <Field>
+                    <Label>Productor / Manager</Label>
+                    <Select 
+                      onValueChange={(val) => {
+                        setSelectedManager(val);
+                        setSelectedFarm("");
+                      }} 
+                      value={selectedManager} 
+                      required
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione un productor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {managers.map((m) => (
+                            <SelectItem key={m.id} value={String(m.id)}>
+                              {m.name} {m.lastname}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+
+                <Field>
+                  <Label>Granja Asociada</Label>
+                  <Select onValueChange={setSelectedFarm} value={selectedFarm} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una granja" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {farms.map((f) => (
+                          <SelectItem key={f.id} value={String(f.id)}>
+                            {f.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </Field>
               </FieldGroup>
 
@@ -170,7 +266,7 @@ export function RegisterWorker() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setOpen(false)}
+                  onClick={() => handleOpenChange(false)}
                 >
                   Cancelar
                 </Button>
@@ -181,7 +277,6 @@ export function RegisterWorker() {
         </Dialog>
       </div>
 
-      {/* 🔥 LISTADO */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {workers.length === 0 ? (
           <p className="text-gray-500">No hay trabajadores aún</p>

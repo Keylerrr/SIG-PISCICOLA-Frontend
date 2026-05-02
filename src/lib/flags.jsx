@@ -1,20 +1,20 @@
 
 export function getFlags(user) {
-    const role = user?.role;
+    const role = user?.role?.name;
 
     return {
-        isAdmin: role === "admin",
-        isManager: role === "manager",
+        isAdmin: role === "Admin",
+        isManager: role === "Manager",
 
         farm: {
-            create: role === "admin" || role === "manager",
-            assignManager: role === "admin",
-            edit: role === "admin" || role === "manager",
+            create: role === "Admin" || role === "Manager",
+            assignManager: role === "Admin",
+            edit: role === "Admin" || role === "Manager",
         },
 
         users: {
-            createManager: role === "admin"
+            createManager: role === "Admin",
+            assignManager: role === "Admin",
         }
-
     };
 }

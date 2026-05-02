@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Field,
   FieldGroup,
@@ -39,6 +40,13 @@ export default function Login() {
   const [recoverSuccess, setRecoverSuccess] = useState(false);
   const [errorRecovery, setErrorRecovery] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isComplete, setIsComplete] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  const [nombres, setNombres] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [numero, setNumero] = useState("");
+  const [cedula, setCedula] = useState("");
 
   const handleRecover = async (e) => {
     e.preventDefault();
@@ -72,6 +80,41 @@ export default function Login() {
     }
   };
 
+  const handleUser = async () => {
+    setLoginError(false);
+    setIsLoading(true);
+
+    try {
+      const access = localStorage.getItem("access");
+      const res2 = await fetch(
+        "https://backend-pongase-trucha.onrender.com/api/users/me/",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+        }
+      );
+
+      const data2 = await res2.json();
+
+      if (!res2.ok) {
+        setLoginError(true);
+        setIsLoading(false);
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data2));
+      router.push("/home");
+    }
+    catch (error) {
+      console.error("Error en el login:", error);
+      setLoginError(true);
+      setIsLoading(false);
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -95,46 +138,128 @@ export default function Login() {
 
       const data = await res.json();
 
+      console.log(data);
+
       if (!res.ok) {
         setLoginError(true);
         setIsLoading(false);
         return;
       }
 
-      const res2 = await fetch(
-        "https://backend-pongase-trucha.onrender.com/api/users/me/",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${data.tokens.access}`,
-          },
-        }
-      );
+      setIsComplete(data.is_profile_complete);
 
-      const data2 = await res2.json();
-
-      if (!res2.ok) {
-        setLoginError(true);
-        setIsLoading(false);
-        return;
-      }
-
-      localStorage.setItem("user", JSON.stringify(data2));
       localStorage.setItem("access", data.tokens.access);
       localStorage.setItem("refresh", data.tokens.refresh);
 
-      router.push("/home");
-
-    } catch (error) {
+      if (data.is_profile_complete) {
+        await handleUser();
+      } else {
+        setOpen(true);
+        setIsLoading(false);
+      }
+    }
+    catch (error) {
       console.error("Error en el login:", error);
       setLoginError(true);
       setIsLoading(false);
     }
   };
 
+  const handleCompleteProfile = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem("access");
+      // Ajusta este endpoint según lo que espere tu backend para actualizar el perfil
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/api/users/me/complete/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: nombres,
+          lastname: apellidos,
+          cc: cedula,
+          phone: numero,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error("Error al completar el perfil");
+        setIsLoading(false);
+        return;
+      }
+
+      setOpen(false);
+      setNombres("");
+      setApellidos("");
+      setCedula("");
+      setNumero("");
+      await handleUser();
+    } catch (error) {
+      console.error(error);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
+
+      {isComplete === false && (
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Completar Perfil</DialogTitle>
+              <DialogDescription>
+                Por favor, completa tus datos antes de continuar.
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleCompleteProfile} className="mt-6 space-y-4">
+              <FieldGroup>
+                <Field>
+                  <Label>Nombres</Label>
+                  <Input
+                    value={nombres}
+                    onChange={(e) => setNombres(e.target.value)}
+                    required
+                  />
+                </Field>
+                <Field>
+                  <Label>Apellidos</Label>
+                  <Input
+                    value={apellidos}
+                    onChange={(e) => setApellidos(e.target.value)}
+                    required
+                  />
+                </Field>
+                <Field>
+                  <Label>Cédula</Label>
+                  <Input
+                    value={cedula}
+                    onChange={(e) => setCedula(e.target.value)}
+                    required
+                  />
+                </Field>
+                <Field>
+                  <Label>Celular</Label>
+                  <Input
+                    value={numero}
+                    onChange={(e) => setNumero(e.target.value)}
+                    required
+                  />
+                </Field>
+              </FieldGroup>
+
+              <DialogFooter>
+                <Button type="submit">Guardar y Continuar</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {isLoading && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">

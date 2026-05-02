@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useFlags } from '@/hooks/useFlags';
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -37,27 +38,15 @@ export function FarmRegisterForm({
   const [totalArea, setArea] = useState(safe(areaProp));
 
   // 🔥 NUEVO: roles
-  const [userRole, setUserRole] = useState("");
+  const { flags, loading } = useFlags();
+  const canAssignManager = flags?.farm?.assignManager;
+
   const [productores, setProductores] = useState([]);
   const [selectedProductor, setSelectedProductor] = useState("");
 
-  // 🔹 OBTENER ROL DEL USUARIO
+  // 🔹 SI PUEDE ASIGNAR PRODUCTOR → TRAER PRODUCTORES
   useEffect(() => {
-    const token = localStorage.getItem("access");
-
-    fetch("https://backend-pongase-trucha.onrender.com/api/users/me/", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setUserRole(data.role?.name);
-      })
-      .catch(console.error);
-  }, []);
-
-  // 🔹 SI ES ADMIN → TRAER PRODUCTORES
-  useEffect(() => {
-    if (userRole !== "Admin") return;
+    if (!canAssignManager) return;
 
     const token = localStorage.getItem("access");
 
@@ -70,7 +59,8 @@ export function FarmRegisterForm({
       })
       .then((data) => setProductores(data))
       .catch(console.error);
-  }, [userRole]);
+  }, [canAssignManager]);
+
 
   // 🔹 DEPARTAMENTOS (PUBLIC)
   useEffect(() => {
@@ -104,10 +94,9 @@ export function FarmRegisterForm({
     setSelectedCity("");
     setDireccion("");
     setArea("");
-    setSelectedProductor(""); // 🔥 nuevo
+    setSelectedProductor("");
   };
 
-  // 🔹 VALIDACIÓN
   const validate = () => {
     if (!nombre.trim()) return alert("Nombre requerido"), false;
     if (!selectedDepartment) return alert("Seleccione departamento"), false;
@@ -118,15 +107,13 @@ export function FarmRegisterForm({
     if (isNaN(area) || area <= 0)
       return alert("Área inválida"), false;
 
-    // 🔥 NUEVO
-    if (userRole === "Admin" && !selectedProductor) {
+    if (canAssignManager && !selectedProductor) {
       return alert("Debe seleccionar un productor"), false;
     }
 
     return true;
   };
 
-  // 🔹 CREAR
   const handleSubmit = async () => {
     if (!validate()) return;
 
@@ -140,8 +127,7 @@ export function FarmRegisterForm({
       total_area_ha: Number(totalArea),
     };
 
-    // 🔥 NUEVO
-    if (userRole === "Admin") {
+    if (canAssignManager) {
       payload.productor_id = Number(selectedProductor);
     }
 
@@ -166,7 +152,6 @@ export function FarmRegisterForm({
     }
   };
 
-  // 🔹 EDITAR
   const handleEdit = async () => {
     if (!validate()) return;
 
@@ -180,8 +165,7 @@ export function FarmRegisterForm({
       total_area_ha: Number(totalArea),
     };
 
-    // 🔥 NUEVO
-    if (userRole === "Admin") {
+    if (canAssignManager) {
       payload.productor_id = Number(selectedProductor);
     }
 
@@ -206,6 +190,8 @@ export function FarmRegisterForm({
     }
   };
 
+  if (loading) return null;
+
   return (
     <FieldGroup>
       {/* NAME */}
@@ -217,8 +203,8 @@ export function FarmRegisterForm({
         />
       </Field>
 
-      {/* 🔥 SOLO ADMIN */}
-      {userRole === "Admin" && (
+      {/* 🔥 SOLO SI PUEDE ASIGNAR MANAGER */}
+      {canAssignManager && (
         <Field>
           <FieldLabel>Productor</FieldLabel>
           <Select

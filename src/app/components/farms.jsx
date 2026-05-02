@@ -215,7 +215,6 @@ export function Farms({ search = "" }) {
 
                                 <CardContent className="flex gap-2 text-xl">
                                     <UserRound />
-                                    {/* ya no hay manager_name */}
                                     Usuario asociado
                                 </CardContent>
 

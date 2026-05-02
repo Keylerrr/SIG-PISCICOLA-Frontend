@@ -21,20 +21,16 @@ import { toast } from "sonner";
 export function RegisterManager() {
   const [managers, setManagers] = useState([]);
 
-  const [nombres, setNombres] = useState("");
-  const [apellidos, setApellidos] = useState("");
-  const [numero, setNumero] = useState("");
   const [correo, setCorreo] = useState("");
   const [open, setOpen] = useState(false);
 
-  // 🔥 TRAER MANAGERS
   const fetchManagers = async () => {
     const token = localStorage.getItem("access");
     if (!token) return;
 
     try {
       const res = await fetch(
-        "https://backend-pongase-trucha.onrender.com/managers/",
+        "https://backend-pongase-trucha.onrender.com/api/managers/",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,7 +48,6 @@ export function RegisterManager() {
     }
   };
 
-  // 🔥 CARGA INICIAL
   useEffect(() => {
     fetchManagers();
   }, []);
@@ -60,25 +55,22 @@ export function RegisterManager() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!nombres || !apellidos || !numero || !correo) {
-      toast.error("Todos los campos son obligatorios");
+    if (!correo) {
+      toast.error("El correo es obligatorio");
       return;
     }
 
     const token = localStorage.getItem("access");
 
     await toast.promise(
-      fetch("https://backend-pongase-trucha.onrender.com/managers/", {
+      fetch("https://backend-pongase-trucha.onrender.com/api/invitations/productor/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name: nombres,
-          lastname: apellidos,
           email: correo,
-          phone: numero,
         }),
       }).then(async (res) => {
         let data = null;
@@ -90,7 +82,6 @@ export function RegisterManager() {
           throw new Error(data?.message || "Error al guardar");
         }
 
-        // 🔥 REFRESH REAL
         await fetchManagers();
 
         return data;
@@ -98,13 +89,10 @@ export function RegisterManager() {
       {
         loading: "Creando gerente...",
         success: () => {
-          setNombres("");
-          setApellidos("");
-          setNumero("");
           setCorreo("");
           setOpen(false);
 
-          return "Gerente creado";
+          return "Enviando credenciales";
         },
         error: (err) => err.message || "Error al guardar",
       }
@@ -113,7 +101,6 @@ export function RegisterManager() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">Gestión de Gerentes</h1>
 
@@ -132,30 +119,6 @@ export function RegisterManager() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <FieldGroup>
-                <Field>
-                  <Label>Nombres</Label>
-                  <Input
-                    value={nombres}
-                    onChange={(e) => setNombres(e.target.value)}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <Label>Apellidos</Label>
-                  <Input
-                    value={apellidos}
-                    onChange={(e) => setApellidos(e.target.value)}
-                    required
-                  />
-                </Field>
-                <Field>
-                  <Label>Celular</Label>
-                  <Input
-                    value={numero}
-                    onChange={(e) => setNumero(e.target.value)}
-                    required
-                  />
-                </Field>
                 <Field>
                   <Label>Correo</Label>
                   <Input
@@ -181,7 +144,6 @@ export function RegisterManager() {
         </Dialog>
       </div>
 
-      {/* 🔥 LISTADO */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {managers.length === 0 ? (
           <p className="text-gray-500">No hay gerentes aún</p>
