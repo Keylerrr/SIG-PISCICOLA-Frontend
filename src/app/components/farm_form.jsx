@@ -1,13 +1,8 @@
-'use client';
+"use client";
 
-import { useFlags } from '@/hooks/useFlags';
-import { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button"
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
   Select,
   SelectContent,
@@ -15,17 +10,25 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-
-export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciudadProp, direccionProp, areaProp, managerProp }) {
+export function FarmRegisterForm({
+  op,
+  idProp,
+  nombreProp,
+  departamentoProp,
+  ciudadProp,
+  direccionProp,
+  areaProp,
+}) {
   const safe = (v) => v ?? "";
 
   const [nombre, setNombre] = useState(safe(nombreProp));
-
-  const [departamentos, setDepartmentos] = useState([]);
-  const [selectedDepartment, setSelectedDepartment] = useState(safe(departamentoProp));
+  const [departamentos, setDepartamentos] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState(
+    safe(departamentoProp)
+  );
 
   const [ciudades, setCiudades] = useState([]);
   const [selectedCity, setSelectedCity] = useState(safe(ciudadProp));
@@ -33,196 +36,226 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
   const [direccion, setDireccion] = useState(safe(direccionProp));
   const [totalArea, setArea] = useState(safe(areaProp));
 
-  const [managers, setManagers] = useState([])
-  const [selectedManager, setSelectedManager] = useState(
-    managerProp ? String(managerProp) : ""
-  );
+  // 🔥 NUEVO: roles
+  const [userRole, setUserRole] = useState("");
+  const [productores, setProductores] = useState([]);
+  const [selectedProductor, setSelectedProductor] = useState("");
 
-  const { flags, loading } = useFlags();
-  const canAssignManager = flags.farm.assignManager;
-
-  useEffect(() => {
-    const token = localStorage.getItem("access")
-
-    //MANAGERS
-    if (canAssignManager) {
-      fetch("https://backend-pongase-trucha.onrender.com/managers/", {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json",
-        }
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error("Error al traer managers");
-          return res.json();
-        })
-        .then((data) => {
-          setManagers(data);
-        })
-        .catch((err) => console.error(err));
-    }
-  }, [canAssignManager]);
-
+  // 🔹 OBTENER ROL DEL USUARIO
   useEffect(() => {
     const token = localStorage.getItem("access");
 
-    fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    fetch("https://backend-pongase-trucha.onrender.com/api/users/me/", {
+      headers: { Authorization: `Bearer ${token}` },
     })
-      .then(res => res.json())
-      .then(data => setDepartmentos(data.departments))
+      .then((res) => res.json())
+      .then((data) => {
+        setUserRole(data.role?.name);
+      })
       .catch(console.error);
   }, []);
 
+  // 🔹 SI ES ADMIN → TRAER PRODUCTORES
   useEffect(() => {
-    const token = localStorage.getItem("access")
-    if (selectedDepartment === "") return;
-    //CIUDADES
-    fetch(`https://backend-pongase-trucha.onrender.com/farm/departments/${selectedDepartment}/cities/`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
-      }
-    }).then((res) => {
-      if (!res.ok) throw new Error("Error al traer las ciudades");
-      return res.json();
-    }).then((data) => {
-      setCiudades(data.cities);
-    }).catch((err) => console.error(err));
-  }, [selectedDepartment])
+    if (userRole !== "Admin") return;
+
+    const token = localStorage.getItem("access");
+
+    fetch("https://backend-pongase-trucha.onrender.com/api/users/productor/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al traer productores");
+        return res.json();
+      })
+      .then((data) => setProductores(data))
+      .catch(console.error);
+  }, [userRole]);
+
+  // 🔹 DEPARTAMENTOS (PUBLIC)
+  useEffect(() => {
+    fetch("https://backend-pongase-trucha.onrender.com/api/departments/")
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al traer departamentos");
+        return res.json();
+      })
+      .then((data) => setDepartamentos(data))
+      .catch(console.error);
+  }, []);
+
+  // 🔹 CIUDADES (FILTRADAS)
+  useEffect(() => {
+    if (!selectedDepartment) return;
+
+    fetch(
+      `https://backend-pongase-trucha.onrender.com/api/cities/?department_id=${selectedDepartment}`
+    )
+      .then((res) => {
+        if (!res.ok) throw new Error("Error al traer ciudades");
+        return res.json();
+      })
+      .then((data) => setCiudades(data))
+      .catch(console.error);
+  }, [selectedDepartment]);
 
   const handleReset = () => {
-    setNombre("")
-    setSelectedDepartment("")
-    setSelectedCity("")
-    setDireccion("")
-    setArea("")
-    setSelectedManager("")
-  }
+    setNombre("");
+    setSelectedDepartment("");
+    setSelectedCity("");
+    setDireccion("");
+    setArea("");
+    setSelectedProductor(""); // 🔥 nuevo
+  };
 
-  // VALIDATION
+  // 🔹 VALIDACIÓN
   const validate = () => {
-    if (!nombre.trim()) {
-      alert("El nombre no puede estar vacío.");
-      return false;
-    }
-    if (!selectedDepartment) {
-      alert("Debe seleccionar un departamento.");
-      return false;
-    }
-    if (!selectedCity) {
-      alert("Debe seleccionar una ciudad.");
-      return false;
-    }
-    if (!direccion.trim()) {
-      alert("La dirección no puede estar vacía.");
-      return false;
-    }
+    if (!nombre.trim()) return alert("Nombre requerido"), false;
+    if (!selectedDepartment) return alert("Seleccione departamento"), false;
+    if (!selectedCity) return alert("Seleccione ciudad"), false;
+    if (!direccion.trim()) return alert("Dirección requerida"), false;
+
     const area = parseFloat(totalArea);
-    if (isNaN(area) || area <= 0) {
-      alert("El área total debe ser un número positivo válido.");
-      return false;
+    if (isNaN(area) || area <= 0)
+      return alert("Área inválida"), false;
+
+    // 🔥 NUEVO
+    if (userRole === "Admin" && !selectedProductor) {
+      return alert("Debe seleccionar un productor"), false;
     }
-    if (!selectedManager && canAssignManager) {
-      alert("Debe seleccionar un manager.");
-      return false;
-    }
+
     return true;
   };
 
-  const handleSubmit = async (e) => {
+  // 🔹 CREAR
+  const handleSubmit = async () => {
     if (!validate()) return;
 
-    const token = localStorage.getItem("access")
+    const token = localStorage.getItem("access");
+
     const payload = {
       name: nombre,
-      department: selectedDepartment,
-      city: selectedCity,
+      department: Number(selectedDepartment),
+      city: Number(selectedCity),
       address: direccion,
       total_area_ha: Number(totalArea),
     };
 
-    if (canAssignManager) {
-      payload.manager_id = Number(selectedManager);
+    // 🔥 NUEVO
+    if (userRole === "Admin") {
+      payload.productor_id = Number(selectedProductor);
     }
-    try {
-      const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) window.location.reload();
-    } catch (error) {
-      console.error("Error en registro de granja:", error);
-    }
-  }
 
-  const handleEdit = async (e) => {
+    try {
+      const res = await fetch(
+        "https://backend-pongase-trucha.onrender.com/api/farms/",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) throw new Error("Error al crear granja");
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // 🔹 EDITAR
+  const handleEdit = async () => {
     if (!validate()) return;
 
-    const token = localStorage.getItem("access")
+    const token = localStorage.getItem("access");
+
     const payload = {
       name: nombre,
-      department: selectedDepartment,
-      city: selectedCity,
+      department: Number(selectedDepartment),
+      city: Number(selectedCity),
       address: direccion,
       total_area_ha: Number(totalArea),
     };
 
-    if (canAssignManager) {
-      payload.manager_id = Number(selectedManager);
-      payload.manager_name = managers.find(
-        m => m.manager_id === Number(selectedManager)
-      )?.name;
+    // 🔥 NUEVO
+    if (userRole === "Admin") {
+      payload.productor_id = Number(selectedProductor);
     }
-    try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/farm/${idProp}/`, {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) window.location.reload();
-    } catch (error) {
-      console.error("Error en la edición de la granja:", error);
-    }
-  }
 
-  if (loading) return null;
+    try {
+      const res = await fetch(
+        `https://backend-pongase-trucha.onrender.com/api/farms/${idProp}/`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!res.ok) throw new Error("Error al editar granja");
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <FieldGroup>
       {/* NAME */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-name">Nombre</FieldLabel>
+        <FieldLabel>Nombre</FieldLabel>
         <Input
-          id="fieldgroup-name"
-          placeholder="Fulano Detal"
           value={nombre}
-          onChange={(e) => setNombre(e.target.value)} />
+          onChange={(e) => setNombre(e.target.value)}
+        />
       </Field>
+
+      {/* 🔥 SOLO ADMIN */}
+      {userRole === "Admin" && (
+        <Field>
+          <FieldLabel>Productor</FieldLabel>
+          <Select
+            onValueChange={setSelectedProductor}
+            value={selectedProductor}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccione un productor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {productores.map((p) => (
+                  <SelectItem key={p.id} value={String(p.id)}>
+                    {p.name} {p.lastname}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
+      )}
 
       {/* DEPARTMENT */}
       <Field>
         <FieldLabel>Departamento</FieldLabel>
-        <Select onValueChange={setSelectedDepartment} value={selectedDepartment}>
+        <Select
+          onValueChange={setSelectedDepartment}
+          value={String(selectedDepartment)}
+        >
           <SelectTrigger>
-            <SelectValue placeholder="Escoja un departamento" />
+            <SelectValue placeholder="Seleccione" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {departamentos.map((departamento) => (
-                <SelectItem key={departamento.key} value={String(departamento.key)}>
-                  {departamento.label}
+              {departamentos.map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.name}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -233,15 +266,18 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
       {/* CITY */}
       <Field>
         <FieldLabel>Ciudad</FieldLabel>
-        <Select onValueChange={setSelectedCity} value={selectedCity}>
+        <Select
+          onValueChange={setSelectedCity}
+          value={String(selectedCity)}
+        >
           <SelectTrigger>
-            <SelectValue placeholder="Escoja una ciudad" />
+            <SelectValue placeholder="Seleccione" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {ciudades.map((ciudad) => (
-                <SelectItem key={ciudad} value={ciudad}>
-                  {ciudad}
+              {ciudades.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>
+                  {c.name}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -251,49 +287,29 @@ export function FarmRegisterForm({ op, idProp, nombreProp, departamentoProp, ciu
 
       {/* ADDRESS */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-address">Dirección</FieldLabel>
+        <FieldLabel>Dirección</FieldLabel>
         <Input
-          id="fieldgroup-address"
-          placeholder="Cll x #y - z"
           value={direccion}
-          onChange={(e) => setDireccion(e.target.value)} />
+          onChange={(e) => setDireccion(e.target.value)}
+        />
       </Field>
 
-      {/* TOTAL AREA HA */}
+      {/* AREA */}
       <Field>
-        <FieldLabel htmlFor="fieldgroup-area">Área total en hectáreas</FieldLabel>
+        <FieldLabel>Área (ha)</FieldLabel>
         <Input
-          id="fieldgroup-area"
           type="number"
-          placeholder="12.5"
           value={totalArea}
-          onChange={(e) => setArea(e.target.value)} />
+          onChange={(e) => setArea(e.target.value)}
+        />
       </Field>
-
-      {canAssignManager &&
-        (<Field>
-          <FieldLabel>Managers</FieldLabel>
-          <Select onValueChange={setSelectedManager} value={selectedManager}>
-            <SelectTrigger>
-              <SelectValue placeholder="Escoja un manager" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {managers.map((manager) => (
-                  <SelectItem key={manager.manager_id} value={String(manager.manager_id)}>
-                    {manager.name} {manager.lastname}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </Field>)
-      }
 
       <Field orientation="horizontal">
         <Button onClick={handleReset}>Borrar</Button>
-        <Button onClick={op === 1 ? handleSubmit : handleEdit}>Subir</Button>
+        <Button onClick={op === 1 ? handleSubmit : handleEdit}>
+          Guardar
+        </Button>
       </Field>
     </FieldGroup>
-  )
+  );
 }

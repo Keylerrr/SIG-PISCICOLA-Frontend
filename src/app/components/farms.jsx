@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Activity, Pencil, Trash, UserRound } from 'lucide-react';
+import { MapPin, Pencil, Trash, UserRound } from "lucide-react";
 import {
     Card,
     CardAction,
@@ -10,7 +10,7 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,206 +21,219 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { FarmRegisterForm } from "./farm_form";
-import { Toaster, toast } from "sonner"
+import { Toaster, toast } from "sonner";
 
-export function Farms({ search }) {
+export function Farms({ search = "" }) {
     const [granjas, setGranjas] = useState([]);
+    const [departamentos, setDepartamentos] = useState([]);
+
     const filteredGranjas = granjas.filter((g) =>
-        g.name.toLowerCase().includes((search || "").toLowerCase().trim())
+        g.name.toLowerCase().includes(search.toLowerCase().trim())
     );
 
+    // 🔹 FETCH GRANJAS
     useEffect(() => {
         async function fetchGranja() {
             try {
-                const token = localStorage.getItem("access")
+                const token = localStorage.getItem("access");
 
-                const res = await fetch("https://backend-pongase-trucha.onrender.com/farm/", {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
-                })
+                const res = await fetch(
+                    "https://backend-pongase-trucha.onrender.com/api/farms/",
+                    {
+                        headers: {
+                            "Authorization": `Bearer ${token}`,
+                        },
+                    }
+                );
 
-                if (!res.ok) throw new Error("Error al obtener la informacion de las granajas")
+                if (!res.ok) throw new Error("Error al obtener granjas");
 
                 const data = await res.json();
                 setGranjas(data);
             } catch (error) {
-                console.error(error)
+                console.error(error);
             }
         }
+
         fetchGranja();
     }, []);
 
-    const [departamentos, setDepartmentos] = useState([]);
+    // 🔹 FETCH DEPARTAMENTOS (SIN TOKEN)
     useEffect(() => {
-        const token = localStorage.getItem("access")
-        //DEPARTAMENTOS
-        fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json",
-            }
-        }).then((res) => {
-            if (!res.ok) throw new Error("Error al traer departamentos");
-            return res.json();
-        }).then((data) => {
-            setDepartmentos(data.departments);
-            console.log(data)
-        }).catch((err) => console.error(err));
+        fetch("https://backend-pongase-trucha.onrender.com/api/departments/")
+            .then((res) => {
+                if (!res.ok) throw new Error("Error al traer departamentos");
+                return res.json();
+            })
+            .then((data) => {
+                setDepartamentos(data);
+            })
+            .catch((err) => console.error(err));
     }, []);
 
+    // 🔹 DELETE
     const handleDelete = async (id) => {
         const token = localStorage.getItem("access");
+
         await toast.promise(
-            fetch(`https://backend-pongase-trucha.onrender.com/farm/${id}/`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(),
-            }).then(async (res) => {
-                let data = null;
-                try {
-                    data = await res.json();
-                } catch { }
-
-                if (!res.ok) {
-                    throw new Error(data?.message || "Error al eliminar granja");
+            fetch(
+                `https://backend-pongase-trucha.onrender.com/api/farms/${id}/`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
                 }
-
-                return data;
+            ).then((res) => {
+                if (!res.ok) {
+                    throw new Error("Error al eliminar granja");
+                }
             }),
             {
                 loading: "Eliminando granja...",
-                success: (data) => {
-                    setGranjas(prev => prev.filter(g => g.id !== id));
-                    return data?.message || "Granja eliminada correctamente";
+                success: () => {
+                    setGranjas((prev) => prev.filter((g) => g.id !== id));
+                    return "Granja eliminada correctamente";
                 },
-                error: (err) => err.message || "Error al eliminar granja",
+                error: (err) => err.message,
             }
         );
-    }
+    };
 
     return (
         <>
             <Toaster position="top-center" />
+
             <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
-                {filteredGranjas.length === 0 && search.trim() && (
+                {filteredGranjas.length === 0 && search && (
                     <p className="text-center col-span-full text-gray-500 text-lg">
                         No se encontraron granjas 😢
                     </p>
                 )}
-                {filteredGranjas.map((g) => (
-                    <div key={g.id}>
-                        <Card className="group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
-                            <CardHeader>
-                                <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
-                                    <a href={`/home/granja/${g.id}/`}>{g.name}</a>
-                                </CardTitle>
 
-                                <CardDescription className="gap-2 font-bold text-md flex items-center">
-                                    <MapPin /> {departamentos.find(d => d.key === g.department)?.label} - {g.city}
-                                </CardDescription>
+                {filteredGranjas.map((g) => {
+                    const departamento = departamentos.find(
+                        (d) => d.id === g.department
+                    );
 
-                                <CardAction>
-                                    <div className="flex items-center gap-3">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Pencil className="text-blue-600 cursor-pointer" />
-                                            </AlertDialogTrigger>
+                    return (
+                        <div key={g.id}>
+                            <Card className="group border hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all">
+                                <CardHeader>
+                                    <CardTitle className="text-2xl font-bold group-hover:text-blue-600">
+                                        <a href={`/home/granja/${g.id}/`}>
+                                            {g.name}
+                                        </a>
+                                    </CardTitle>
 
-                                            <AlertDialogContent className="sm:max-w-2xl">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        ¿Editar granja?
-                                                    </AlertDialogTitle>
+                                    <CardDescription className="flex items-center gap-2 font-bold">
+                                        <MapPin />
+                                        {departamento?.name || "—"} - {g.city}
+                                    </CardDescription>
 
-                                                    <AlertDialogDescription>
-                                                        Cambie los datos a continuación para editar la informacio de la granja{" "}
-                                                        <span className="font-bold">{g.name}.</span>
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <FarmRegisterForm
-                                                    op={0}
-                                                    idProp={g.id}
-                                                    nombreProp={g.name}
-                                                    departamentoProp={g.department}
-                                                    ciudadProp={g.city}
-                                                    direccionProp={g.address}
-                                                    areaProp={g.total_area_ha}
-                                                    managerProp={g.manager_id}
-                                                />
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>
-                                                        Cancelar
-                                                    </AlertDialogCancel>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                    <CardAction>
+                                        <div className="flex gap-3">
+                                            {/* EDIT */}
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Pencil className="text-blue-600 cursor-pointer" />
+                                                </AlertDialogTrigger>
 
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Trash className="text-red-600 cursor-pointer" />
-                                            </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            ¿Editar granja?
+                                                        </AlertDialogTitle>
 
-                                            <AlertDialogContent className="sm:max-w-2xl">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        ¿Eliminar granja?
-                                                    </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Edita{" "}
+                                                            <span className="font-bold">
+                                                                {g.name}
+                                                            </span>
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
 
-                                                    <AlertDialogDescription>
-                                                        Esta acción no se puede deshacer. Se eliminará la granja{" "}
-                                                        <span className="font-bold">{g.name}</span>.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
+                                                    <FarmRegisterForm
+                                                        op={0}
+                                                        idProp={g.id}
+                                                        nombreProp={g.name}
+                                                        departamentoProp={g.department}
+                                                        ciudadProp={g.city}
+                                                        direccionProp={g.address}
+                                                        areaProp={g.total_area_ha}
+                                                    />
 
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>
-                                                        Cancelar
-                                                    </AlertDialogCancel>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>
+                                                            Cancelar
+                                                        </AlertDialogCancel>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
 
-                                                    <AlertDialogAction
-                                                        onClick={() => handleDelete(g.id)}
-                                                        className="bg-red-600 hover:bg-red-700"
-                                                    >
-                                                        Eliminar
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                            {/* DELETE */}
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Trash className="text-red-600 cursor-pointer" />
+                                                </AlertDialogTrigger>
+
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            ¿Eliminar granja?
+                                                        </AlertDialogTitle>
+
+                                                        <AlertDialogDescription>
+                                                            Se eliminará{" "}
+                                                            <span className="font-bold">
+                                                                {g.name}
+                                                            </span>
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>
+                                                            Cancelar
+                                                        </AlertDialogCancel>
+
+                                                        <AlertDialogAction
+                                                            onClick={() =>
+                                                                handleDelete(g.id)
+                                                            }
+                                                            className="bg-red-600 hover:bg-red-700"
+                                                        >
+                                                            Eliminar
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </CardAction>
+                                </CardHeader>
+
+                                <CardContent className="flex gap-2 text-xl">
+                                    <UserRound />
+                                    {/* ya no hay manager_name */}
+                                    Usuario asociado
+                                </CardContent>
+
+                                <CardFooter>
+                                    <div>
+                                        <p className="text-2xl font-bold text-blue-600">
+                                            {g.total_area_ha} ha
+                                        </p>
+                                        <p className="text-md text-slate-500">
+                                            Área Total
+                                        </p>
                                     </div>
-                                </CardAction>
-                            </CardHeader>
-
-                            <CardContent className="flex gap-2 text-xl">
-                                <UserRound /> {g.manager_name}
-                            </CardContent>
-
-                            <CardFooter className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-2xl font-bold text-blue-600">
-                                        {g.total_area_ha} ha
-                                    </p>
-                                    <p className="text-md text-slate-500">
-                                        Area Total
-                                    </p>
-                                </div>
-
-                                {/* <div className="flex items-center gap-2 text-green-500">
-                                    <Activity /> Activo
-                                </div> */}
-                            </CardFooter>
-                        </Card>
-                    </div>
-                ))}
+                                </CardFooter>
+                            </Card>
+                        </div>
+                    );
+                })}
             </div>
         </>
     );
-};
+}
