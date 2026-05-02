@@ -32,21 +32,23 @@ export function Navbar() {
     try {
 
       const token = localStorage.getItem("access")
+      const refresh = localStorage.getItem("refresh");
 
-      const res = await fetch("https://backend-pongase-trucha.onrender.com/auth/logout/", {
+      const res = await fetch("https://backend-pongase-trucha.onrender.com/api/auth/logout/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          refresh: refresh,
+        })
       })
 
       if (!res.ok) {
         setIsLoading(false);
         throw new Error("Error al cerrar sesion")
       }
-
-      //console.log(res)
 
       localStorage.clear();
       router.push('/');
@@ -104,7 +106,7 @@ export function Navbar() {
                   {userData.name}
                 </p>
                 <p className="text-sm capitalize">
-                  {userData.role}
+                  {userData.role?.name}
                 </p>
               </div>
             </div>

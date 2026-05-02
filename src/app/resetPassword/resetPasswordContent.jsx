@@ -1,5 +1,7 @@
 "use client";
 
+//Falta validar el token, igual el backend lo valida internamente
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -26,7 +28,8 @@ export default function ResetPasswordContent() {
     const [pas1, setPas1] = useState('');
     const [pas2, setPas2] = useState('');
     const searchParams = useSearchParams();
-    const uuid = searchParams.get("uuid");
+    const uuid = searchParams.get("uuidb64");
+    const token = searchParams.get("token");
     const [success, setSuccess] = useState(false);
     useEffect(() => {
         if (success) {
@@ -56,15 +59,14 @@ export default function ResetPasswordContent() {
 
         try {
             const res = await fetch(
-                "https://backend-pongase-trucha.onrender.com/auth/reset-password/confirm/",
+                `https://backend-pongase-trucha.onrender.com/api/auth/reset-password/${uuid}/${token}/`,
                 {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        token: uuid,
-                        new_password: pas1
+                        new_password: pas1,
                     }),
                 }
             );
