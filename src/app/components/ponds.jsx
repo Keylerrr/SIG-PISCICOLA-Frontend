@@ -160,6 +160,7 @@ export function Ponds({ id, search, filter }) {
                                                     idFarmProp={id}
                                                     nombreProp={e.name}
                                                     estadoProp={e.status}
+                                                    typeProp={e.type}
                                                     capacidadProp={e.capacity}
                                                     areaProp={e.area}
                                                     volumenProp={e.volume}

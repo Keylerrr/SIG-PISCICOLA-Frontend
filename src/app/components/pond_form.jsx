@@ -37,7 +37,6 @@ export function PondRegisterForm({
   const [profundidad, setProfundidad] = useState(safe(profundidadProp))
   const [descripcion, setDescripcion] = useState(safe(descripcionProp));
   const [type, setType] = useState(safe(typeProp));  
-
   const handleReset = () => {
     setNombre("");
     setEstado("");
@@ -239,7 +238,7 @@ export function PondRegisterForm({
           min="0"
           value={capacidad} 
           onChange={(e) => setCapacidad(e.target.value)} 
-          placeholder="Ej: 1000.50"
+          placeholder="Ej: 1000"
           required
         />
       </Field>
