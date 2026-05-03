@@ -37,14 +37,12 @@ export function FarmRegisterForm({
   const [direccion, setDireccion] = useState(safe(direccionProp));
   const [totalArea, setArea] = useState(safe(areaProp));
 
-  // 🔥 NUEVO: roles
   const { flags, loading } = useFlags();
   const canAssignManager = flags?.farm?.assignManager;
 
   const [productores, setProductores] = useState([]);
   const [selectedProductor, setSelectedProductor] = useState("");
 
-  // 🔹 SI PUEDE ASIGNAR PRODUCTOR → TRAER PRODUCTORES
   useEffect(() => {
     if (!canAssignManager) return;
 
@@ -61,8 +59,6 @@ export function FarmRegisterForm({
       .catch(console.error);
   }, [canAssignManager]);
 
-
-  // 🔹 DEPARTAMENTOS (PUBLIC)
   useEffect(() => {
     fetch("https://backend-pongase-trucha.onrender.com/api/departments/")
       .then((res) => {
@@ -73,7 +69,6 @@ export function FarmRegisterForm({
       .catch(console.error);
   }, []);
 
-  // 🔹 CIUDADES (FILTRADAS)
   useEffect(() => {
     if (!selectedDepartment) return;
 
@@ -194,7 +189,6 @@ export function FarmRegisterForm({
 
   return (
     <FieldGroup>
-      {/* NAME */}
       <Field>
         <FieldLabel>Nombre</FieldLabel>
         <Input
@@ -203,7 +197,6 @@ export function FarmRegisterForm({
         />
       </Field>
 
-      {/* 🔥 SOLO SI PUEDE ASIGNAR MANAGER */}
       {canAssignManager && (
         <Field>
           <FieldLabel>Productor</FieldLabel>
@@ -227,7 +220,6 @@ export function FarmRegisterForm({
         </Field>
       )}
 
-      {/* DEPARTMENT */}
       <Field>
         <FieldLabel>Departamento</FieldLabel>
         <Select
@@ -249,7 +241,6 @@ export function FarmRegisterForm({
         </Select>
       </Field>
 
-      {/* CITY */}
       <Field>
         <FieldLabel>Ciudad</FieldLabel>
         <Select
@@ -271,7 +262,6 @@ export function FarmRegisterForm({
         </Select>
       </Field>
 
-      {/* ADDRESS */}
       <Field>
         <FieldLabel>Dirección</FieldLabel>
         <Input
@@ -280,7 +270,6 @@ export function FarmRegisterForm({
         />
       </Field>
 
-      {/* AREA */}
       <Field>
         <FieldLabel>Área (ha)</FieldLabel>
         <Input

@@ -1,7 +1,8 @@
 "use client"
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Droplet, RulerDimensionLine, Pencil, Trash, Activity } from 'lucide-react'
+import Link from "next/link";
 import {
     Card,
     CardAction,
@@ -22,15 +23,6 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import {
-  Field,
-  FieldContent,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldTitle,
-} from "@/components/ui/field"
-import { Switch } from "@/components/ui/switch"
 import { Toaster, toast } from "sonner"
 import { PondRegisterForm } from "./pond_form";
 
@@ -40,7 +32,7 @@ export function Ponds({ id, search, filter }) {
     const filteredEstanques = estanques.filter((e) =>
         e.name.toLowerCase().includes((search || "").toLowerCase().trim())
     );
-    
+
     const togglePondDisabled = (pondId) => {
         setDisabledPonds(prev => ({
             ...prev,
@@ -61,11 +53,10 @@ export function Ponds({ id, search, filter }) {
     };
 
     useEffect(() => {
-        console.log(id);
         async function fetchEstanques() {
             try {
                 const token = localStorage.getItem("access")
-                    const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/`, {                    
+                const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -77,12 +68,13 @@ export function Ponds({ id, search, filter }) {
                     const errorData = await res.clone().json().catch(() => ({}));
                     throw new Error(errorData.detail || errorData.message || `Error ${res.status} al obtener estanques`);
                 }
+                
                 const data = await res.json();
                 if (filter && filter !== "all") {
-                setEstanques(data.filter(pond => pond.status === filter));
-            } else {
-                setEstanques(data);
-            }
+                    setEstanques(data.filter(pond => pond.status === filter));
+                } else {
+                    setEstanques(data);
+                }
             } catch (error) {
                 console.error(error)
             }
@@ -137,18 +129,20 @@ export function Ponds({ id, search, filter }) {
                         <Card className={`group border border-gray-200 hover:border-blue-500 hover:shadow-lg ${disabledPonds[e.id] ? "bg-gray-200" : ""} hover:-translate-y-1 transition-all duration-200`}>
                             <CardHeader>
                                 <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
-                                    {e.name}
+                                    <Link href={`/home/granja/${id}/estanque/${e.id}/`}>
+                                        {e.name}
+                                    </Link>
                                 </CardTitle>
                                 <CardDescription className="gap-2 font-bold text-lg flex items-center">Código: {e.code}</CardDescription>
                                 <CardAction>
                                     <div className="flex items-center gap-3">
                                         <AlertDialog>
                                             {!disabledPonds[e.id] && (
-                                            <AlertDialogTrigger asChild>
-                                                <Pencil className={`cursor-pointer ${disabledPonds[e.id] ? "text-gray-400 cursor-not-allowed" : "text-blue-600"}`} />
-                                            </AlertDialogTrigger>)}
+                                                <AlertDialogTrigger asChild>
+                                                    <Pencil className={`cursor-pointer ${disabledPonds[e.id] ? "text-gray-400 cursor-not-allowed" : "text-blue-600"}`} />
+                                                </AlertDialogTrigger>)}
 
-                                            
+
                                             <AlertDialogContent className="sm:max-w-2xl">
                                                 <AlertDialogHeader>
                                                     <AlertDialogTitle>

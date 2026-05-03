@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Pencil, Trash, UserRound } from "lucide-react";
+import { MapPin, Pencil, Trash } from "lucide-react";
 import {
     Card,
     CardAction,
@@ -25,9 +25,8 @@ import {
 import { FarmRegisterForm } from "./farm_form";
 import { Toaster, toast } from "sonner";
 
-// 🔹 FUNCIÓN PARA REFRESCAR TOKEN
 async function refreshAccessToken() {
-    const refresh = localStorage.getItem("refresh");  // 👈 Tu refresh token guardado
+    const refresh = localStorage.getItem("refresh");
     if (!refresh) return null;
 
     try {
@@ -40,7 +39,6 @@ async function refreshAccessToken() {
         if (!res.ok) return null;
 
         const data = await res.json();
-        // 👇 Guardar nuevo access (y refresh si el backend lo rota)
         localStorage.setItem("access", data.access);
         if (data.refresh) localStorage.setItem("refresh", data.refresh);
         return data.access;
@@ -52,13 +50,12 @@ async function refreshAccessToken() {
 export function Farms({ search = "" }) {
     const [granjas, setGranjas] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
-    const [ciudades, setCiudades] = useState([]);  // 👈 Nuevo estado
+    const [ciudades, setCiudades] = useState([]);
 
     const filteredGranjas = granjas.filter((g) =>
         g.name.toLowerCase().includes(search.toLowerCase().trim())
     );
 
-    // 🔹 FETCH GRANJAS (con retry si token expira)
     useEffect(() => {
         async function fetchGranja() {
             try {
@@ -73,12 +70,10 @@ export function Farms({ search = "" }) {
                     }
                 );
 
-                // 👇 Si es 401, intentar refrescar y reintentar
                 if (res.status === 401) {
                     const newToken = await refreshAccessToken();
                     if (!newToken) throw new Error("Sesión expirada. Inicia sesión nuevamente.");
 
-                    // Reintentar con nuevo token
                     const retryRes = await fetch(
                         "https://backend-pongase-trucha.onrender.com/api/farms/",
                         {
@@ -95,10 +90,9 @@ export function Farms({ search = "" }) {
 
                     const data = await retryRes.json();
                     setGranjas(data);
-                    return;  // 👈 Salir temprano
+                    return;
                 }
 
-                // Manejo normal de errores
                 if (!res.ok) {
                     const errorData = await res.clone().json().catch(() => ({}));
                     throw new Error(errorData.detail || errorData.message || `Error ${res.status}: ${res.statusText}`);
@@ -108,11 +102,8 @@ export function Farms({ search = "" }) {
                 setGranjas(data);
             } catch (error) {
                 console.error(error);
-                // 👇 Opcional: mostrar toast si el token no se pudo refrescar
                 if (error.message === "Sesión expirada. Inicia sesión nuevamente.") {
                     toast.error("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
-                    // Opcional: redirigir a login
-                    // window.location.href = "/login";
                 }
             }
         }
@@ -120,7 +111,6 @@ export function Farms({ search = "" }) {
         fetchGranja();
     }, []);
 
-    // 🔹 FETCH DEPARTAMENTOS (SIN TOKEN)
     useEffect(() => {
         fetch("https://backend-pongase-trucha.onrender.com/api/departments/")
             .then((res) => {
@@ -133,7 +123,6 @@ export function Farms({ search = "" }) {
             .catch((err) => console.error(err));
     }, []);
 
-            // 🔹 FETCH CIUDADES
             useEffect(() => {
                 fetch("https://backend-pongase-trucha.onrender.com/api/cities/")
                     .then((res) => {
@@ -146,8 +135,6 @@ export function Farms({ search = "" }) {
                     .catch((err) => console.error(err));
             }, []);
 
-    // 🔹 DELETE
-    // 🔹 DELETE (con manejo robusto de errores)
 const handleDelete = async (id) => {
     const token = localStorage.getItem("access");
 
@@ -160,12 +147,9 @@ const handleDelete = async (id) => {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
-                    // 👇 DELETE no lleva body, eliminar esta línea si existe:
-                    // body: JSON.stringify(), 
                 }
             );
 
-            // 👇 Manejo de error con mensaje real del backend
             if (!res.ok) {
                 const errorData = await res.clone().json().catch(() => ({}));
                 throw new Error(
@@ -175,7 +159,6 @@ const handleDelete = async (id) => {
                 );
             }
 
-            // 204 No Content es respuesta exitosa de DELETE
             return { message: "Granja eliminada correctamente" };
         })(),
         {
@@ -185,7 +168,6 @@ const handleDelete = async (id) => {
                 return data?.message || "Granja eliminada correctamente";
             },
             error: (err) => {
-                // 👇 Si es error de token, sugerir re-login
                 if (err.message.includes("token") || err.message.includes("401")) {
                     return "Tu sesión ha expirado. Recarga la página.";
                 }
@@ -228,7 +210,6 @@ const handleDelete = async (id) => {
 
                                     <CardAction>
                                         <div className="flex gap-3">
-                                            {/* EDIT */}
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Pencil className="text-blue-600 cursor-pointer" />
@@ -266,7 +247,6 @@ const handleDelete = async (id) => {
                                                 </AlertDialogContent>
                                             </AlertDialog>
 
-                                            {/* DELETE */}
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild>
                                                     <Trash className="text-red-600 cursor-pointer" />

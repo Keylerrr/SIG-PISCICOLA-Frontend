@@ -6,7 +6,7 @@ import { ArrowLeft, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Field, FieldLabel } from "@/components/ui/field"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { PondRegisterForm } from "@/app/components/pond_form";
