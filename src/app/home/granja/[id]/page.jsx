@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
@@ -34,7 +35,8 @@ export default function Granja({ params }) {
     const [departamentos, setDepartmentos] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
-    const [ciudades, setCiudades] = useState([]);  // 👈 Nuevo estado para ciudades
+    const [ciudades, setCiudades] = useState([]);
+    const router = useRouter();
 
     useEffect(() => {
         const token = localStorage.getItem("access")
@@ -72,7 +74,6 @@ export default function Granja({ params }) {
         }).catch((err) => console.error(err));
     }, []);
 
-        // 🔥 TRAER CIUDADES
         useEffect(() => {
             fetch("https://backend-pongase-trucha.onrender.com/api/cities/", {
                 headers: {
@@ -84,7 +85,7 @@ export default function Granja({ params }) {
                 return res.json();
             })
             .then((data) => {
-                setCiudades(data);  // 👈 La API devuelve array directo
+                setCiudades(data);
             })
             .catch((err) => console.error(err));
         }, []);
@@ -112,9 +113,19 @@ export default function Granja({ params }) {
             </div>
             <div className="px-4 sm:px-6 lg:px-8">
                 <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm p-6 space-y-6">
-                    <h1 className="text-4xl font-bold">
-                        {granja.name}
-                    </h1>
+                    <div className="flex justify-between items-start">
+                        <h1 className="text-4xl font-bold">
+                            {granja.name}
+                        </h1>
+
+                        <Button
+                            onClick={() => router.push(`/home/granja/${id}/granja_trabajadores`)}
+                            className="flex items-center gap-2 bg-[#6ec3b1] text-white px-4 py-2 rounded-lg"
+                        >
+                            <UserCog className="w-5 h-5" />
+                            Administrar Trabajadores
+                        </Button>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
                         <div className="bg-slate-50 p-4 rounded-lg">
                             Departamento <br />
@@ -128,7 +139,7 @@ export default function Granja({ params }) {
                         </div>
 
                         <div className="bg-slate-50 p-4 rounded-lg">
-                            Area Total <br />
+                            Área Total <br />
                             <p className="font-bold">{granja.total_area_ha} ha</p>
                         </div>
                     </div>
