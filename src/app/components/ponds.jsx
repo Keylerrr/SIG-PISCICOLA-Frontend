@@ -215,7 +215,7 @@ export function Ponds({ id, search, filter }) {
                             </CardHeader>
                             <CardContent className="text-lg font-bold">
                                 <p className="flex gap-2"><Droplet /> Volumen: <span className="text-blue-500">{e.volume} m³</span></p>
-                                <p className="flex gap-2"><RulerDimensionLine /> Área: <span className="text-blue-500">{e.area} m²</span></p>
+                                <p className="flex gap-2"><RulerDimensionLine /> Área: <span className="text-blue-500">{e.area} ha</span></p>
                             </CardContent>
                             <CardFooter className="flex items-center justify-between gap-4">
                                 <p className={`whitespace-nowrap capitalize px-3 py-1 rounded-full text-sm font-semibold

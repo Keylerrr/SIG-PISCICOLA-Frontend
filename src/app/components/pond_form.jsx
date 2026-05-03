@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -23,9 +23,10 @@ export function PondRegisterForm({
   areaProp,
   volumenProp,
   profundidadProp,
-  descripcionProp
+  descripcionProp,
+  typeProp  
 }) {
-  // 🔥 SAFE VALUES (evita null)
+
   const safe = (v) => v ?? "";
 
   const [nombre, setNombre] = useState(safe(nombreProp))
@@ -35,8 +36,8 @@ export function PondRegisterForm({
   const [volumen, setVolumen] = useState(safe(volumenProp))
   const [profundidad, setProfundidad] = useState(safe(profundidadProp))
   const [descripcion, setDescripcion] = useState(safe(descripcionProp));
+  const [type, setType] = useState(safe(typeProp));  
 
-  //RESET
   const handleReset = () => {
     setNombre("");
     setEstado("");
@@ -45,9 +46,9 @@ export function PondRegisterForm({
     setVolumen("");
     setProfundidad("");
     setDescripcion("");
+    setType("");
   };
 
-  // VALIDATION
   const validate = () => {
     if (!nombre.trim()) {
       alert("El nombre no puede estar vacío.");
@@ -57,9 +58,15 @@ export function PondRegisterForm({
       alert("Debe seleccionar un estado válido.");
       return false;
     }
-    const cap = parseInt(capacidad);
+
+    const validTypes = ["dirt", "concrete", "geomembrane", "floating_cage", "raceway", "round_tank"];
+    if (!validTypes.includes(type)) {
+      alert("Debe seleccionar un tipo de estanque válido.");
+      return false;
+    }
+    const cap = parseFloat(capacidad);
     if (isNaN(cap) || cap <= 0) {
-      alert("La capacidad debe ser un número entero positivo mayor a 0.");
+      alert("La capacidad debe ser un número positivo mayor a 0.");
       return false;
     }
     const ar = parseFloat(area);
@@ -77,32 +84,32 @@ export function PondRegisterForm({
       alert("La profundidad debe ser un número positivo válido.");
       return false;
     }
-    if (!descripcion.trim()) {
-      alert("La descripción no puede estar vacía.");
+
+    if (descripcion && descripcion.trim().length > 500) {
+      alert("La descripción no puede superar los 500 caracteres.");
       return false;
     }
     return true;
   };
 
-  // SUBMIT
   const handleSubmit = async () => {
     if (!validate()) return;
 
     const token = localStorage.getItem("access");
 
     const payload = {
-      farm: idFarmProp,
-      name: nombre,
+      name: nombre.trim(),
       status: estado,
-      capacity: Number(capacidad),
-      area: Number(area),
-      volume: Number(volumen),
-      depth: Number(profundidad),
-      description: descripcion,
+      type: type,  
+      capacity: parseFloat(capacidad),
+      area: parseFloat(area),
+      volume: parseFloat(volumen),
+      depth: parseFloat(profundidad),
+      description: descripcion.trim(),  
     };
 
     try {
-      const res = await fetch("https://backend-pongase-trucha.onrender.com/ponds/", {
+      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${idFarmProp}/ponds/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -111,30 +118,43 @@ export function PondRegisterForm({
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) window.location.reload();
+      if (!res.ok) {
+        const errorData = await res.clone().json().catch(() => ({}));
+        const errorMsg = 
+          errorData.detail || 
+          errorData.name?.[0] || 
+          errorData.type?.[0] ||
+          errorData.non_field_errors?.[0] || 
+          `Error ${res.status}: ${res.statusText}`;
+        alert(errorMsg);
+        return;
+      }
+
+      window.location.reload();
     } catch (err) {
       console.error("Error registro:", err);
+      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 
-  // EDIT
   const handleEdit = async () => {
     if (!validate()) return;
 
     const token = localStorage.getItem("access");
 
     const payload = {
-      name: nombre,
+      name: nombre.trim(),
       status: estado,
-      capacity: Number(capacidad),
-      area: Number(area),
-      volume: Number(volumen),
-      depth: Number(profundidad),
-      description: descripcion,
+      type: type,  
+      capacity: parseFloat(capacidad),
+      area: parseFloat(area),
+      volume: parseFloat(volumen),
+      depth: parseFloat(profundidad),
+      description: descripcion.trim(),
     };
 
     try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/ponds/${idProp}/`, {
+      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${idFarmProp}/ponds/${idProp}/`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -143,18 +163,35 @@ export function PondRegisterForm({
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) window.location.reload();
+      if (!res.ok) {
+        const errorData = await res.clone().json().catch(() => ({}));
+        const errorMsg = 
+          errorData.detail || 
+          errorData.name?.[0] || 
+          errorData.type?.[0] ||
+          errorData.non_field_errors?.[0] || 
+          `Error ${res.status}: ${res.statusText}`;
+        alert(errorMsg);
+        return;
+      }
+
+      window.location.reload();
     } catch (err) {
       console.error("Error edición:", err);
+      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 
   return (
     <FieldGroup>
-
       <Field>
         <FieldLabel>Nombre del Estanque</FieldLabel>
-        <Input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+        <Input 
+          value={nombre} 
+          onChange={(e) => setNombre(e.target.value)} 
+          placeholder="Ej: Estanque Principal"
+          required
+        />
       </Field>
 
       <Field>
@@ -165,55 +202,109 @@ export function PondRegisterForm({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem key="active" value="active">
-                Activo
-              </SelectItem>
-              <SelectItem key="inactive" value="inactive">
-                Inactivo
-              </SelectItem>
-              <SelectItem key="in_use" value="in_use">
-                En uso
-              </SelectItem>
-              <SelectItem key="cleaning" value="cleaning">
-                En limpieza
-              </SelectItem>
+              <SelectItem value="active">Activo</SelectItem>
+              <SelectItem value="inactive">Inactivo</SelectItem>
+              <SelectItem value="in_use">En uso</SelectItem>
+              <SelectItem value="cleaning">En limpieza</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </Field>
+
+      {}
+      <Field>
+        <FieldLabel>Tipo de Estanque</FieldLabel>
+        <Select onValueChange={setType} value={type}>
+          <SelectTrigger>
+            <SelectValue placeholder="Escoja un tipo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="geomembrane">Geomembrana</SelectItem>
+              <SelectItem value="concrete">Concreto</SelectItem>
+              <SelectItem value="dirt">Tierra</SelectItem>
+              <SelectItem value="floating_cage">Jaula flotante</SelectItem>
+              <SelectItem value="raceway">Canal de flujo</SelectItem>
+              <SelectItem value="round_tank">Tanque circular</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
       </Field>
 
       <Field>
-        <FieldLabel>Capacidad</FieldLabel>
-        <Input type="number" value={capacidad} onChange={(e) => setCapacidad(e.target.value)} />
+        <FieldLabel>Capacidad (# peces)</FieldLabel>
+        <Input 
+          type="number" 
+          step="0.01"
+          min="0"
+          value={capacidad} 
+          onChange={(e) => setCapacidad(e.target.value)} 
+          placeholder="Ej: 1000.50"
+          required
+        />
       </Field>
 
       <Field>
-        <FieldLabel>Área</FieldLabel>
-        <Input type="number" value={area} onChange={(e) => setArea(e.target.value)} />
+        <FieldLabel>Área (ha)</FieldLabel>
+        <Input 
+          type="number" 
+          step="0.01"
+          min="0"
+          value={area} 
+          onChange={(e) => setArea(e.target.value)} 
+          placeholder="Ej: 500.25"
+          required
+        />
       </Field>
 
       <Field>
-        <FieldLabel>Volumen</FieldLabel>
-        <Input type="number" value={volumen} onChange={(e) => setVolumen(e.target.value)} />
+        <FieldLabel>Volumen (m³)</FieldLabel>
+        <Input 
+          type="number" 
+          step="0.01"
+          min="0"
+          value={volumen} 
+          onChange={(e) => setVolumen(e.target.value)} 
+          placeholder="Ej: 1200.00"
+          required
+        />
       </Field>
 
       <Field>
-        <FieldLabel>Profundidad</FieldLabel>
-        <Input type="number" value={profundidad} onChange={(e) => setProfundidad(e.target.value)} />
+        <FieldLabel>Profundidad (m)</FieldLabel>
+        <Input 
+          type="number" 
+          step="0.01"
+          min="0"
+          value={profundidad} 
+          onChange={(e) => setProfundidad(e.target.value)} 
+          placeholder="Ej: 2.40"
+          required
+        />
       </Field>
 
       <Field>
-        <FieldLabel>Descripción</FieldLabel>
-        <Input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+        <FieldLabel>Descripción (opcional)</FieldLabel>
+        <Input 
+          value={descripcion} 
+          onChange={(e) => setDescripcion(e.target.value)} 
+          placeholder="Detalles adicionales del estanque..."
+          maxLength={500}
+        />
       </Field>
 
-      <Field orientation="horizontal">
-        <Button onClick={handleReset}>Borrar</Button>
-        <Button onClick={op === 1 ? handleSubmit : handleEdit}>
+      <Field orientation="horizontal" className="justify-end gap-3 mt-4">
+        <Button type="button" variant="outline" onClick={handleReset}>
+          Borrar
+        </Button>
+        <Button 
+          type="button" 
+          onClick={op === 1 ? handleSubmit : handleEdit}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
           {op === 1 ? "Crear" : "Actualizar"}
         </Button>
       </Field>
-
     </FieldGroup>
   );
 }
