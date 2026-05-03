@@ -25,6 +25,30 @@ import {
 import { FarmRegisterForm } from "./farm_form";
 import { Toaster, toast } from "sonner";
 
+// 🔹 FUNCIÓN PARA REFRESCAR TOKEN
+async function refreshAccessToken() {
+    const refresh = localStorage.getItem("refresh");  // 👈 Tu refresh token guardado
+    if (!refresh) return null;
+
+    try {
+        const res = await fetch("https://backend-pongase-trucha.onrender.com/api/auth/token/refresh/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh }),
+        });
+
+        if (!res.ok) return null;
+
+        const data = await res.json();
+        // 👇 Guardar nuevo access (y refresh si el backend lo rota)
+        localStorage.setItem("access", data.access);
+        if (data.refresh) localStorage.setItem("refresh", data.refresh);
+        return data.access;
+    } catch {
+        return null;
+    }
+}
+
 export function Farms({ search = "" }) {
     const [granjas, setGranjas] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
@@ -34,11 +58,11 @@ export function Farms({ search = "" }) {
         g.name.toLowerCase().includes(search.toLowerCase().trim())
     );
 
-    // 🔹 FETCH GRANJAS
+    // 🔹 FETCH GRANJAS (con retry si token expira)
     useEffect(() => {
         async function fetchGranja() {
             try {
-                const token = localStorage.getItem("access");
+                let token = localStorage.getItem("access");
 
                 const res = await fetch(
                     "https://backend-pongase-trucha.onrender.com/api/farms/",
@@ -49,12 +73,47 @@ export function Farms({ search = "" }) {
                     }
                 );
 
-                if (!res.ok) throw new Error("Error al obtener granjas");
+                // 👇 Si es 401, intentar refrescar y reintentar
+                if (res.status === 401) {
+                    const newToken = await refreshAccessToken();
+                    if (!newToken) throw new Error("Sesión expirada. Inicia sesión nuevamente.");
+
+                    // Reintentar con nuevo token
+                    const retryRes = await fetch(
+                        "https://backend-pongase-trucha.onrender.com/api/farms/",
+                        {
+                            headers: {
+                                "Authorization": `Bearer ${newToken}`,
+                            },
+                        }
+                    );
+
+                    if (!retryRes.ok) {
+                        const errorData = await retryRes.clone().json().catch(() => ({}));
+                        throw new Error(errorData.detail || errorData.message || `Error ${retryRes.status}`);
+                    }
+
+                    const data = await retryRes.json();
+                    setGranjas(data);
+                    return;  // 👈 Salir temprano
+                }
+
+                // Manejo normal de errores
+                if (!res.ok) {
+                    const errorData = await res.clone().json().catch(() => ({}));
+                    throw new Error(errorData.detail || errorData.message || `Error ${res.status}: ${res.statusText}`);
+                }
 
                 const data = await res.json();
                 setGranjas(data);
             } catch (error) {
                 console.error(error);
+                // 👇 Opcional: mostrar toast si el token no se pudo refrescar
+                if (error.message === "Sesión expirada. Inicia sesión nuevamente.") {
+                    toast.error("Tu sesión ha expirado. Por favor inicia sesión nuevamente.");
+                    // Opcional: redirigir a login
+                    // window.location.href = "/login";
+                }
             }
         }
 
@@ -88,33 +147,53 @@ export function Farms({ search = "" }) {
             }, []);
 
     // 🔹 DELETE
-    const handleDelete = async (id) => {
-        const token = localStorage.getItem("access");
+    // 🔹 DELETE (con manejo robusto de errores)
+const handleDelete = async (id) => {
+    const token = localStorage.getItem("access");
 
-        await toast.promise(
-            fetch(
+    await toast.promise(
+        (async () => {
+            const res = await fetch(
                 `https://backend-pongase-trucha.onrender.com/api/farms/${id}/`,
                 {
                     method: "DELETE",
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
+                    // 👇 DELETE no lleva body, eliminar esta línea si existe:
+                    // body: JSON.stringify(), 
                 }
-            ).then((res) => {
-                if (!res.ok) {
-                    throw new Error("Error al eliminar granja");
-                }
-            }),
-            {
-                loading: "Eliminando granja...",
-                success: () => {
-                    setGranjas((prev) => prev.filter((g) => g.id !== id));
-                    return "Granja eliminada correctamente";
-                },
-                error: (err) => err.message,
+            );
+
+            // 👇 Manejo de error con mensaje real del backend
+            if (!res.ok) {
+                const errorData = await res.clone().json().catch(() => ({}));
+                throw new Error(
+                    errorData.detail || 
+                    errorData.message || 
+                    `Error ${res.status}: ${res.statusText}`
+                );
             }
-        );
-    };
+
+            // 204 No Content es respuesta exitosa de DELETE
+            return { message: "Granja eliminada correctamente" };
+        })(),
+        {
+            loading: "Eliminando granja...",
+            success: (data) => {
+                setGranjas((prev) => prev.filter((g) => g.id !== id));
+                return data?.message || "Granja eliminada correctamente";
+            },
+            error: (err) => {
+                // 👇 Si es error de token, sugerir re-login
+                if (err.message.includes("token") || err.message.includes("401")) {
+                    return "Tu sesión ha expirado. Recarga la página.";
+                }
+                return err.message || "Error al eliminar granja";
+            },
+        }
+    );
+};
 
     return (
         <>

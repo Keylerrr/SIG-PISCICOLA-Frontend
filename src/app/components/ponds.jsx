@@ -65,7 +65,7 @@ export function Ponds({ id, search, filter }) {
         async function fetchEstanques() {
             try {
                 const token = localStorage.getItem("access")
-                const res = await fetch(`https://backend-pongase-trucha.onrender.com/ponds/?farm_id=${id}&status=${filter}`, {
+                    const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/`, {                    
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -73,26 +73,32 @@ export function Ponds({ id, search, filter }) {
                     },
                 })
 
-                if (!res.ok) throw new Error("Error al obtener los estanques")
+                if (!res.ok) {
+                    const errorData = await res.clone().json().catch(() => ({}));
+                    throw new Error(errorData.detail || errorData.message || `Error ${res.status} al obtener estanques`);
+                }
                 const data = await res.json();
+                if (filter && filter !== "all") {
+                setEstanques(data.filter(pond => pond.status === filter));
+            } else {
                 setEstanques(data);
+            }
             } catch (error) {
                 console.error(error)
             }
         }
         fetchEstanques();
-    }, [filter]);
+    }, [id, filter]);
 
     const handleDelete = async (ide) => {
         const token = localStorage.getItem("access");
         await toast.promise(
-            fetch(`https://backend-pongase-trucha.onrender.com/ponds/${ide}/`, {
+            fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/${ide}/`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify(),
             }).then(async (res) => {
                 let data = null;
                 try {
@@ -100,7 +106,8 @@ export function Ponds({ id, search, filter }) {
                 } catch { }
 
                 if (!res.ok) {
-                    throw new Error(data?.message || "Error al eliminar estanque");
+                    const errorMsg = data?.detail || data?.message || data?.non_field_errors?.[0] || `Error ${res.status} al eliminar`;
+                    throw new Error(errorMsg);
                 }
 
                 return data;
