@@ -4,38 +4,40 @@ import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
 import { useRouter } from "next/navigation";
-import { ArrowLeft, UserCog } from "lucide-react";
-import { Button } from "@/components/ui/button"
-import { Plus, Loader2 } from "lucide-react";
-import { Ponds } from "@/app/components/ponds";
-import { Field, FieldLabel } from "@/components/ui/field"
-import { ButtonGroup } from "@/components/ui/button-group"
-import { Input } from "@/components/ui/input"
-import { PondRegisterForm } from "@/app/components/pond_form";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function Estanque({ params }) {
 
     const { estanque_id } = useParams(params);
     const { id } = useParams(params);
     const [estanque, setEstanque] = useState([]);
+    const statusBg = {
+        active: "bg-green-100",
+        inactive: "bg-red-100",
+        in_use: "bg-blue-100",
+        cleaning: "bg-yellow-100",
+    };
+    const statusFont = {
+        active: "text-green-700",
+        inactive: "text-red-700",
+        in_use: "text-blue-700",
+        cleaning: "text-yellow-700",
+    };
+    const statusLabels = {
+        active: "Activo",
+        inactive: "Inactivo",
+        in_use: "En Uso",
+        cleaning: "En Limpieza",
+    };
+    const typeLabels = {
+        dirt: "Tierra",
+        concrete: "Concreto",
+        geomembrane: "Geomembrana",
+        floating_cage: "Jaula flotante",
+        raceway: "Canal",
+        round_tank: "Tanque circular",
+    };
 
     useEffect(() => {
         async function fetchEstanque() {
@@ -93,46 +95,34 @@ export default function Estanque({ params }) {
                             {estanque.name}
                         </h1>
                     </div>
+                    {estanque.description?.length>0 && (<p className="text-xl">{estanque.description}</p>)}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
-                        {Object.entries(estanque)
-                            .filter(([key]) => !['id', 'name', 'department', 'city', 'address', 'created_at', 'updated_at'].includes(key))
-                            .map(([key, value]) => {
-                                const labels = {
-                                    total_area_ha: "Área Total",
-                                    water_source: "Fuente de Agua",
-                                    status: "Estado",
-                                    capacity: "Capacidad",
-                                    area: "Área",
-                                    volume: "Volumen",
-                                    depth: "Profundidad",
-                                    description: "Descripción",
-                                    code: "Código"
-                                };
-                                const label = labels[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-                                let displayValue = value;
-                                if (key === 'status') {
-                                    const statusLabels = {
-                                        active: "Activo",
-                                        inactive: "Inactivo",
-                                        in_use: "En Uso",
-                                        cleaning: "En Limpieza"
-                                    };
-                                    displayValue = statusLabels[value] || value;
-                                }
-
-                                if (key === 'total_area_ha') {
-                                    displayValue = `${value} ha`;
-                                }
-
-                                return (
-                                    <div key={key} className="bg-slate-50 p-4 rounded-lg">
-                                        {label} <br />
-                                        <p className="font-bold">{displayValue || "—"}</p>
-                                    </div>
-                                );
-                            })
-                        }
+                        <div className={`p-4 rounded-lg 
+                            ${statusBg[estanque.status] || "bg-gray-100 text-gray-700"}`}>                            Estado <br />
+                            <p className={` font-bold
+                                        ${statusFont[estanque.status]}`}>
+                                {statusLabels[estanque.status]}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            Codigo <br />
+                            <p className="font-bold">{estanque.code}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            Area <br />
+                            <p className="font-bold">{estanque.area} m²</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            Capadidad de peces<br />
+                            <p className="font-bold">{estanque.capacity}</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            Profundidad <br />
+                            <p className="font-bold">{estanque.depth} m</p>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            Tipo <br />
+                            <p className="font-bold">{typeLabels[estanque.type]}</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -142,6 +142,16 @@ export default function Granja({ params }) {
                             Área Total <br />
                             <p className="font-bold">{granja.total_area_ha} ha</p>
                         </div>
+
+                        <div className="bg-slate-50 p-4 rounded-lg">
+                            Direccion <br />
+                            <p className="font-bold">{granja.address}</p>
+                        </div>
+
+                        {granja.water_source?.length>0 && (<div className="bg-slate-50 p-4 rounded-lg">
+                            Fuente hídrica <br />
+                            <p className="font-bold">{granja.water_source}</p>
+                        </div>)}
                     </div>
                 </div>
             </div>
