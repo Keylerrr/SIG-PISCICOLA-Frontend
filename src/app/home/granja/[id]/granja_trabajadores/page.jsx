@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { use } from "react";
-import { ArrowLeft, UserCog, Plus } from "lucide-react";
+import { ArrowLeft, UserCog, Plus, UserPen, NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -149,15 +149,16 @@ export default function GranjaUsuarios({ params }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 space-y-6">
+    <div className="min-h-screen bg-slate-50">
+        <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
       
       {/* VOLVER */}
       <button
         onClick={() => router.back()}
-        className="flex items-center gap-2 text-slate-600 hover:text-slate-800"
+        className="flex items-center gap-2 text-slate-600 hover:text-slate-800 hover:cursor-pointer"
       >
         <ArrowLeft className="w-5 h-5" />
-        Volver a la Vista de Estanques
+        Volver a la Vista de la Granja
       </button>
 
       {/* HEADER */}
@@ -167,8 +168,8 @@ export default function GranjaUsuarios({ params }) {
         {/* CREAR ROL */}
         <Dialog open={openRole} onOpenChange={setOpenRole}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-[#6ec3b1] text-white">
-              <Plus className="w-4 h-4" />
+            <Button className="flex items-center gap-2 bg-[#6ec3b1] text-white hover:cursor-pointer">
+              <NotebookPen className="w-4 h-4" />
               Crear Rol
             </Button>
           </DialogTrigger>
@@ -187,6 +188,7 @@ export default function GranjaUsuarios({ params }) {
               />
 
               <div className="space-y-2 text-sm">
+                <span className="block mb-2 font-medium">Permisos Concedidos:</span>
                 {["VIEW", "EDIT", "DELETE", "MANAGE_USERS", "MANAGE_ROLES"].map((perm) => (
                   <label key={perm} className="flex items-center gap-2">
                     <input
@@ -205,7 +207,7 @@ export default function GranjaUsuarios({ params }) {
                 ))}
               </div>
 
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full hover:cursor-pointer">
                 Crear
               </Button>
             </form>
@@ -221,10 +223,10 @@ export default function GranjaUsuarios({ params }) {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b">
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Rol</th>
-                <th>Acción</th>
+                <th className="py-3">Nombre</th>
+                <th className="py-3">Email</th>
+                <th className="py-3">Rol</th>
+                <th className="py-3">Acción</th>
               </tr>
             </thead>
 
@@ -233,20 +235,20 @@ export default function GranjaUsuarios({ params }) {
                 .filter(w => !w.is_owner)
                 .map((w) => (
                   <tr key={w.user.id} className="border-b">
-                    <td>{w.user.name} {w.user.lastname}</td>
-                    <td>{w.user.email}</td>
-                    <td>
+                    <td className="py-3">{w.user.name} {w.user.lastname}</td>
+                    <td className="py-3">{w.user.email}</td>
+                    <td className="py-3">
                       {roles.find(r => r.id === w.farm_role)?.name || "Sin rol"}
                     </td>
-                    <td>
+                    <td className="py-3">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button
+                          <Button className="hover:cursor-pointer"
                             size="sm"
                             onClick={() => setSelectedUser(w.user.id)}
                           >
-                            <UserCog className="w-4 h-4 mr-1" />
-                            Asignar
+                            <UserPen className="w-4 h-4 mr-1" />
+                            Asignar Rol
                           </Button>
                         </DialogTrigger>
 
@@ -269,7 +271,7 @@ export default function GranjaUsuarios({ params }) {
                             </SelectContent>
                           </Select>
 
-                          <Button className="mt-4" onClick={handleAssignRole}>
+                          <Button className="mt-4 hover:cursor-pointer" onClick={handleAssignRole}>
                             Guardar
                           </Button>
                         </DialogContent>
@@ -280,6 +282,7 @@ export default function GranjaUsuarios({ params }) {
             </tbody>
           </table>
         )}
+      </div>
       </div>
     </div>
   );
