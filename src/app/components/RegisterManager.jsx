@@ -19,18 +19,18 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export function RegisterManager() {
-  const [managers, setManagers] = useState([]);
+  const [productores, setProductores] = useState([]);
 
   const [correo, setCorreo] = useState("");
   const [open, setOpen] = useState(false);
 
-  const fetchManagers = async () => {
+  const fetchProductores = async () => {
     const token = localStorage.getItem("access");
     if (!token) return;
 
     try {
       const res = await fetch(
-        "https://backend-pongase-trucha.onrender.com/api/managers/",
+        "https://backend-pongase-trucha.onrender.com/api/users/productor/",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -41,15 +41,15 @@ export function RegisterManager() {
       if (!res.ok) throw new Error();
 
       const data = await res.json();
-      setManagers(data);
+      setProductores(data);
     } catch (err) {
       console.error(err);
-      toast.error("Error cargando gerentes");
+      toast.error("Error cargando productores");
     }
   };
 
   useEffect(() => {
-    fetchManagers();
+    fetchProductores();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -82,12 +82,12 @@ export function RegisterManager() {
           throw new Error(data?.message || "Error al guardar");
         }
 
-        await fetchManagers();
+        await fetchProductores();
 
         return data;
       }),
       {
-        loading: "Creando gerente...",
+        loading: "Creando Productor...",
         success: () => {
           setCorreo("");
           setOpen(false);
@@ -102,7 +102,7 @@ export function RegisterManager() {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">Gestión de Gerentes</h1>
+        <h1 className="text-xl font-bold">Gestión de Productores</h1>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -114,7 +114,7 @@ export function RegisterManager() {
 
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Agregar Gerente</DialogTitle>
+              <DialogTitle>Agregar Productor</DialogTitle>
             </DialogHeader>
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -145,16 +145,16 @@ export function RegisterManager() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {managers.length === 0 ? (
-          <p className="text-gray-500">No hay gerentes aún</p>
+        {productores.length === 0 ? (
+          <p className="text-gray-500">No hay productores aún</p>
         ) : (
-          managers.map((m) => (
-            <div key={m.manager_id} className="border rounded-lg p-4 group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+          productores.map((p) => (
+            <div key={p.id} className="border rounded-lg p-4 group border border-gray-200 hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
               <p className="font-bold group-hover:text-blue-600">
-                {m.name} {m.lastname}
+                {p.name} {p.lastname}
               </p>
-              <p className="text-sm text-gray-500">{m.email}</p>
-              <p className="text-sm">{m.phone}</p>
+              <p className="text-sm text-gray-500">{p.email}</p>
+              <p className="text-sm">{p.phone}</p>
             </div>
           ))
         )}
