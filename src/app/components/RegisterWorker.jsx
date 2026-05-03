@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { useFlags } from "@/hooks/useFlags";
 
@@ -29,6 +29,8 @@ import { toast } from "sonner";
 
 export function RegisterWorker() {
   const [workers, setWorkers] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [userRole, setUserRole] = useState(null); // 👈 Para saber si es Admin o Productor
 
   const { flags, loading } = useFlags();
   const canAssignManager = flags?.users?.assignManager;
@@ -41,8 +43,33 @@ export function RegisterWorker() {
   const [selectedManager, setSelectedManager] = useState("");
 
   const [open, setOpen] = useState(false);
+  const [isLoadingWorkers, setIsLoadingWorkers] = useState(false);
 
-  // 🔥 TRAER MANAGERS
+  // 🔥 1. Obtener perfil del usuario logueado (PRIMERO)
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const token = localStorage.getItem("access");
+      if (!token) return;
+
+      try {
+        const res = await fetch("https://backend-pongase-trucha.onrender.com/api/users/me/", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setCurrentUserId(data.id);
+          setUserRole(data.role?.name); // 👈 Guardar rol: "Admin" o "Productor"
+        }
+      } catch (err) {
+        console.error("Error cargando perfil:", err);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  // 🔥 2. TRAER MANAGERS (solo si es Admin)
   useEffect(() => {
     if (!canAssignManager) return;
 
@@ -58,7 +85,7 @@ export function RegisterWorker() {
       .catch(console.error);
   }, [canAssignManager]);
 
-  // 🔥 TRAER GRANJAS
+  // 🔥 3. TRAER GRANJAS
   useEffect(() => {
     if (loading) return;
 
@@ -93,36 +120,146 @@ export function RegisterWorker() {
     fetchFarms();
   }, [loading, canAssignManager, selectedManager]);
 
-  // 🔥 FUNCIÓN GLOBAL PARA TRAER WORKERS
-  const fetchWorkers = async () => {
+  // 🔥 4. FUNCIÓN AUXILIAR: Obtener operarios vía granjas + miembros (para Productor)
+  const fetchWorkersViaFarms = useCallback(async (token, productorId) => {
+    try {
+      // Obtener granjas donde este productor es dueño
+      const farmsRes = await fetch(
+        `https://backend-pongase-trucha.onrender.com/api/farms/productor/${productorId}/`,
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+
+      if (!farmsRes.ok) {
+        // Si no puede acceder al endpoint de farms por productor, intentar endpoint genérico
+        const farmsResAlt = await fetch(
+          "https://backend-pongase-trucha.onrender.com/api/farms/",
+          { headers: { Authorization: `Bearer ${token}` }}
+        );
+        if (!farmsResAlt.ok) throw new Error("Error al cargar granjas");
+        var farms = await farmsResAlt.json();
+        // Filtrar solo las granjas donde el usuario es owner (si el backend lo indica)
+        // Si no hay campo is_owner, asumimos que el backend ya filtró por permisos
+      } else {
+        var farms = await farmsRes.json();
+      }
+
+      // Para cada granja, obtener sus miembros
+      const allOperarios = [];
+      const seenUsers = new Set(); // Evitar duplicados
+
+      for (const farm of farms) {
+        const membersRes = await fetch(
+          `https://backend-pongase-trucha.onrender.com/api/farms/${farm.id}/members/`,
+          { headers: { Authorization: `Bearer ${token}` }}
+        );
+        
+        if (membersRes.ok) {
+          const members = await membersRes.json();
+          // Filtrar solo operarios (excluir al dueño) y activos
+          for (const m of members) {
+            if (!m.is_owner && m.status === "active" && !seenUsers.has(m.user?.id)) {
+              seenUsers.add(m.user?.id);
+              // Normalizar estructura para que coincida con el render
+              allOperarios.push({
+                worker_id: m.user?.id,
+                id: m.user?.id,
+                name: m.user?.name || "",
+                lastname: m.user?.lastname || "",
+                email: m.user?.email || "",
+                phone: m.user?.phone || "",
+                farm_id: farm.id,
+                farm_name: farm.name,
+              });
+            }
+          }
+        }
+      }
+
+      return allOperarios;
+    } catch (err) {
+      console.error("Error en fetchWorkersViaFarms:", err);
+      throw err;
+    }
+  }, []);
+
+  // 🔥 5. FUNCIÓN PRINCIPAL: TRAER WORKERS
+  const fetchWorkers = useCallback(async (productorId = null) => {
     const token = localStorage.getItem("access");
     if (!token) return;
 
+    setIsLoadingWorkers(true);
+
     try {
-      const res = await fetch(
-        "https://backend-pongase-trucha.onrender.com/api/workers/",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      // Determinar qué ID usar: seleccionado o el usuario actual
+      const idToUse = productorId || currentUserId;
+      
+      // Si no tenemos ID, no podemos filtrar
+      if (!idToUse) {
+        setWorkers([]);
+        return;
+      }
+
+      let workersData = [];
+
+      // 🎯 FLUJO SEGÚN ROL
+      if (userRole === "Admin") {
+        // Admin: puede usar el endpoint directo de operarios por productor
+        const url = `https://backend-pongase-trucha.onrender.com/api/users/productor/${idToUse}/operarios/`;
+        
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          const errorData = await res.clone().json().catch(() => ({}));
+          throw new Error(errorData.detail || errorData.message || "Error al cargar operarios");
         }
-      );
 
-      if (!res.ok) throw new Error();
+        workersData = await res.json();
+        
+      } else {
+        // Productor: usar fallback vía granjas + miembros
+        workersData = await fetchWorkersViaFarms(token, idToUse);
+      }
 
-      const data = await res.json();
-      setWorkers(data);
+      // Normalizar datos para el render (asegurar campos)
+      const normalized = workersData.map((w) => ({
+        worker_id: w.id || w.worker_id || w.user?.id,
+        id: w.id || w.worker_id || w.user?.id,
+        name: w.name || w.user?.name || "",
+        lastname: w.lastname || w.user?.lastname || "",
+        email: w.email || w.user?.email || "",
+        phone: w.phone || w.user?.phone || "",
+        farm_id: w.farm_id,
+        farm_name: w.farm_name,
+      }));
+
+      setWorkers(normalized);
+
     } catch (err) {
-      console.error(err);
-      toast.error("Error cargando trabajadores");
+      console.error("Error en fetchWorkers:", err);
+      toast.error(err.message || "Error cargando trabajadores");
+      setWorkers([]); // Limpiar en caso de error
+    } finally {
+      setIsLoadingWorkers(false);
     }
-  };
+  }, [currentUserId, userRole, fetchWorkersViaFarms]);
 
-  // 🔥 CARGA INICIAL
+  // 🔥 6. Cargar workers cuando tengamos el usuario y rol
   useEffect(() => {
-    fetchWorkers();
-  }, []);
+    if (currentUserId && userRole && !loading) {
+      fetchWorkers(selectedManager);
+    }
+  }, [currentUserId, userRole, loading, selectedManager, fetchWorkers]);
 
+  // 🔥 7. Recargar al cambiar de manager seleccionado
+  useEffect(() => {
+    if (currentUserId && userRole && selectedManager) {
+      fetchWorkers(selectedManager);
+    }
+  }, [selectedManager, currentUserId, userRole, fetchWorkers]);
+
+  // 🔥 8. HANDLER: Submit de invitación
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -151,11 +288,12 @@ export function RegisterWorker() {
         } catch { }
 
         if (!res.ok) {
-          throw new Error(data?.message || "Error al guardar");
+          const errorMsg = data?.detail || data?.message || data?.non_field_errors?.[0] || "Error al enviar invitación";
+          throw new Error(errorMsg);
         }
 
-        // 🔥 SOLUCIÓN REAL: volver a traer los datos completos
-        await fetchWorkers();
+        // Recargar lista de operarios
+        await fetchWorkers(selectedManager);
 
         return data;
       }),
@@ -165,7 +303,6 @@ export function RegisterWorker() {
           setCorreo("");
           setSelectedFarm("");
           setOpen(false);
-
           return "Invitación enviada";
         },
         error: (err) => err.message || "Error al guardar",
@@ -173,6 +310,7 @@ export function RegisterWorker() {
     );
   };
 
+  // 🔥 9. Handler para cerrar modal
   const handleOpenChange = (newOpen) => {
     setOpen(newOpen);
     if (!newOpen) {
@@ -182,7 +320,14 @@ export function RegisterWorker() {
     }
   };
 
-  if (loading) return null;
+  // 🔥 10. Render condicional mientras carga
+  if (loading || (!currentUserId && !userRole)) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-center min-h-[200px]">
+        <p className="text-gray-500">Cargando...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
@@ -192,7 +337,7 @@ export function RegisterWorker() {
 
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
-            <button className="flex items-center gap-2 bg-cyan-500 text-white px-4 py-2 rounded-lg">
+            <button className="flex items-center gap-2 bg-cyan-500 text-white px-4 py-2 rounded-lg hover:bg-cyan-600 transition-colors">
               <Plus className="w-4 h-4" />
               Agregar
             </button>
@@ -218,14 +363,14 @@ export function RegisterWorker() {
 
                 {canAssignManager && (
                   <Field>
-                    <Label>Productor / Manager</Label>
+                    <Label>Productor</Label>
                     <Select 
                       onValueChange={(val) => {
                         setSelectedManager(val);
                         setSelectedFarm("");
                       }} 
                       value={selectedManager} 
-                      required
+                      required={canAssignManager}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccione un productor" />
@@ -245,17 +390,28 @@ export function RegisterWorker() {
 
                 <Field>
                   <Label>Granja Asociada</Label>
-                  <Select onValueChange={setSelectedFarm} value={selectedFarm} required>
+                  <Select 
+                    onValueChange={setSelectedFarm} 
+                    value={selectedFarm} 
+                    required
+                    disabled={canAssignManager && !selectedManager}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccione una granja" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {farms.map((f) => (
-                          <SelectItem key={f.id} value={String(f.id)}>
-                            {f.name}
+                        {farms.length === 0 ? (
+                          <SelectItem value="no-farms" disabled>
+                            Sin granjas disponibles
                           </SelectItem>
-                        ))}
+                        ) : (
+                          farms.map((f) => (
+                            <SelectItem key={f.id} value={String(f.id)}>
+                              {f.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
@@ -270,24 +426,39 @@ export function RegisterWorker() {
                 >
                   Cancelar
                 </Button>
-                <Button type="submit">Guardar</Button>
+                <Button type="submit" disabled={isLoadingWorkers}>
+                  Guardar
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
+      {/* LISTA DE TRABAJADORES */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {workers.length === 0 ? (
-          <p className="text-gray-500">No hay trabajadores aún</p>
+        {isLoadingWorkers ? (
+          <p className="text-gray-500 col-span-full text-center">Cargando operarios...</p>
+        ) : workers.length === 0 ? (
+          <p className="text-gray-500 col-span-full text-center">
+            {canAssignManager && !selectedManager 
+              ? "Seleccione un productor para ver sus operarios" 
+              : "No hay operarios registrados"}
+          </p>
         ) : (
           workers.map((w) => (
-            <div key={w.worker_id} className="border rounded-lg p-4 group border border-gray-200 hover:border-cyan-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+            <div 
+              key={w.worker_id || w.id} 
+              className="border rounded-lg p-4 group border border-gray-200 hover:border-cyan-500 hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+            >
               <p className="font-bold group-hover:text-cyan-500">
                 {w.name} {w.lastname}
               </p>
               <p className="text-sm text-gray-500">{w.email}</p>
-              <p className="text-sm">{w.phone}</p>
+              {w.phone && <p className="text-sm">{w.phone}</p>}
+              {w.farm_name && (
+                <p className="text-xs text-cyan-600 mt-1">📍 {w.farm_name}</p>
+              )}
             </div>
           ))
         )}
