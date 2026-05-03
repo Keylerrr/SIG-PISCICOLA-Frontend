@@ -34,11 +34,12 @@ export default function Granja({ params }) {
     const [departamentos, setDepartmentos] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
+    const [ciudades, setCiudades] = useState([]);  // 👈 Nuevo estado para ciudades
 
     useEffect(() => {
         const token = localStorage.getItem("access")
 
-        fetch("https://backend-pongase-trucha.onrender.com/farm/departments/", {
+        fetch("https://backend-pongase-trucha.onrender.com/api/departments/", {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${token}`,
@@ -48,7 +49,7 @@ export default function Granja({ params }) {
             if (!res.ok) throw new Error("Error al traer departamentos");
             return res.json();
         }).then((data) => {
-            setDepartmentos(data.departments);
+            setDepartmentos(data);
             console.log(data)
         }).catch((err) => console.error(err));
     }, []);
@@ -56,7 +57,7 @@ export default function Granja({ params }) {
     useEffect(() => {
         const token = localStorage.getItem("access")
 
-        fetch(`https://backend-pongase-trucha.onrender.com/farm/${id}/`, {
+        fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -70,6 +71,23 @@ export default function Granja({ params }) {
             console.log(data)
         }).catch((err) => console.error(err));
     }, []);
+
+        // 🔥 TRAER CIUDADES
+        useEffect(() => {
+            fetch("https://backend-pongase-trucha.onrender.com/api/cities/", {
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("access")}`,
+                }
+            })
+            .then((res) => {
+                if (!res.ok) throw new Error("Error al traer ciudades");
+                return res.json();
+            })
+            .then((data) => {
+                setCiudades(data);  // 👈 La API devuelve array directo
+            })
+            .catch((err) => console.error(err));
+        }, []);
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -101,13 +119,12 @@ export default function Granja({ params }) {
                         <div className="bg-slate-50 p-4 rounded-lg">
                             Departamento <br />
                             <p className="font-bold">
-                                {departamentos.find(d => d.key === granja.department)?.label}
-                            </p>
+                                {departamentos.find(d => d.id === granja.department)?.name}                            </p>
                         </div>
 
                         <div className="bg-slate-50 p-4 rounded-lg">
                             Municipio <br />
-                            <p className="font-bold">{granja.city}</p>
+                            <p className="font-bold">{ciudades.find(c => c.id === granja.city)?.name || "—"}</p>
                         </div>
 
                         <div className="bg-slate-50 p-4 rounded-lg">
