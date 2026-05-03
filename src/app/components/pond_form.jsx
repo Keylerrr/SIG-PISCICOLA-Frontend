@@ -245,7 +245,7 @@ export function PondRegisterForm({
       </Field>
 
       <Field>
-        <FieldLabel>Área (ha)</FieldLabel>
+        <FieldLabel>Área (m²)</FieldLabel>
         <Input 
           type="number" 
           step="0.01"
