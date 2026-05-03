@@ -28,6 +28,7 @@ import { Toaster, toast } from "sonner";
 export function Farms({ search = "" }) {
     const [granjas, setGranjas] = useState([]);
     const [departamentos, setDepartamentos] = useState([]);
+    const [ciudades, setCiudades] = useState([]);  // 👈 Nuevo estado
 
     const filteredGranjas = granjas.filter((g) =>
         g.name.toLowerCase().includes(search.toLowerCase().trim())
@@ -72,6 +73,19 @@ export function Farms({ search = "" }) {
             })
             .catch((err) => console.error(err));
     }, []);
+
+            // 🔹 FETCH CIUDADES
+            useEffect(() => {
+                fetch("https://backend-pongase-trucha.onrender.com/api/cities/")
+                    .then((res) => {
+                        if (!res.ok) throw new Error("Error al traer ciudades");
+                        return res.json();
+                    })
+                    .then((data) => {
+                        setCiudades(data);
+                    })
+                    .catch((err) => console.error(err));
+            }, []);
 
     // 🔹 DELETE
     const handleDelete = async (id) => {
@@ -130,7 +144,7 @@ export function Farms({ search = "" }) {
 
                                     <CardDescription className="flex items-center gap-2 font-bold">
                                         <MapPin />
-                                        {departamento?.name || "—"} - {g.city}
+                                        {departamento?.name || "—"} - {ciudades.find(c => c.id === g.city)?.name || "—"}
                                     </CardDescription>
 
                                     <CardAction>
