@@ -209,7 +209,7 @@ export default function Granja({ params }) {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
-                                <Button className="text-md">Search</Button>
+                                <Button className="text-md">Buscar</Button>
                             </ButtonGroup>
                         </Field>
                     </div>
