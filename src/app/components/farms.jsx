@@ -213,11 +213,6 @@ export function Farms({ search = "" }) {
                                     </CardAction>
                                 </CardHeader>
 
-                                <CardContent className="flex gap-2 text-xl">
-                                    <UserRound />
-                                    Usuario asociado
-                                </CardContent>
-
                                 <CardFooter>
                                     <div>
                                         <p className="text-2xl font-bold text-blue-600">
