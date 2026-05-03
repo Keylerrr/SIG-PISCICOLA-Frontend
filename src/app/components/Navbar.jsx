@@ -111,12 +111,13 @@ export function Navbar() {
               </div>
             </div>
 
-            <button
-              title='Gestionar Usuarios'
+            <button 
+              title='Gestionar Trabajadores'
               onClick={handleSettings}
-              className="p-2 text-[#6ec3b1] hover:bg-[#e3fff9] rounded-lg transition-colors hover:cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 text-[#6ec3b1] hover:bg-[#e3fff9] rounded-lg transition-colors hover:cursor-pointer"
             >
               <UserRoundCog className="w-5 h-5" />
+              <span className="text-md font-bold">Trabajadores</span>
             </button>
 
             <button
