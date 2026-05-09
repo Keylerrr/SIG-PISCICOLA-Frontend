@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -28,6 +28,8 @@ export function BatchRegisterForm({
 
   const safe = (v) => v ?? "";
 
+  const [species, setSpecies] = useState([]);
+  const [loadingSpecies, setLoadingSpecies] = useState(true);
   const [specie, setSpecie] = useState(safe(specieProp))
   const [biologicalState, setBiologicalState] = useState(safe(biologicalStateProp))
   const [status, setStatus] = useState(safe(statusProp))
@@ -35,6 +37,32 @@ export function BatchRegisterForm({
   const [minWeightG, setMinWeightG] = useState(safe(minWeightGProp))
   const [avgWeightG, setAvgWeightG] = useState(safe(avgWeightGProp))
   const [maxWeightG, setMaxWeightG] = useState(safe(maxWeightGProp))
+
+  useEffect(() => {
+    const fetchSpecies = async () => {
+      const token = localStorage.getItem("access");
+      try {
+        const res = await fetch("https://backend-pongase-trucha.onrender.com/api/species/", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSpecies(data);
+        } else {
+          console.error("Error fetching species:", res.statusText);
+        }
+      } catch (err) {
+        console.error("Error fetching species:", err);
+      } finally {
+        setLoadingSpecies(false);
+      }
+    };
+    fetchSpecies();
+  }, []);
 
   const handleReset = () => {
     setSpecie("");
@@ -184,15 +212,21 @@ export function BatchRegisterForm({
   return (
     <FieldGroup>
       <Field>
-        <FieldLabel>Especie (ID)</FieldLabel>
-        <Input 
-          type="number"
-          min="1"
-          value={specie} 
-          onChange={(e) => setSpecie(e.target.value)} 
-          placeholder="Ej: 1"
-          required
-        />
+        <FieldLabel>Especie</FieldLabel>
+        <Select onValueChange={setSpecie} value={specie} disabled={loadingSpecies}>
+          <SelectTrigger>
+            <SelectValue placeholder={loadingSpecies ? "Cargando especies..." : "Seleccione una especie"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              {species.map((item) => (
+                <SelectItem key={item.id} value={item.id.toString()}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </Field>
 
       <Field>
