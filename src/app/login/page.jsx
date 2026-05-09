@@ -205,7 +205,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-cyan-50">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-cyan-50">
 
       {isComplete === false && (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -271,7 +271,7 @@ export default function Login() {
       )}
 
       {isSending && (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-9999 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
           <div className="bg-white p-6 rounded-xl shadow-2xl flex flex-col items-center">
             <Loader2 className="h-12 w-12 text-blue-600 animate-spin" />
             <p className="mt-4 font-medium text-slate-700">
