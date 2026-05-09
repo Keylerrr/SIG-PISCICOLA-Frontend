@@ -23,7 +23,8 @@ export function BatchRegisterForm({
   initialQuantityProp,
   minWeightGProp,
   avgWeightGProp,
-  maxWeightGProp
+  maxWeightGProp,
+  commentsProp
 }) {
 
   const safe = (v) => v ?? "";
@@ -37,6 +38,7 @@ export function BatchRegisterForm({
   const [minWeightG, setMinWeightG] = useState(safe(minWeightGProp))
   const [avgWeightG, setAvgWeightG] = useState(safe(avgWeightGProp))
   const [maxWeightG, setMaxWeightG] = useState(safe(maxWeightGProp))
+  const [comments, setComments] = useState(safe(commentsProp))
 
   useEffect(() => {
     const fetchSpecies = async () => {
@@ -72,6 +74,7 @@ export function BatchRegisterForm({
     setMinWeightG("");
     setAvgWeightG("");
     setMaxWeightG("");
+    setComments("");
   };
 
   const validate = () => {
@@ -127,8 +130,10 @@ export function BatchRegisterForm({
     const payload = {
       specie: parseInt(specie),
       farm: parseInt(idFarmProp),
+      origin_type: "initial",
       biological_state: biologicalState,
       status: status,
+      comments: comments.trim(),
       initial_quantity: parseInt(initialQuantity),
       min_weight_g: parseFloat(minWeightG),
       avg_weight_g: parseFloat(avgWeightG),
@@ -174,6 +179,7 @@ export function BatchRegisterForm({
       specie: parseInt(specie),
       biological_state: biologicalState,
       status: status,
+      comments: comments.trim(),
       initial_quantity: parseInt(initialQuantity),
       min_weight_g: parseFloat(minWeightG),
       avg_weight_g: parseFloat(avgWeightG),
@@ -312,6 +318,15 @@ export function BatchRegisterForm({
           onChange={(e) => setMaxWeightG(e.target.value)} 
           placeholder="Ej: 1.5"
           required
+        />
+      </Field>
+
+      <Field>
+        <FieldLabel>Comentarios</FieldLabel>
+        <Input 
+          value={comments} 
+          onChange={(e) => setComments(e.target.value)} 
+          placeholder="Comentarios adicionales..."
         />
       </Field>
 
