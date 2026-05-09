@@ -105,6 +105,7 @@ export default function Login() {
       }
 
       localStorage.setItem("user", JSON.stringify(data2));
+      setIsLoading(false);
       router.push("/home");
     }
     catch (error) {
@@ -145,13 +146,12 @@ export default function Login() {
         return;
       }
 
-      setIsComplete(data.is_profile_complete);
-
       localStorage.setItem("access", data.tokens.access);
       localStorage.setItem("refresh", data.tokens.refresh);
+
+      setIsComplete(data.is_profile_complete);
       
-      if (isComplete) {
-        console.log("aca");
+      if (data.is_profile_complete) {
         await handleUser();
       } else {
         setOpen(true);
