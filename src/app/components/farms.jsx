@@ -178,7 +178,7 @@ export function Farms({ search = "" }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
+      <div className="flex items-center justify-center min-h-50">
         <p className="text-slate-500">Cargando granjas...</p>
       </div>
     );

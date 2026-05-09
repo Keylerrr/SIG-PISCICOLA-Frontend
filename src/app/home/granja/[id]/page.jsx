@@ -319,6 +319,7 @@ export default function Granja({ params }) {
                                         minWeightGProp={""}
                                         avgWeightGProp={""}
                                         maxWeightGProp={""}
+                                        commentsProp={""}
                                     />
                                 </DialogContent>
                             </form>

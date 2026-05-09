@@ -99,7 +99,7 @@ export function Cycles({ id, search = "" }) {
 
     return (
         <>
-            {loading && (<div className="flex items-center justify-center min-h-[200px]">
+            {loading && (<div className="flex items-center justify-center min-h-50">
                 <p className="text-slate-500">Cargando ciclos...</p>
             </div>)
             }
