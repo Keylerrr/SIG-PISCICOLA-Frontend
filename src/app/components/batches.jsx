@@ -68,7 +68,8 @@ export function Batches({ id, search = "" }) {
       (b) =>
         BIO_STATE_LABELS[b.biological_state]?.toLowerCase().includes(term) ||
         STATUS_LABELS[b.status]?.toLowerCase().includes(term) ||
-        b.id.toString().includes(term)
+        b.id.toString().includes(term) ||
+        (b.comments || "").toLowerCase().includes(term)
     );
   }, [batches, search]);
 
@@ -159,6 +160,7 @@ export function Batches({ id, search = "" }) {
                         minWeightGProp={b.min_weight_g}
                         avgWeightGProp={b.avg_weight_g}
                         maxWeightGProp={b.max_weight_g}
+                        commentsProp={b.comments ?? ""}
                       />
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cerrar</AlertDialogCancel>
@@ -200,6 +202,11 @@ export function Batches({ id, search = "" }) {
                 <span>Prom: {b.avg_weight_g}g</span> | 
                 <span>Max: {b.max_weight_g}g</span>
               </div>
+              {b.comments ? (
+                <p className="text-sm text-slate-500">
+                  <strong>Comentarios:</strong> {b.comments}
+                </p>
+              ) : null}
             </CardContent>
 
             <CardFooter className="flex flex-col gap-4 items-start">
