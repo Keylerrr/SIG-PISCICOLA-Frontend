@@ -52,12 +52,14 @@ export function BatchRegisterForm({
       alert("La especie debe ser un ID válido mayor a 0.");
       return false;
     }
-    const validBiologicalStates = ["alevin", "fingerling", "juvenile", "adult"];
+
+    const validBiologicalStates = ["alevin", "rising", "fatting", "breeding"];
     if (!validBiologicalStates.includes(biologicalState)) {
       alert("Debe seleccionar un estado biológico válido.");
       return false;
     }
-    const validStatuses = ["active", "inactive", "completed", "sold"];
+
+    const validStatuses = ["active", "consumed", "finished", "dead"];
     if (!validStatuses.includes(status)) {
       alert("Debe seleccionar un estado válido.");
       return false;
@@ -202,9 +204,9 @@ export function BatchRegisterForm({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="alevin">Alevín</SelectItem>
-              <SelectItem value="fingerling">Fingerling</SelectItem>
-              <SelectItem value="juvenile">Juvenil</SelectItem>
-              <SelectItem value="adult">Adulto</SelectItem>
+              <SelectItem value="rising">Fingerling</SelectItem>
+              <SelectItem value="fatting">Juvenil</SelectItem>
+              <SelectItem value="breeding">Adulto</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -219,9 +221,9 @@ export function BatchRegisterForm({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="active">Activo</SelectItem>
-              <SelectItem value="inactive">Inactivo</SelectItem>
-              <SelectItem value="completed">Completado</SelectItem>
-              <SelectItem value="sold">Vendido</SelectItem>
+              <SelectItem value="consumed">Inactivo</SelectItem>
+              <SelectItem value="finished">Completado</SelectItem>
+              <SelectItem value="dead">Vendido</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
