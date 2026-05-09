@@ -38,16 +38,16 @@ const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
 const BIO_STATE_LABELS = {
   alevin: "Alevín",
-  rising: "Fingerling / Levante",
-  fatting: "Juvenil / Engorde",
-  breeding: "Adulto / Reproducción",
+  rising: "Levante",
+  fatting: "Engorde",
+  breeding: "Reproducción",
 };
 
 const STATUS_LABELS = {
   active: "Activo",
-  consumed: "Inactivo / Consumido",
+  consumed: "Consumido",
   finished: "Completado",
-  dead: "Vendido / Muerto",
+  dead: "Muerto",
 };
 
 const STATUS_COLORS = {
@@ -103,7 +103,7 @@ export function Batches({ id, search = "" }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px]">
+      <div className="flex items-center justify-center min-h-50">
         <p className="text-slate-500">Cargando lotes...</p>
       </div>
     );
