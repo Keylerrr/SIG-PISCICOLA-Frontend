@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
 import { Cycles } from "@/app/components/cycles";
+import { Batches } from "@/app/components/batches";
+import { BatchRegisterForm } from "@/app/components/batch_form";
 import { Field, FieldLabel } from "@/components/ui/field"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
@@ -37,6 +39,7 @@ export default function Granja({ params }) {
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
     const [searchCycle, setSearchCycle] = useState("");
+    const [searchBatch, setSearchBatch] = useState("");
     const [ciudades, setCiudades] = useState([]);
     const router = useRouter();
 
@@ -279,6 +282,72 @@ export default function Granja({ params }) {
             </div>
             <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-12">
                 <Cycles id={id} search={searchCycle} />
+            </div>
+
+            {/* Sección de Lotes */}
+            <div className="mt-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto flex justify-between">
+                    <div>
+                        <h1 className="font-bold text-3xl">Lotes</h1>
+                        <p className="text-xl">Gestiona los lotes de la granja (sin asociar a estanque)</p>
+                    </div>
+                    <div>
+                        <Dialog>
+                            <form>
+                                <DialogTrigger asChild>
+                                    <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
+                                        variant="outline">
+                                        <Plus />
+                                        Crear Lote
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                                    <DialogHeader>
+                                        <DialogTitle>Crear Lote</DialogTitle>
+                                        <DialogDescription>
+                                            Escribe la información del lote que vas a crear. Haz click en crear cuando hayas terminado.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <BatchRegisterForm
+                                        op={1}
+                                        idProp={""}
+                                        idFarmProp={id}
+                                        specieProp={""}
+                                        biologicalStateProp={""}
+                                        statusProp={""}
+                                        initialQuantityProp={""}
+                                        minWeightGProp={""}
+                                        avgWeightGProp={""}
+                                        maxWeightGProp={""}
+                                    />
+                                </DialogContent>
+                            </form>
+                        </Dialog>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-4 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4 sm:items-end sm:justify-between">
+                    <div className="w-full sm:flex-1">
+                        <Field className="text-xl">
+                            <FieldLabel htmlFor="input-search-batches" className="text-xl">
+                                Buscar Lote
+                            </FieldLabel>
+                            <ButtonGroup>
+                                <Input
+                                    id="input-search-batches"
+                                    placeholder="Escriba el estado o tipo..."
+                                    value={searchBatch}
+                                    onChange={(e) => setSearchBatch(e.target.value)}
+                                />
+                                <Button className="text-md">Buscar</Button>
+                            </ButtonGroup>
+                        </Field>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-12">
+                <Batches id={id} search={searchBatch} />
             </div>
         </div>
     );
