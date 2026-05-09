@@ -126,6 +126,7 @@ export function BatchRegisterForm({
 
     const payload = {
       specie: parseInt(specie),
+      farm: parseInt(idFarmProp),
       biological_state: biologicalState,
       status: status,
       initial_quantity: parseInt(initialQuantity),
