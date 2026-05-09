@@ -3,10 +3,9 @@
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
-import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Loader2 } from "lucide-react";
-
+import { Cycles } from '@/app/components/cycles'
 export default function Estanque({ params }) {
 
     const { estanque_id } = useParams(params);
@@ -95,7 +94,7 @@ export default function Estanque({ params }) {
                             {estanque.name}
                         </h1>
                     </div>
-                    {estanque.description?.length>0 && (<p className="text-xl">{estanque.description}</p>)}
+                    {estanque.description?.length > 0 && (<p className="text-xl">{estanque.description}</p>)}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
                         <div className={`p-4 rounded-lg 
                             ${statusBg[estanque.status] || "bg-gray-100 text-gray-700"}`}>                            Estado <br />

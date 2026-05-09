@@ -6,6 +6,7 @@ import { ArrowLeft, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
+import { Cycles } from "@/app/components/cycles";
 import { Field, FieldLabel } from "@/components/ui/field"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
@@ -35,6 +36,7 @@ export default function Granja({ params }) {
     const [departamentos, setDepartmentos] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
+    const [searchCycle, setSearchCycle] = useState("");
     const [ciudades, setCiudades] = useState([]);
     const router = useRouter();
 
@@ -234,6 +236,49 @@ export default function Granja({ params }) {
             </div>
             <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
                 <Ponds id={id} search={search} filter={filter} />
+            </div>
+
+            {/* Sección de Ciclos */}
+            <div className="mt-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto flex justify-between">
+                    <div>
+                        <h1 className="font-bold text-3xl">Ciclos</h1>
+                        <p className="text-xl">Gestiona los ciclos de producción de la granja</p>
+                    </div>
+                    <div>
+                        <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
+                            variant="outline"
+                            onClick={() => {
+                                // Espacio para la funcionalidad del botón de agregar ciclo
+                            }}>
+                            <Plus />
+                            Agregar Ciclo
+                        </Button>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-4 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4 sm:items-end sm:justify-between">
+                    <div className="w-full sm:flex-1">
+                        <Field className="text-xl">
+                            <FieldLabel htmlFor="input-search-cycles" className="text-xl">
+                                Buscar Ciclo
+                            </FieldLabel>
+                            <ButtonGroup>
+                                <Input
+                                    id="input-search-cycles"
+                                    placeholder="Escriba el nombre del ciclo..."
+                                    value={searchCycle}
+                                    onChange={(e) => setSearchCycle(e.target.value)}
+                                />
+                                <Button className="text-md">Buscar</Button>
+                            </ButtonGroup>
+                        </Field>
+                    </div>
+                </div>
+            </div>
+            <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-12">
+                <Cycles id={id} search={searchCycle} />
             </div>
         </div>
     );

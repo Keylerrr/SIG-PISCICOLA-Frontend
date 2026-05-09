@@ -96,7 +96,6 @@ export default function Login() {
           },
         }
       );
-
       const data2 = await res2.json();
 
       if (!res2.ok) {
@@ -150,8 +149,9 @@ export default function Login() {
 
       localStorage.setItem("access", data.tokens.access);
       localStorage.setItem("refresh", data.tokens.refresh);
-
-      if (data.is_profile_complete) {
+      
+      if (isComplete) {
+        console.log("aca");
         await handleUser();
       } else {
         setOpen(true);
