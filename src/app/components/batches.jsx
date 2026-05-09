@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { BatchRegisterForm } from "./batch_form";
+import { AssignPondForm } from "./assign_pond_form";
 import { Button } from "@/components/ui/button";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
@@ -227,9 +228,11 @@ export function Batches({ id, search = "" }) {
                       Seleccione el estanque de destino para este lote.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="p-4 bg-slate-50 rounded text-center text-slate-500">
-                    Formulario de asignación a estanque pendiente de implementación
-                  </div>
+                  <AssignPondForm 
+                    farmId={id}
+                    batchId={b.id}
+                    defaultQuantity={b.initial_quantity}
+                  />
                 </DialogContent>
               </Dialog>
             </CardFooter>
