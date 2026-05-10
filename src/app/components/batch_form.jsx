@@ -245,9 +245,9 @@ export function BatchRegisterForm({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="alevin">Alevín</SelectItem>
-              <SelectItem value="rising">Fingerling</SelectItem>
-              <SelectItem value="fatting">Juvenil</SelectItem>
-              <SelectItem value="breeding">Adulto</SelectItem>
+              <SelectItem value="rising">Levante</SelectItem>
+              <SelectItem value="fatting">Engorde</SelectItem>
+              <SelectItem value="breeding">Reproducción</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
@@ -262,9 +262,9 @@ export function BatchRegisterForm({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="active">Activo</SelectItem>
-              <SelectItem value="consumed">Inactivo</SelectItem>
+              <SelectItem value="consumed">Consumido</SelectItem>
               <SelectItem value="finished">Completado</SelectItem>
-              <SelectItem value="dead">Vendido</SelectItem>
+              <SelectItem value="dead">Muerto</SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>
