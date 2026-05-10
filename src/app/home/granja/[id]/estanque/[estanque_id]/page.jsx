@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 
 import { ArrowLeft } from "lucide-react";
 import { Loader2 } from "lucide-react";
-import { Cycles } from '@/app/components/cycles'
+import { Batches } from '@/app/components/batches';
 export default function Estanque({ params }) {
 
     const { estanque_id } = useParams(params);
@@ -124,6 +124,16 @@ export default function Estanque({ params }) {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div className="mt-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-5xl mx-auto">
+                    <h2 className="font-bold text-3xl mb-2">Lotes en este Estanque</h2>
+                    <p className="text-xl text-slate-600 mb-6">Listado de lotes actualmente asignados a este estanque.</p>
+                </div>
+            </div>
+            <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-12">
+                <Batches id={id} pondId={estanque_id} />
             </div>
         </div>
     );

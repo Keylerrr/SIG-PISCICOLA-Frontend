@@ -58,20 +58,61 @@ const STATUS_COLORS = {
   dead: "bg-red-100 text-red-700",
 };
 
-export function Batches({ id, search = "" }) {
+export function Batches({ id, pondId, search = "" }) {
   const [batches, setBatches] = useState([]);
+  const [species, setSpecies] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchSpecies = async () => {
+      try {
+        const token = localStorage.getItem("access");
+        const res = await fetch(`${API_BASE}/species/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSpecies(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Error fetching species:", err);
+      }
+    };
+    fetchSpecies();
+  }, []);
+
+  const specieMap = useMemo(() => {
+    return species.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.name }), {});
+  }, [species]);
+
   const filteredBatches = useMemo(() => {
+    // Si no hay búsqueda, mostramos todos
     if (!search?.trim()) return batches;
+    
     const term = search.toLowerCase().trim();
-    return batches.filter(
-      (b) =>
+    
+    return batches.filter((item) => {
+      /*
+       EXPLICACIÓN DE LA COMPLEJIDAD:
+       El backend puede devolvernos dos cosas distintas dependiendo de qué endpoint consumamos:
+       1. Si consumimos /batches/, nos devuelve objetos Lote (Batch) directos.
+       2. Si consumimos /pond-batches/, nos devuelve objetos de Relación (PondBatch) que 
+          tienen el Lote anidado adentro de una propiedad llamada 'batch' (dependiendo de 
+          cómo se haya serializado en Django).
+          
+       Para evitar que la app se rompa o que los atributos salgan como "undefined", 
+       hacemos esta comprobación: si 'item' tiene la propiedad 'batch' y es un objeto, 
+       significa que es una Relación y sacamos el lote de adentro. Si no, usamos 'item' tal cual.
+      */
+      const b = typeof item.batch === 'object' && item.batch !== null ? item.batch : item;
+      
+      return (
         BIO_STATE_LABELS[b.biological_state]?.toLowerCase().includes(term) ||
         STATUS_LABELS[b.status]?.toLowerCase().includes(term) ||
-        b.id.toString().includes(term) ||
+        b.id?.toString().includes(term) ||
         (b.comments || "").toLowerCase().includes(term)
-    );
+      );
+    });
   }, [batches, search]);
 
   useEffect(() => {
@@ -79,12 +120,19 @@ export function Batches({ id, search = "" }) {
       setLoading(true);
       try {
         const token = localStorage.getItem("access");
-        const res = await fetch(`${API_BASE}/farms/${id}/batches/`, {
+        const endpoint = pondId
+        // /api/farms/{farm_pk}/pond-batches/{id}/
+          ? `${API_BASE}/farms/${id}/pond-batches/?pond_id=${pondId}` // Sigue estando mal el endpoint
+          : `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
+          
+        const res = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (!res.ok) {
-          throw new Error(`Error ${res.status} al obtener lotes`);
+          // Extraemos información útil si el servidor nos responde con algún error 4xx o 5xx
+          const errorText = await res.text();
+          throw new Error(`Error ${res.status} al obtener lotes: ${errorText}`);
         }
 
         const data = await res.json();
@@ -122,19 +170,22 @@ export function Batches({ id, search = "" }) {
           </p>
         )}
 
-        {filteredBatches.map((b) => (
+        {filteredBatches.map((item) => {
+          const b = typeof item.batch === 'object' && item.batch !== null ? item.batch : item;
+          const displayId = b.id || item.id;
+          return (
           <Card
-            key={b.id}
+            key={item.id}
             className="group border hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all"
           >
             <CardHeader>
               <CardTitle className="text-2xl font-bold group-hover:text-blue-600">
-                Lote #{b.id}
+                Lote #{displayId}
               </CardTitle>
 
               <CardDescription className="flex items-center gap-2 font-bold text-lg mt-1">
                 <Fish className="w-5 h-5" />
-                {BIO_STATE_LABELS[b.biological_state] || b.biological_state}
+                {specieMap[b.specie] || b.specie} - {BIO_STATE_LABELS[b.biological_state] || b.biological_state}
               </CardDescription>
 
               <CardAction>
@@ -221,6 +272,7 @@ export function Batches({ id, search = "" }) {
                 </p>
               </div>
 
+              {!pondId && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full flex gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
@@ -242,9 +294,10 @@ export function Batches({ id, search = "" }) {
                   />
                 </DialogContent>
               </Dialog>
+              )}
             </CardFooter>
           </Card>
-        ))}
+        )})}
       </div>
     </>
   );

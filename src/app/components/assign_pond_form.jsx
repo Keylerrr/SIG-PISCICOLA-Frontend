@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import {
@@ -54,18 +55,18 @@ export function AssignPondForm({
 
   const handleSubmit = async () => {
     if (!pond) {
-      alert("Debe seleccionar un estanque.");
+      toast.error("Debe seleccionar un estanque.");
       return;
     }
     
     const qty = parseInt(initialQuantity);
     if (isNaN(qty) || qty <= 0) {
-      alert("La cantidad debe ser un número entero positivo.");
+      toast.error("La cantidad debe ser un número entero positivo.");
       return;
     }
 
     if (!startDate) {
-      alert("Debe seleccionar una fecha de inicio.");
+      toast.error("Debe seleccionar una fecha de inicio.");
       return;
     }
 
@@ -91,19 +92,31 @@ export function AssignPondForm({
 
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
-        const errorMsg = 
-          errorData.detail || 
-          errorData.pond?.[0] || 
-          errorData.non_field_errors?.[0] || 
-          `Error ${res.status}: ${res.statusText}`;
-        alert(errorMsg);
+        
+        // Función para extraer todos los mensajes de error del backend sin importar la estructura
+        const extractErrors = (obj) => {
+          if (typeof obj === 'string') return obj;
+          if (Array.isArray(obj)) return obj.join(', ');
+          if (typeof obj === 'object' && obj !== null) {
+            return Object.values(obj)
+              .map(val => extractErrors(val))
+              .join(' | ');
+          }
+          return '';
+        };
+
+        const parsedError = extractErrors(errorData);
+        const errorMsg = parsedError ? parsedError : `Error ${res.status}: Ocurrió un error inesperado`;
+        
+        toast.error(errorMsg);
         return;
       }
 
-      window.location.reload();
+      toast.success("Lote asignado correctamente al estanque.");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error("Error asignando estanque:", err);
-      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
+      toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 

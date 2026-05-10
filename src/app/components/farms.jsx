@@ -216,7 +216,7 @@ export function Farms({ search = "" }) {
               {}
               <CardDescription className="text-sm text-slate-600 mt-1 flex items-center gap-1">
                 <Droplet className="w-4 h-4 text-blue-500" />
-                <span>Fonte: {WATER_SOURCE_LABELS[g.water_source] || "No especificada"}</span>
+                <span>Fuente: {WATER_SOURCE_LABELS[g.water_source] || "No especificada"}</span>
               </CardDescription>
 
               {}
