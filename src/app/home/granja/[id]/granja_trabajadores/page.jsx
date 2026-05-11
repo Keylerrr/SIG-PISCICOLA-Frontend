@@ -35,14 +35,14 @@ export default function GranjaUsuarios({ params }) {
   const [token, setToken] = useState(null);
 
   const PERMISSION_LABELS = {
-    MANAGE_REVIEWS: "Gestión de Revisiones",
-    MANAGE_INVENTORY: "Gestión de Inventario",
-    MANAGE_CYCLE: "Gestión de Ciclos",
-    MANAGE_POND: "Gestión de Estanques",
-    MANAGE_FARM: "Administración Total de la Finca",
-  };
+      MANAGE_REVIEWS: "Gestión de Revisiones",
+      MANAGE_INVENTORY: "Gestión de Inventario",
+      MANAGE_CYCLE: "Gestión de Ciclos",
+      MANAGE_POND: "Gestión de Estanques",
+      MANAGE_FARM: "Administración Total de la Finca",
+    };
 
-  const PERMISSION_OPTIONS = [
+    const PERMISSION_OPTIONS = [
     {
       key: "MANAGE_REVIEWS",
       title: "Gestión de Revisiones",
@@ -59,15 +59,15 @@ export default function GranjaUsuarios({ params }) {
       key: "MANAGE_CYCLE",
       title: "Gestión de Ciclos",
       description: "Administración de ciclos productivos.",
-      includes: ["Gestión de Revisiones"],
+      includes: ["MANAGE_REVIEWS"],
     },
     {
       key: "MANAGE_POND",
       title: "Gestión de Estanques",
       description: "Control y administración de estanques.",
       includes: [
-        "Gestión de Ciclos",
-        "Gestión de Revisiones",
+        "MANAGE_CYCLE",
+        "MANAGE_REVIEWS",
       ],
     },
     {
@@ -75,10 +75,10 @@ export default function GranjaUsuarios({ params }) {
       title: "Administración Total de la Finca",
       description: "Acceso completo a la gestión de la finca.",
       includes: [
-        "Gestión de Estanques",
-        "Gestión de Inventario",
-        "Gestión de Ciclos",
-        "Gestión de Revisiones",
+        "MANAGE_POND",
+        "MANAGE_INVENTORY",
+        "MANAGE_CYCLE",
+        "MANAGE_REVIEWS",
       ],
     },
   ];
@@ -265,10 +265,15 @@ export default function GranjaUsuarios({ params }) {
 
                 <div className="grid gap-3">
                   {PERMISSION_OPTIONS.map((perm) => {
-                    const isChecked = permissions.includes(perm.key);
-                    const isInherited = permissions.some((p) =>
-                      PERMISSION_OPTIONS.find((opt) => opt.key === p)?.includes.includes(perm.key)
-                    );
+                    const expandedPermissions = expandPermissions(permissions);
+
+                    const isChecked =
+                      permissions.includes(perm.key) ||
+                      expandedPermissions.includes(perm.key);
+
+                    const isInherited =
+                      !permissions.includes(perm.key) &&
+                      expandedPermissions.includes(perm.key);
 
                     return (
                       <label
@@ -282,9 +287,11 @@ export default function GranjaUsuarios({ params }) {
                           disabled={isInherited}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setPermissions([...permissions, perm.key]);
+                              setPermissions((prev) => [...prev, perm.key]);
                             } else {
-                              setPermissions(permissions.filter((p) => p !== perm.key));
+                              setPermissions((prev) =>
+                                prev.filter((p) => p !== perm.key)
+                              );
                             }
                           }}
                         />
@@ -303,7 +310,7 @@ export default function GranjaUsuarios({ params }) {
                                   key={included}
                                   className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600"
                                 >
-                                  + {included}
+                                  + {PERMISSION_LABELS[included]}
                                 </span>
                               ))}
                             </div>
