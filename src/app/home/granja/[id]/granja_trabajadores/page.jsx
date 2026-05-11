@@ -13,13 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Input } from "@/components/ui/input";
 
 import { toast } from "sonner";
@@ -31,14 +25,85 @@ export default function GranjaUsuarios({ params }) {
   const [workers, setWorkers] = useState([]);
   const [roles, setRoles] = useState([]);
 
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedRole, setSelectedRole] = useState("");
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assigningUser, setAssigningUser] = useState(null);
 
   const [openRole, setOpenRole] = useState(false);
   const [roleName, setRoleName] = useState("");
   const [permissions, setPermissions] = useState([]);
 
   const [token, setToken] = useState(null);
+
+  const PERMISSION_LABELS = {
+    MANAGE_REVIEWS: "Gestión de Revisiones",
+    MANAGE_INVENTORY: "Gestión de Inventario",
+    MANAGE_CYCLE: "Gestión de Ciclos",
+    MANAGE_POND: "Gestión de Estanques",
+    MANAGE_FARM: "Administración Total de la Finca",
+  };
+
+  const PERMISSION_OPTIONS = [
+    {
+      key: "MANAGE_REVIEWS",
+      title: "Gestión de Revisiones",
+      description: "Permite administrar revisiones y controles.",
+      includes: [],
+    },
+    {
+      key: "MANAGE_INVENTORY",
+      title: "Gestión de Inventario",
+      description: "Productos, compras, proveedores y movimientos.",
+      includes: [],
+    },
+    {
+      key: "MANAGE_CYCLE",
+      title: "Gestión de Ciclos",
+      description: "Administración de ciclos productivos.",
+      includes: ["Gestión de Revisiones"],
+    },
+    {
+      key: "MANAGE_POND",
+      title: "Gestión de Estanques",
+      description: "Control y administración de estanques.",
+      includes: [
+        "Gestión de Ciclos",
+        "Gestión de Revisiones",
+      ],
+    },
+    {
+      key: "MANAGE_FARM",
+      title: "Administración Total de la Finca",
+      description: "Acceso completo a la gestión de la finca.",
+      includes: [
+        "Gestión de Estanques",
+        "Gestión de Inventario",
+        "Gestión de Ciclos",
+        "Gestión de Revisiones",
+      ],
+    },
+  ];
+
+  const expandPermissions = (selected) => {
+    const set = new Set(selected);
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const perm of Array.from(set)) {
+        const option = PERMISSION_OPTIONS.find((p) => p.key === perm);
+        if (!option) continue;
+
+        for (const included of option.includes) {
+          if (!set.has(included)) {
+            set.add(included);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    return Array.from(set);
+  };
 
   useEffect(() => {
     setToken(localStorage.getItem("access"));
@@ -85,12 +150,10 @@ export default function GranjaUsuarios({ params }) {
     fetchRoles();
   }, [token]);
 
-  const handleAssignRole = async () => {
-    if (!selectedUser || !selectedRole) return;
-
+  const handleAssignRole = async (userId, roleId) => {
     await toast.promise(
       fetch(
-        `https://backend-pongase-trucha.onrender.com/api/farms/${id}/members/${selectedUser}/`,
+        `https://backend-pongase-trucha.onrender.com/api/farms/${id}/members/${userId}/`,
         {
           method: "PATCH",
           headers: {
@@ -98,17 +161,21 @@ export default function GranjaUsuarios({ params }) {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            farm_role: Number(selectedRole),
+            farm_role: roleId,
           }),
         }
       ).then(async (res) => {
         if (!res.ok) throw new Error("Error asignando rol");
+
         await fetchWorkers();
+
+        setAssignDialogOpen(false);
+        setAssigningUser(null);
       }),
       {
         loading: "Asignando rol...",
         success: "Rol actualizado",
-        error: "Error",
+        error: "Error asignando rol",
       }
     );
   };
@@ -130,7 +197,7 @@ export default function GranjaUsuarios({ params }) {
         },
         body: JSON.stringify({
           name: roleName,
-          permissions: permissions,
+          permissions: [...new Set(permissions)],
         }),
       }).then(async (res) => {
         if (!res.ok) throw new Error("Error creando rol");
@@ -174,42 +241,117 @@ export default function GranjaUsuarios({ params }) {
             </Button>
           </DialogTrigger>
 
-          <DialogContent>
+          <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Crear Rol</DialogTitle>
+              <DialogTitle>Crear rol</DialogTitle>
+              <p className="text-sm text-slate-500">
+                Selecciona las acciones permitidas para este rol. Algunos permisos incluyen otros.
+              </p>
             </DialogHeader>
 
-            <form onSubmit={handleCreateRole} className="space-y-4 mt-4">
-              <Input
-                placeholder="Nombre del rol"
-                value={roleName}
-                onChange={(e) => setRoleName(e.target.value)}
-                required
-              />
-
-              <div className="space-y-2 text-sm">
-                <span className="block mb-2 font-medium">Permisos Concedidos:</span>
-                {["VIEW", "EDIT", "DELETE", "MANAGE_USERS", "MANAGE_ROLES"].map((perm) => (
-                  <label key={perm} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={permissions.includes(perm)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setPermissions([...permissions, perm]);
-                        } else {
-                          setPermissions(permissions.filter(p => p !== perm));
-                        }
-                      }}
-                    />
-                    {perm}
-                  </label>
-                ))}
+            <form onSubmit={handleCreateRole} className="space-y-5 mt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Nombre del rol</label>
+                <Input
+                  placeholder="Ej. Jefe de inventario"
+                  value={roleName}
+                  onChange={(e) => setRoleName(e.target.value)}
+                  required
+                />
               </div>
 
-              <Button type="submit" className="w-full hover:cursor-pointer">
-                Crear
-              </Button>
+              <div className="space-y-3">
+                <div className="text-sm font-medium">Permisos concedidos</div>
+
+                <div className="grid gap-3">
+                  {PERMISSION_OPTIONS.map((perm) => {
+                    const isChecked = permissions.includes(perm.key);
+                    const isInherited = permissions.some((p) =>
+                      PERMISSION_OPTIONS.find((opt) => opt.key === p)?.includes.includes(perm.key)
+                    );
+
+                    return (
+                      <label
+                        key={perm.key}
+                        className="flex items-start gap-3 rounded-lg border p-3 hover:bg-slate-50"
+                      >
+                        <input
+                          type="checkbox"
+                          className="mt-1"
+                          checked={isChecked}
+                          disabled={isInherited}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setPermissions([...permissions, perm.key]);
+                            } else {
+                              setPermissions(permissions.filter((p) => p !== perm.key));
+                            }
+                          }}
+                        />
+
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{perm.title}</span>
+                          </div>
+
+                          <p className="text-sm text-slate-600">{perm.description}</p>
+
+                          {perm.includes.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {perm.includes.map((included) => (
+                                <span
+                                  key={included}
+                                  className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600"
+                                >
+                                  + {included}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {isInherited && (
+                            <p className="mt-1 text-xs text-amber-600">
+                              Este permiso ya viene incluido por otro permiso superior.
+                            </p>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-slate-50 p-3">
+                <div className="text-sm font-medium">Permisos efectivos</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {expandPermissions(permissions).map((perm) => (
+                    <span
+                      key={perm}
+                      className="rounded-full bg-white px-3 py-1 text-xs border"
+                    >
+                      {PERMISSION_LABELS[perm] || perm}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setOpenRole(false);
+                    setRoleName("");
+                    setPermissions([]);
+                  }}
+                >
+                  Cancelar
+                </Button>
+
+                <Button type="submit" className="hover:cursor-pointer">
+                  Crear rol
+                </Button>
+              </div>
             </form>
           </DialogContent>
         </Dialog>
@@ -241,39 +383,97 @@ export default function GranjaUsuarios({ params }) {
                       {roles.find(r => r.id === w.farm_role)?.name || "Sin rol"}
                     </td>
                     <td className="py-3">
-                      <Dialog>
+                      <Dialog
+                        open={assignDialogOpen}
+                        onOpenChange={setAssignDialogOpen}
+                      >
                         <DialogTrigger asChild>
-                          <Button className="hover:cursor-pointer"
+                          <Button
                             size="sm"
-                            onClick={() => setSelectedUser(w.user.id)}
+                            className="hover:cursor-pointer"
+                            onClick={() => {
+                              setAssigningUser(w);
+                              setAssignDialogOpen(true);
+                            }}
                           >
                             <UserPen className="w-4 h-4 mr-1" />
                             Asignar Rol
                           </Button>
                         </DialogTrigger>
 
-                        <DialogContent>
+                        <DialogContent className="sm:max-w-lg">
                           <DialogHeader>
                             <DialogTitle>Asignar Rol</DialogTitle>
+
+                            <p className="text-sm text-slate-500">
+                              Selecciona un rol para:
+                            </p>
+
+                            <div className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium">
+                              {assigningUser?.user?.name}{" "}
+                              {assigningUser?.user?.lastname}
+                            </div>
                           </DialogHeader>
 
-                          <Select onValueChange={setSelectedRole}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecciona rol" />
-                            </SelectTrigger>
+                          <div className="space-y-3 mt-4">
+                            {roles.map((role) => {
+                              const isCurrent =
+                                assigningUser?.farm_role === role.id;
 
-                            <SelectContent>
-                              {roles.map((r) => (
-                                <SelectItem key={r.id} value={String(r.id)}>
-                                  {r.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                              return (
+                                <button
+                                  key={role.id}
+                                  type="button"
+                                  disabled={isCurrent}
+                                  onClick={() =>
+                                    handleAssignRole(
+                                      assigningUser.user.id,
+                                      role.id
+                                    )
+                                  }
+                                  className={`
+                                    w-full rounded-xl border p-4 text-left transition
+                                    ${
+                                      isCurrent
+                                        ? "border-emerald-500 bg-emerald-50"
+                                        : "hover:bg-slate-50 hover:border-slate-400"
+                                    }
+                                  `}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <h3 className="font-semibold">
+                                        {role.name}
+                                      </h3>
 
-                          <Button className="mt-4 hover:cursor-pointer" onClick={handleAssignRole}>
-                            Guardar
-                          </Button>
+                                      <p className="text-sm text-slate-500 mt-1">
+                                        {(role.permissions || []).length} permisos
+                                      </p>
+                                    </div>
+
+                                    {isCurrent && (
+                                      <span className="text-xs font-medium text-emerald-600">
+                                        Rol actual
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {(role.permissions || []).length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                      {role.permissions.map((perm) => (
+                                        <span
+                                          key={perm}
+                                          className="rounded-full border px-2 py-1 text-xs bg-white"
+                                        >
+                                          {PERMISSION_LABELS[perm] || perm}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </DialogContent>
                       </Dialog>
                     </td>
