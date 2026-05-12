@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Toaster } from "sonner";
 import { feedingService } from "@/lib/feedingService";
 import { usePermissions } from "@/lib/usePermissions";
-import { FeedingScheduleForm } from "@/app/home/granja/[id]/alimentacion/feeding_schedule_form";
+import { FeedingScheduleForm } from "@/app/components/feeding_schedule_form";
 
 const TYPES = [
   { key: "alevin", label: "Alevín" },
@@ -73,7 +73,7 @@ export default function FarmFeeding({ params }) {
       }
 
       try {
-        const productResponse = await fetch("https://backend-pongase-trucha.onrender.com/api/products/?type=feeding", {
+        const productResponse = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/products/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (productResponse.ok) {
@@ -86,7 +86,7 @@ export default function FarmFeeding({ params }) {
     };
 
     loadFilters();
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     if (permissions.loading) return;
@@ -196,11 +196,11 @@ export default function FarmFeeding({ params }) {
                 <p className="text-sm text-slate-600">Tipo: {schedule.type || "—"}</p>
                 <p className="text-sm text-slate-600">Producto: {(schedule.product_name ?? schedule.product) || "—"}</p>
                 <p className="text-sm text-slate-600">Fecha de creación: {schedule.created_at || "—"}</p>
-                {schedule.warnings && (
+                {/* {schedule.warnings && (
                   <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                     {schedule.warnings}
                   </span>
-                )}
+                )} */}
               </CardContent>
               <CardFooter className="flex flex-wrap items-center justify-between gap-3">
                 <Link href={`/home/granja/${id}/alimentacion/${schedule.id}`} className="text-sm font-medium text-blue-600 hover:underline">

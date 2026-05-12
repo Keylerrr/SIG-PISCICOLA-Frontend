@@ -56,7 +56,7 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
 
       try {
         const productResponse = await fetch(
-          "https://backend-pongase-trucha.onrender.com/api/products/?type=feeding",
+          `https://backend-pongase-trucha.onrender.com/api/farms/${farmId}/products/`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (productResponse.ok) {
@@ -81,7 +81,7 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
     }
 
     loadOptions();
-  }, []);
+  }, [farmId]);
 
   const setField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -301,7 +301,7 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
         <textarea
           value={form.comments}
           onChange={(event) => setField("comments", event.target.value)}
-          className="min-h-[100px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="min-h-25 w-full rounded-lg border border-input bg-transparent px-3 py-2 text-base outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           placeholder="Comentarios adicionales"
         />
         <FieldError errors={normalizeFieldErrors(errors.comments)} />
