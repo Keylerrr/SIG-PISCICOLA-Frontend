@@ -59,6 +59,10 @@ export const feedingService = {
     return apiRequest(`/farms/${farmId}/feeding-schedules/${query ? `?${query}` : ""}`);
   },
 
+  getFeedingOptions: async () => {
+    return apiRequest(`/feeding/options/`);
+  },
+
   createFeedingSchedule: async (farmId, payload) => {
     return apiRequest(`/farms/${farmId}/feeding-schedules/`, {
       method: "POST",

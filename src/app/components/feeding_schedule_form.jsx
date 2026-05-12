@@ -49,15 +49,14 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
   const [saving, setSaving] = useState(false);
   const [products, setProducts] = useState([]);
   const [species, setSpecies] = useState([]);
+  const [feedForms, setFeedForms] = useState([]);
 
   useEffect(() => {
     async function loadOptions() {
-      const token = localStorage.getItem("access");
-
       try {
         const productResponse = await fetch(
           `https://backend-pongase-trucha.onrender.com/api/farms/${farmId}/products/`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${localStorage.getItem("access")}` } }
         );
         if (productResponse.ok) {
           const productData = await productResponse.json();
@@ -69,7 +68,7 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
 
       try {
         const speciesResponse = await fetch("https://backend-pongase-trucha.onrender.com/api/species/", {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
         });
         if (speciesResponse.ok) {
           const speciesData = await speciesResponse.json();
@@ -77,6 +76,13 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
         }
       } catch (error) {
         console.error("No se pudieron cargar especies:", error);
+      }
+
+      try {
+        const feedOptions = await feedingService.getFeedingOptions();
+        setFeedForms(Array.isArray(feedOptions) ? feedOptions : []);
+      } catch (error) {
+        console.error("No se pudieron cargar opciones de feed_form:", error);
       }
     }
 
@@ -255,7 +261,19 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
       <div className="grid gap-4 lg:grid-cols-2">
         <Field>
           <FieldLabel>Forma del alimento</FieldLabel>
-          <Input value={form.feed_form} onChange={(event) => setField("feed_form", event.target.value)} placeholder="Ej. pellet flake" />
+          <Select value={form.feed_form || undefined} onValueChange={(value) => setField("feed_form", value === "__NONE__" ? "" : value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona una forma de alimento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__NONE__">Selecciona</SelectItem>
+              {feedForms.map((item) => {
+                const value = typeof item === "string" ? item : item.id?.toString() ?? item.name ?? item.value ?? "";
+                const label = typeof item === "string" ? item : item.name ?? item.label ?? value;
+                return <SelectItem key={value} value={value}>{label}</SelectItem>;
+              })}
+            </SelectContent>
+          </Select>
           <FieldError errors={normalizeFieldErrors(errors.feed_form)} />
         </Field>
 
