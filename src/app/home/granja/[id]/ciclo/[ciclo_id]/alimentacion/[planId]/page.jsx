@@ -283,8 +283,8 @@ export default function FeedingPlanDetail({ params }) {
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">
-                    Cronograma: {getScheduleLabel(plan?.feeding_schedule || plan?.feeding_schedule_name)}
+                  <p className="text-sm text-slate-500">Cronograma</p>
+                    <p className="mt-2 text-lg font-semibold">{getScheduleLabel(plan?.feeding_schedule || plan?.feeding_schedule_name)}
                   </p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, ChevronRight, Layers, ListChecks, Calendar, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ export default function ScheduleDetail({ params }) {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [events, setEvents] = useState([]);
   const [eventError, setEventError] = useState(null);
+  const [species, setSpecies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [loadingError, setLoadingError] = useState(null);
@@ -52,14 +53,22 @@ export default function ScheduleDetail({ params }) {
       setLoadingError(null);
 
       try {
-        const [versionData, planData] = await Promise.all([
+        const [versionData, planData, speciesData] = await Promise.all([
           feedingService.getScheduleVersions(id, scheduleId),
           feedingService.getScheduleFeedingPlans(id, scheduleId),
+          fetch("https://backend-pongase-trucha.onrender.com/api/species/", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
+          }),
         ]);
 
         const versionList = Array.isArray(versionData) ? versionData : [];
         setVersions(versionList.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
         setPlans(Array.isArray(planData) ? planData : []);
+
+        if (speciesData.ok) {
+          const speciesJson = await speciesData.json();
+          setSpecies(Array.isArray(speciesJson) ? speciesJson : []);
+        }
       } catch (error) {
         if (error.status === 401) {
           window.location.href = "/login";
@@ -81,6 +90,23 @@ export default function ScheduleDetail({ params }) {
 
     loadData();
   }, [id, permissions.loading, permissions.isFarmMember, permissions.canManageCycle, permissions.isAdmin, scheduleId]);
+
+  const speciesById = useMemo(() => {
+    return species.reduce((map, specie) => {
+      if (specie?.id != null) {
+        map[specie.id.toString()] = specie.name || specie.label || "";
+      }
+      return map;
+    }, {});
+  }, [species]);
+
+  const getSpeciesLabel = (version) => {
+    if (!version) return "—";
+    if (version.specie_name) return version.specie_name;
+    if (typeof version.specie === "object" && version.specie?.name) return version.specie.name;
+    const specieKey = version.specie != null ? version.specie.toString() : "";
+    return speciesById[specieKey] || version.specie || "—";
+  };
 
   const handleSelectPlan = async (plan) => {
     if (selectedPlan?.id === plan.id) {
@@ -190,7 +216,7 @@ export default function ScheduleDetail({ params }) {
                       </CardHeader>
                       <CardContent className="grid gap-2 text-sm text-slate-700">
                         <p>Tipo: {version.type || "—"}</p>
-                        <p>Especie: {(version.specie_name ?? version.specie) || "—"}</p>
+                        <p>Especie: {getSpeciesLabel(version)}</p>
                         {version.parent && <p>Padre: #{version.parent}</p>}
                       </CardContent>
                     </Card>
