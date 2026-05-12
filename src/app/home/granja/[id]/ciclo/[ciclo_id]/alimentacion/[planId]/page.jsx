@@ -28,6 +28,7 @@ export default function FeedingPlanDetail({ params }) {
   const [plan, setPlan] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [ranges, setRanges] = useState([]);
+  const [cycleName, setCycleName] = useState("");
   const [form, setForm] = useState({ feeding_schedule: "", start_date: "", end_date: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,25 @@ export default function FeedingPlanDetail({ params }) {
 
   const isInProgress = plan?.state === "in_progress";
   const isScheduled = plan?.state === "scheduled" || (!isInProgress && !isFinished);
+
+  const scheduleNameById = useMemo(() => {
+    return schedules.reduce((map, schedule) => {
+      if (schedule?.id != null) {
+        map[schedule.id.toString()] = schedule.name || schedule.title || `Cronograma #${schedule.id}`;
+      }
+      return map;
+    }, {});
+  }, [schedules]);
+
+  const getScheduleLabel = (scheduleId) => {
+    if (!scheduleId) return "—";
+    const idKey = scheduleId.toString();
+    return plan?.feeding_schedule_name || scheduleNameById[idKey] || scheduleId;
+  };
+
+  const getCycleLabel = () => {
+    return plan?.cycle_name || cycleName || plan?.cycle || ciclo_id || "—";
+  };
 
   useEffect(() => {
     if (permissions.loading) return;
@@ -78,6 +98,22 @@ export default function FeedingPlanDetail({ params }) {
           start_date: formatDate(planData.start_date),
           end_date: formatDate(planData.end_date),
         });
+
+        const token = localStorage.getItem("access");
+        if (token) {
+          const resCycle = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/cycles/${ciclo_id}/`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (resCycle.ok) {
+            const cycleData = await resCycle.json();
+            setCycleName(cycleData.name || "");
+          }
+        }
       } catch (error) {
         if (error.status === 401) {
           window.location.href = "/login";
@@ -248,12 +284,12 @@ export default function FeedingPlanDetail({ params }) {
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-sm text-slate-500">
-                    Cronograma: {(plan.feeding_schedule_name ?? plan.feeding_schedule) || "—"}
+                    Cronograma: {getScheduleLabel(plan?.feeding_schedule || plan?.feeding_schedule_name)}
                   </p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-sm text-slate-500">Ciclo</p>
-                  <p className="mt-2 text-lg font-semibold">{plan.cycle || ciclo_id}</p>
+                  <p className="mt-2 text-lg font-semibold">{getCycleLabel()}</p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-4">
                   <p className="text-sm text-slate-500">Inicio</p>
