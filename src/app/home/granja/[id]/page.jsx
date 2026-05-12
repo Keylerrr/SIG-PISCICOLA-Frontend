@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  hasPermission,
+  PERMISSIONS,
+} from "@/lib/permissions";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserCog } from "lucide-react";
@@ -43,6 +47,20 @@ export default function Granja({ params }) {
     const [searchBatch, setSearchBatch] = useState("");
     const [ciudades, setCiudades] = useState([]);
     const router = useRouter();
+    const [myPermissions, setMyPermissions] = useState([]);
+    const [myMember, setMyMember] = useState(null);
+    const [userData, setUserData] = useState(null);
+
+    useEffect(() => {
+        try {
+            const userString = localStorage.getItem("user");
+            if (userString) {
+                setUserData(JSON.parse(userString));
+            }
+        } catch (error) {
+            console.error("Error parsing user data:", error);
+        }
+    }, []);
 
     useEffect(() => {
         const token = localStorage.getItem("access")
@@ -96,6 +114,81 @@ export default function Granja({ params }) {
             .catch((err) => console.error(err));
         }, []);
 
+        useEffect(() => {
+            const token = localStorage.getItem("access");
+            let userId = null;
+            try {
+                const userObj = JSON.parse(localStorage.getItem("user"));
+                if (userObj) {
+                    userId = userObj.id;
+                }
+            } catch(e) {}
+
+            fetch(
+                `https://backend-pongase-trucha.onrender.com/api/farms/${id}/members/`,
+                {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                }
+            )
+                .then((res) => res.json())
+                .then((data) => {
+                if (Array.isArray(data)) {
+                    const me = data.find(
+                        (member) => member.user.id === userId
+                    );
+
+                    if (me) {
+                        setMyMember(me);
+                        setMyPermissions(me.permissions || []);
+                    }
+                }
+                });
+            }, [id]);
+
+        const isFarmOwner = myMember?.is_owner;
+        const isProductor = userData?.role?.name === "Productor" || userData?.role === "Productor" || userData?.role?.name === "productor";
+        const isAdmin = userData?.role?.name === "Admin" || userData?.role === "Admin" || userData?.role?.name === "admin";
+        
+        // El Productor tiene acceso total si es miembro de la finca (lo cual se verifica con myMember) o si se requiere como fallback total. 
+        // Según la API: Productor con UserFarm válido se considera con control total.
+        const hasFullAccess = isAdmin || (isProductor && myMember != null) || isProductor;
+
+        console.log("Debug page.jsx Permissions:", {
+            userData,
+            isProductor,
+            isAdmin,
+            isFarmOwner,
+            myMember,
+            hasFullAccess,
+            myPermissions
+        });
+
+        const canManagePonds =
+        hasFullAccess ||
+        isFarmOwner ||
+        hasPermission(
+            myPermissions,
+            PERMISSIONS.MANAGE_POND
+        );
+
+        const canManageCycles =
+        hasFullAccess ||
+        isFarmOwner ||
+        hasPermission(
+            myPermissions,
+            PERMISSIONS.MANAGE_CYCLE
+        );
+
+        const canManageFarm =
+        hasFullAccess ||
+        isFarmOwner ||
+        hasPermission(
+            myPermissions,
+            PERMISSIONS.MANAGE_FARM
+        );
+
     return (
         <div className="min-h-screen bg-slate-50">
             {
@@ -123,7 +216,7 @@ export default function Granja({ params }) {
                         <h1 className="text-4xl font-bold">
                             {granja.name}
                         </h1>
-
+                        {canManageFarm && (
                         <Button
                             onClick={() => router.push(`/home/granja/${id}/granja_trabajadores`)}
                             className="flex items-center gap-2 bg-[#6ec3b1] text-white px-4 py-2 rounded-lg"
@@ -131,6 +224,7 @@ export default function Granja({ params }) {
                             <UserCog className="w-5 h-5" />
                             Administrar Trabajadores
                         </Button>
+                        )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
                         <div className="bg-slate-50 p-4 rounded-lg">
@@ -167,6 +261,7 @@ export default function Granja({ params }) {
                         <h1 className="font-bold text-3xl">Estanques</h1>
                         <p className="text-xl">Selecciona un estanque para ver especies y calidad del agua</p>
                     </div>
+                    {canManagePonds && (
                     <div>
                         <Dialog>
                             <form>
@@ -199,6 +294,7 @@ export default function Granja({ params }) {
                             </form>
                         </Dialog>
                     </div>
+                    )}
                 </div>
             </div>
             <div className="mt-4 px-4 sm:px-6 lg:px-8">
@@ -249,6 +345,7 @@ export default function Granja({ params }) {
                         <h1 className="font-bold text-3xl">Ciclos</h1>
                         <p className="text-xl">Gestiona los ciclos de producción de la granja</p>
                     </div>
+                    {canManageCycles && (
                     <div>
                         <Dialog>
                             <form>
@@ -285,6 +382,7 @@ export default function Granja({ params }) {
                             </form>
                         </Dialog>
                     </div>
+                    )}
                 </div>
             </div>
             <div className="mt-4 px-4 sm:px-6 lg:px-8">
@@ -318,6 +416,7 @@ export default function Granja({ params }) {
                         <h1 className="font-bold text-3xl">Lotes</h1>
                         <p className="text-xl">Gestiona los lotes de la granja (sin asociar a estanque)</p>
                     </div>
+                    {canManagePonds && (
                     <div>
                         <Dialog>
                             <form>
@@ -352,6 +451,7 @@ export default function Granja({ params }) {
                             </form>
                         </Dialog>
                     </div>
+                    )}
                 </div>
             </div>
             <div className="mt-4 px-4 sm:px-6 lg:px-8">
