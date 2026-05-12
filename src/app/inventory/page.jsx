@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2, Package, Truck, ShoppingCart, ArrowRightLeft, Bell } from "lucide-react";
 import { ProductsTab } from "../components/inventory/ProductsTab";
 import { SuppliersTab } from "../components/inventory/SuppliersTab";
@@ -19,9 +20,11 @@ import { Toaster } from "sonner";
 
 export default function InventoryPage() {
   const [farms, setFarms] = useState([]);
-  const [selectedFarm, setSelectedFarm] = useState("");
   const [activeTab, setActiveTab] = useState("products");
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const farmIdFromUrl = searchParams.get("farmId");
+  const [selectedFarm, setSelectedFarm] = useState(farmIdFromUrl || "");
 
   useEffect(() => {
     const fetchFarms = async () => {
@@ -34,7 +37,19 @@ export default function InventoryPage() {
           const data = await res.json();
           setFarms(Array.isArray(data) ? data : []);
           if (Array.isArray(data) && data.length > 0) {
-            setSelectedFarm(data[0].id.toString());
+            if (farmIdFromUrl) {
+              const exists = data.some(
+                f => f.id.toString() === farmIdFromUrl
+              );
+
+              if (exists) {
+                setSelectedFarm(farmIdFromUrl);
+              } else {
+                setSelectedFarm(data[0].id.toString());
+              }
+            } else {
+              setSelectedFarm(data[0].id.toString());
+            }
           }
         }
       } catch (err) {
