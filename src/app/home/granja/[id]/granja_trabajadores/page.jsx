@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { use } from "react";
+import { useEffect, useState, useCallback, use } from "react";
 import { ArrowLeft, UserCog, Plus, UserPen, NotebookPen } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -31,8 +30,6 @@ export default function GranjaUsuarios({ params }) {
   const [openRole, setOpenRole] = useState(false);
   const [roleName, setRoleName] = useState("");
   const [permissions, setPermissions] = useState([]);
-
-  const [token, setToken] = useState(null);
 
   const PERMISSION_LABELS = {
       MANAGE_REVIEWS: "Gestión de Revisiones",
@@ -105,16 +102,12 @@ export default function GranjaUsuarios({ params }) {
     return Array.from(set);
   };
 
-  useEffect(() => {
-    setToken(localStorage.getItem("access"));
-  }, []);
-
-  const fetchWorkers = async () => {
+  const fetchWorkers = useCallback(async (currentToken) => {
     try {
       const res = await fetch(
         `https://backend-pongase-trucha.onrender.com/api/farms/${id}/members/`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${currentToken}` },
         }
       );
 
@@ -124,14 +117,14 @@ export default function GranjaUsuarios({ params }) {
       console.error(err);
       toast.error("Error cargando trabajadores");
     }
-  };
+  }, [id]);
 
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async (currentToken) => {
     try {
       const res = await fetch(
         `https://backend-pongase-trucha.onrender.com/api/farms/${id}/roles/`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${currentToken}` },
         }
       );
 
@@ -141,16 +134,22 @@ export default function GranjaUsuarios({ params }) {
       console.error(err);
       toast.error("Error cargando roles");
     }
-  };
+  }, [id]);
 
   useEffect(() => {
-    if (!token) return;
+    const currentToken = localStorage.getItem("access");
+    if (!currentToken) return;
 
-    fetchWorkers();
-    fetchRoles();
-  }, [token]);
+    const loadData = async () => {
+      await fetchWorkers(currentToken);
+      await fetchRoles(currentToken);
+    };
+
+    loadData();
+  }, [fetchWorkers, fetchRoles]);
 
   const handleAssignRole = async (userId, roleId) => {
+    const currentToken = localStorage.getItem("access");
     await toast.promise(
       fetch(
         `https://backend-pongase-trucha.onrender.com/api/farms/${id}/members/${userId}/`,
@@ -158,7 +157,7 @@ export default function GranjaUsuarios({ params }) {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${currentToken}`,
           },
           body: JSON.stringify({
             farm_role: roleId,
@@ -167,7 +166,7 @@ export default function GranjaUsuarios({ params }) {
       ).then(async (res) => {
         if (!res.ok) throw new Error("Error asignando rol");
 
-        await fetchWorkers();
+        await fetchWorkers(currentToken);
 
         setAssignDialogOpen(false);
         setAssigningUser(null);
@@ -188,12 +187,14 @@ export default function GranjaUsuarios({ params }) {
       return;
     }
 
+    const currentToken = localStorage.getItem("access");
+
     await toast.promise(
       fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/roles/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${currentToken}`,
         },
         body: JSON.stringify({
           name: roleName,
@@ -205,7 +206,7 @@ export default function GranjaUsuarios({ params }) {
         setRoleName("");
         setPermissions([]);
         setOpenRole(false);
-        await fetchRoles();
+        await fetchRoles(currentToken);
       }),
       {
         loading: "Creando rol...",
