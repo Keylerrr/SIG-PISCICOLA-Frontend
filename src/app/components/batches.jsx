@@ -58,7 +58,7 @@ const STATUS_COLORS = {
   dead: "bg-red-100 text-red-700",
 };
 
-export function Batches({ id, pondId, search = "" }) {
+export function Batches({ id, pondId, cycleId, search = "" }) {
   const [batches, setBatches] = useState([]);
   const [species, setSpecies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,10 +120,12 @@ export function Batches({ id, pondId, search = "" }) {
       setLoading(true);
       try {
         const token = localStorage.getItem("access");
-        const endpoint = pondId
-        // /api/farms/{farm_pk}/pond-batches/{id}/
-          ? `${API_BASE}/farms/${id}/pond-batches/?pond_id=${pondId}` // Sigue estando mal el endpoint
-          : `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
+        let endpoint = `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
+        if (cycleId) {
+          endpoint = `${API_BASE}/farms/${id}/cycles/${cycleId}/cycle-batches/`;
+        } else if (pondId) {
+          endpoint = `${API_BASE}/farms/${id}/batches/?pond=${pondId}`;
+        }
           
         const res = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
