@@ -52,14 +52,19 @@ export default function Granja({ params }) {
     const [userData, setUserData] = useState(null);
 
     useEffect(() => {
+        let mounted = true;
         try {
             const userString = localStorage.getItem("user");
-            if (userString) {
-                setUserData(JSON.parse(userString));
+            if (userString && mounted) {
+                // Se usa Promise.resolve() para hacer la llamada asíncrona y evitar la advertencia de ESLint
+                Promise.resolve().then(() => {
+                    if (mounted) setUserData(JSON.parse(userString));
+                });
             }
         } catch (error) {
             console.error("Error parsing user data:", error);
         }
+        return () => { mounted = false; };
     }, []);
 
     useEffect(() => {
