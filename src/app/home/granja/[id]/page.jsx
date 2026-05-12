@@ -6,7 +6,7 @@ import {
 } from "@/lib/permissions";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, UserCog } from "lucide-react";
+import { ArrowLeft, UserCog, Package } from "lucide-react";
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
@@ -194,6 +194,14 @@ export default function Granja({ params }) {
             PERMISSIONS.MANAGE_FARM
         );
 
+        const canManageInventory =
+        hasFullAccess ||
+        isFarmOwner ||
+        hasPermission(
+            myPermissions,
+            PERMISSIONS.MANAGE_INVENTORY
+        );
+
     return (
         <div className="min-h-screen bg-slate-50">
             {
@@ -221,15 +229,29 @@ export default function Granja({ params }) {
                         <h1 className="text-4xl font-bold">
                             {granja.name}
                         </h1>
-                        {canManageFarm && (
-                        <Button
-                            onClick={() => router.push(`/home/granja/${id}/granja_trabajadores`)}
-                            className="flex items-center gap-2 bg-[#6ec3b1] text-white px-4 py-2 rounded-lg"
-                        >
-                            <UserCog className="w-5 h-5" />
-                            Administrar Trabajadores
-                        </Button>
-                        )}
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
+                            {canManageInventory && (
+                            <Button
+                                onClick={() => {
+                                    localStorage.setItem("selectedFarmId", id);
+                                    router.push(`/inventory?farmId=${id}`);
+                                }}
+                                className="flex items-center gap-2 bg-[#FF91A4] hover:bg-[#ff7b91] text-white px-4 py-2 rounded-lg"
+                            >
+                                <Package className="w-5 h-5" />
+                                Administrar Inventario
+                            </Button>
+                            )}
+                            {canManageFarm && (
+                            <Button
+                                onClick={() => router.push(`/home/granja/${id}/granja_trabajadores`)}
+                                className="flex items-center gap-2 bg-[#6ec3b1] hover:bg-[#5db4a2] text-white px-4 py-2 rounded-lg"
+                            >
+                                <UserCog className="w-5 h-5" />
+                                Administrar Trabajadores
+                            </Button>
+                            )}
+                        </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
                         <div className="bg-slate-50 p-4 rounded-lg">
