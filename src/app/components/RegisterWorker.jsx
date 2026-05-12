@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus, MapPin } from "lucide-react";
 import { useFlags } from "@/hooks/useFlags";
-
+import { UserRoundX, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -44,6 +44,9 @@ export function RegisterWorker() {
 
   const [open, setOpen] = useState(false);
   const [isLoadingWorkers, setIsLoadingWorkers] = useState(false);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [workerToDelete, setWorkerToDelete] = useState(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -287,6 +290,48 @@ export function RegisterWorker() {
     );
   };
 
+  const handleDeleteWorker = async () => {
+    if (!workerToDelete) return;
+
+    const token = localStorage.getItem("access");
+
+    await toast.promise(
+      fetch(
+        `https://backend-pongase-trucha.onrender.com/api/farms/${workerToDelete.farm_id}/members/${workerToDelete.worker_id}/`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      ).then(async (res) => {
+        if (!res.ok) {
+          let data = null;
+
+          try {
+            data = await res.json();
+          } catch {}
+
+          throw new Error(
+            data?.detail ||
+            data?.message ||
+            "Error eliminando trabajador"
+          );
+        }
+
+        await fetchWorkers(selectedManager);
+
+        setDeleteDialogOpen(false);
+        setWorkerToDelete(null);
+      }),
+      {
+        loading: "Eliminando trabajador...",
+        success: "Trabajador eliminado",
+        error: (err) => err.message || "Error eliminando trabajador",
+      }
+    );
+  };
+
   const handleOpenChange = (newOpen) => {
     setOpen(newOpen);
     if (!newOpen) {
@@ -431,12 +476,85 @@ export function RegisterWorker() {
               </p>
               <p className="text-sm text-gray-500">{w.email}</p>
               {w.phone && <p className="text-sm">{w.phone}</p>}
-              {w.farm_name && (
-                <p className="mt-1 flex items-center gap-1 text-xs text-cyan-600">
-                  <MapPin className="h-4 w-4" />
-                  {w.farm_name}
-                </p>
-              )}
+              <div className="mt-2 flex items-center justify-between">
+                {w.farm_name && (
+                  <p className="flex items-center gap-1 text-xs text-cyan-600">
+                    <MapPin className="h-4 w-4" />
+                    {w.farm_name}
+                  </p>
+                )}
+
+                <Dialog
+                  open={deleteDialogOpen && workerToDelete?.worker_id === w.worker_id}
+                  onOpenChange={(open) => {
+                    setDeleteDialogOpen(open);
+
+                    if (!open) {
+                      setWorkerToDelete(null);
+                    }
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <button
+                      onClick={() => {
+                        setWorkerToDelete(w);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className="text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <UserRoundX className="h-5 w-5" />
+                    </button>
+                  </DialogTrigger>
+
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-6 w-6 text-red-500" />
+                        <DialogTitle>Eliminar trabajador</DialogTitle>
+                      </div>
+                    </DialogHeader>
+
+                    <div className="space-y-3">
+                      <p className="text-sm text-slate-600">
+                        Estás a punto de eliminar a:
+                      </p>
+
+                      <div className="rounded-lg border bg-slate-50 p-3">
+                        <p className="font-semibold">
+                          {w.name} {w.lastname}
+                        </p>
+
+                        <p className="text-sm text-slate-500">
+                          {w.email}
+                        </p>
+                      </div>
+
+                      <p className="text-sm text-red-600 font-medium">
+                        Esta acción no se puede deshacer.
+                      </p>
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setDeleteDialogOpen(false);
+                          setWorkerToDelete(null);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteWorker}
+                      >
+                        Eliminar
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           ))
         )}
