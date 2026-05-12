@@ -97,9 +97,35 @@ export default function FarmFeeding({ params }) {
     fetchSchedules();
   }, [id, typeFilter, specieFilter, permissions.loading, permissions.isFarmMember, permissions.canManageCycle, permissions.isAdmin]);
 
+  const speciesById = useMemo(() => {
+    return species.reduce((acc, item) => {
+      acc[item.id.toString()] = item.name;
+      return acc;
+    }, {});
+  }, [species]);
+
+  const productsById = useMemo(() => {
+    return products.reduce((acc, item) => {
+      acc[item.id.toString()] = item.name;
+      return acc;
+    }, {});
+  }, [products]);
+
   const filteredSchedules = useMemo(() => {
     return schedules;
   }, [schedules]);
+
+  const getSpeciesLabel = (schedule) => {
+    const specieValue = schedule.specie ?? schedule.specie_id;
+    const specieKey = specieValue != null ? specieValue.toString() : "";
+    return schedule.specie_name || speciesById[specieKey] || schedule.specie || "—";
+  };
+
+  const getProductLabel = (schedule) => {
+    const productValue = schedule.product ?? schedule.product_id;
+    const productKey = productValue != null ? productValue.toString() : "";
+    return schedule.product_name || productsById[productKey] || schedule.product || "—";
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
@@ -192,9 +218,9 @@ export default function FarmFeeding({ params }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-slate-600">Especie: {(schedule.specie_name ?? schedule.specie) || "—"}</p>
+                <p className="text-sm text-slate-600">Especie: {getSpeciesLabel(schedule)}</p>
                 <p className="text-sm text-slate-600">Tipo: {schedule.type || "—"}</p>
-                <p className="text-sm text-slate-600">Producto: {(schedule.product_name ?? schedule.product) || "—"}</p>
+                <p className="text-sm text-slate-600">Producto: {getProductLabel(schedule)}</p>
                 <p className="text-sm text-slate-600">Fecha de creación: {schedule.created_at || "—"}</p>
                 {/* {schedule.warnings && (
                   <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
