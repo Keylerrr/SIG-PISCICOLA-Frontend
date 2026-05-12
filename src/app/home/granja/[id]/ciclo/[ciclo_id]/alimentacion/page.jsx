@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,17 +27,33 @@ const STATE_LABELS = {
 export default function CycleFeeding({ params }) {
   const { id, ciclo_id } = use(params);
   const [plans, setPlans] = useState([]);
+  const [scheduleMap, setScheduleMap] = useState({});
+  const [cycleName, setCycleName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const permissions = usePermissions(id);
 
   const canManage = permissions.canManageCycle;
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await feedingService.getCycleFeedingPlans(id, ciclo_id);
-      setPlans(Array.isArray(data) ? data : []);
+      const [plansData, schedulesData] = await Promise.all([
+        feedingService.getCycleFeedingPlans(id, ciclo_id),
+        feedingService.getFeedingSchedules(id),
+      ]);
+
+      setPlans(Array.isArray(plansData) ? plansData : []);
+      setScheduleMap(
+        Array.isArray(schedulesData)
+          ? schedulesData.reduce((map, schedule) => {
+              if (schedule?.id != null) {
+                map[schedule.id.toString()] = schedule.name || schedule.title || `Cronograma #${schedule.id}`;
+              }
+              return map;
+            }, {})
+          : {}
+      );
     } catch (error) {
       if (error.status === 404) {
         setPlans([]);
@@ -47,13 +63,47 @@ export default function CycleFeeding({ params }) {
     } finally {
       setLoading(false);
     }
+  }, [id, ciclo_id]);
+
+  useEffect(() => {
+    const loadCycleName = async () => {
+      const token = localStorage.getItem("access");
+      if (!token) return;
+
+      try {
+        const response = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/cycles/${ciclo_id}/`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setCycleName(data.name || "");
+      } catch (error) {
+        console.error("Error cargando nombre del ciclo:", error);
+      }
+    };
+
+    if (id && ciclo_id) {
+      loadCycleName();
+    }
+  }, [id, ciclo_id]);
+
+  const getScheduleLabel = (plan) => {
+    const key = plan?.feeding_schedule?.toString();
+    return plan?.feeding_schedule_name || (key ? scheduleMap[key] : undefined) || plan?.feeding_schedule || "—";
+  };
+
+  const getCycleLabel = (plan) => {
+    return plan?.cycle_name || cycleName || plan?.cycle || "—";
   };
 
   useEffect(() => {
     if (permissions.loading) return;
     if (!permissions.isFarmMember && !permissions.canManageCycle && !permissions.isAdmin) return;
     fetchPlans();
-  }, [id, ciclo_id, permissions.loading, permissions.isFarmMember, permissions.canManageCycle, permissions.isAdmin]);
+  }, [fetchPlans, permissions.loading, permissions.isFarmMember, permissions.canManageCycle, permissions.isAdmin]);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
@@ -98,11 +148,11 @@ export default function CycleFeeding({ params }) {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-slate-600">
-                  Cronograma: {(plan.feeding_schedule_name ?? plan.feeding_schedule) || "—"}
+                  Cronograma: {getScheduleLabel(plan)}
                 </p>
                 <p className="text-sm text-slate-600">Inicio: {plan.start_date || "—"}</p>
                 <p className="text-sm text-slate-600">Fin: {plan.end_date || "—"}</p>
-                <p className="text-sm text-slate-600">Ciclo: {plan.cycle || "—"}</p>
+                <p className="text-sm text-slate-600">Ciclo: {getCycleLabel(plan)}</p>
               </CardContent>
               <CardFooter className="flex flex-wrap items-center justify-between gap-3">
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATE_COLORS[plan.state] || "bg-slate-100 text-slate-700"}`}>
