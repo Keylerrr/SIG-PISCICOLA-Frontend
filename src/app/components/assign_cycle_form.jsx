@@ -23,18 +23,28 @@ export function AssignCycleForm({
   defaultMaxWeight = 0,
 }) {
   const [cycles, setCycles] = useState([]);
+  const [speciesMap, setSpeciesMap] = useState({});
   const [loadingCycles, setLoadingCycles] = useState(true);
-  
+
   const [cycle, setCycle] = useState("");
-  const [quantity, setQuantity] = useState(defaultQuantity || "");
   const [minWeight, setMinWeight] = useState(defaultMinWeight);
   const [avgWeight, setAvgWeight] = useState(defaultAvgWeight);
   const [maxWeight, setMaxWeight] = useState(defaultMaxWeight);
 
   useEffect(() => {
-    const fetchCycles = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem("access");
       try {
+        const speciesRes = await fetch(`https://backend-pongase-trucha.onrender.com/api/species/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (speciesRes.ok) {
+          const sData = await speciesRes.json();
+          const sArray = Array.isArray(sData) ? sData : [];
+          const sMap = sArray.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.name }), {});
+          setSpeciesMap(sMap);
+        }
+
         const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmId}/cycles/`, {
           method: "GET",
           headers: {
@@ -50,12 +60,12 @@ export function AssignCycleForm({
           console.error("Error fetching cycles:", res.statusText);
         }
       } catch (err) {
-        console.error("Error fetching cycles:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoadingCycles(false);
       }
     };
-    fetchCycles();
+    fetchData();
   }, [farmId]);
 
   const handleSubmit = async () => {
@@ -63,18 +73,46 @@ export function AssignCycleForm({
       toast.error("Debe seleccionar un ciclo.");
       return;
     }
-    
-    const qty = parseInt(quantity);
+
+    const qty = parseInt(defaultQuantity);
     if (isNaN(qty) || qty <= 0) {
-      toast.error("La cantidad debe ser un número entero positivo.");
+      toast.error("Error: cantidad del lote no válida.");
       return;
     }
 
     const token = localStorage.getItem("access");
 
+    // GET pond_batch association ID
+    let realPondBatchId = null;
+    try {
+      const pbRes = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmId}/pond-batches/?batch=${pondBatchId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!pbRes.ok) {
+        toast.error("Error obteniendo la asociación del lote con el estanque.");
+        return;
+      }
+
+      const pbData = await pbRes.json();
+      const results = pbData.results || pbData;
+
+      if (Array.isArray(results) && results.length > 0) {
+        realPondBatchId = results[0].id;
+      } else {
+        toast.error("No se encontró la asociación del lote con el estanque.");
+        return;
+      }
+    } catch (err) {
+      console.error("Error fetching pond-batch:", err);
+      toast.error("Error de red al buscar la asociación del lote.");
+      return;
+    }
+
     const payload = {
       cycle: parseInt(cycle),
-      pond_batch: parseInt(pondBatchId),
+      pond_batch: parseInt(realPondBatchId),
       quantity: qty,
       min_weight_g: parseFloat(minWeight),
       avg_weight_g: parseFloat(avgWeight),
@@ -82,7 +120,7 @@ export function AssignCycleForm({
     };
 
     try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmId}/cycle-pond-batches/`, { //Corregir endpoint
+      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmId}/cycles/${cycle}/cycle-batches/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -93,7 +131,7 @@ export function AssignCycleForm({
 
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
-        
+
         const extractErrors = (obj) => {
           if (typeof obj === 'string') return obj;
           if (Array.isArray(obj)) return obj.join(', ');
@@ -107,7 +145,7 @@ export function AssignCycleForm({
 
         const parsedError = extractErrors(errorData);
         const errorMsg = parsedError ? parsedError : `Error ${res.status}: Ocurrió un error inesperado`;
-        
+
         toast.error(errorMsg);
         return;
       }
@@ -132,7 +170,7 @@ export function AssignCycleForm({
             <SelectGroup>
               {cycles.map((item) => (
                 <SelectItem key={item.id} value={item.id.toString()}>
-                  {item.name}
+                  {item.name} {item.specie ? `(${speciesMap[item.specie] || 'Especie #' + item.specie})` : ''}
                 </SelectItem>
               ))}
             </SelectGroup>
@@ -140,54 +178,44 @@ export function AssignCycleForm({
         </Select>
       </Field>
 
-      <Field>
-        <FieldLabel>Cantidad</FieldLabel>
-        <Input 
-          type="number" 
-          min="1"
-          value={quantity} 
-          onChange={(e) => setQuantity(e.target.value)} 
-          placeholder="Ej: 5000"
-          required
-        />
-      </Field>
+
 
       <div className="grid grid-cols-3 gap-2">
         <Field>
-            <FieldLabel>Peso Mín (g)</FieldLabel>
-            <Input 
-            type="number" 
+          <FieldLabel>Peso Mín (g)</FieldLabel>
+          <Input
+            type="number"
             step="0.01"
-            value={minWeight} 
-            onChange={(e) => setMinWeight(e.target.value)} 
+            value={minWeight}
+            onChange={(e) => setMinWeight(e.target.value)}
             required
-            />
+          />
         </Field>
         <Field>
-            <FieldLabel>Peso Prom. (g)</FieldLabel>
-            <Input 
-            type="number" 
+          <FieldLabel>Peso Prom. (g)</FieldLabel>
+          <Input
+            type="number"
             step="0.01"
-            value={avgWeight} 
-            onChange={(e) => setAvgWeight(e.target.value)} 
+            value={avgWeight}
+            onChange={(e) => setAvgWeight(e.target.value)}
             required
-            />
+          />
         </Field>
         <Field>
-            <FieldLabel>Peso Máx (g)</FieldLabel>
-            <Input 
-            type="number" 
+          <FieldLabel>Peso Máx (g)</FieldLabel>
+          <Input
+            type="number"
             step="0.01"
-            value={maxWeight} 
-            onChange={(e) => setMaxWeight(e.target.value)} 
+            value={maxWeight}
+            onChange={(e) => setMaxWeight(e.target.value)}
             required
-            />
+          />
         </Field>
       </div>
 
       <Field orientation="horizontal" className="justify-end gap-3 mt-4">
-        <Button 
-          type="button" 
+        <Button
+          type="button"
           onClick={handleSubmit}
           className="bg-blue-600 hover:bg-blue-700"
         >

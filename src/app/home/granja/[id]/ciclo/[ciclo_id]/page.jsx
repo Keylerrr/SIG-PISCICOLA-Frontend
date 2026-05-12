@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Loader2, Calendar, CalendarX } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, CalendarX, Fish, ClipboardList, Map } from "lucide-react";
 import { Batches } from '@/app/components/batches';
 
 const STATE_LABELS = {
@@ -23,11 +23,14 @@ export default function Ciclo({ params }) {
     const { ciclo_id, id } = useParams(params);
     const [ciclo, setCiclo] = useState(null);
 
+    const [species, setSpecies] = useState([]);
+
     useEffect(() => {
-        async function fetchCiclo() {
+        async function fetchData() {
             try {
                 const token = localStorage.getItem("access");
-                const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/cycles/${ciclo_id}/`, {
+                
+                const resCiclo = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/cycles/${ciclo_id}/`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -35,19 +38,26 @@ export default function Ciclo({ params }) {
                     },
                 });
 
-                if (!res.ok) {
-                    const errorData = await res.clone().json().catch(() => ({}));
-                    throw new Error(errorData.detail || errorData.message || `Error ${res.status} al obtener la informacion del ciclo`);
+                if (!resCiclo.ok) {
+                    const errorData = await resCiclo.clone().json().catch(() => ({}));
+                    throw new Error(errorData.detail || errorData.message || `Error ${resCiclo.status} al obtener la informacion del ciclo`);
                 }
 
-                const data = await res.json();
-                console.log("Ciclo data:", data);
+                const data = await resCiclo.json();
                 setCiclo(data);
+
+                const resSpecies = await fetch(`https://backend-pongase-trucha.onrender.com/api/species/`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (resSpecies.ok) {
+                    const dataSpecies = await resSpecies.json();
+                    setSpecies(Array.isArray(dataSpecies) ? dataSpecies : []);
+                }
             } catch (error) {
                 console.error(error);
             }
         }
-        fetchCiclo();
+        fetchData();
     }, [id, ciclo_id]);
 
     return (
@@ -84,8 +94,8 @@ export default function Ciclo({ params }) {
                             </div>
                         </div>
 
-                        {ciclo.description?.length > 0 && (
-                            <p className="text-xl text-slate-700">{ciclo.description}</p>
+                        {ciclo.comments?.length > 0 && (
+                            <p className="text-xl text-slate-700">{ciclo.comments}</p>
                         )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
@@ -107,6 +117,35 @@ export default function Ciclo({ params }) {
                                         <CalendarX className="w-5 h-5" /> Fecha Finalización
                                     </span>
                                     <span className="font-bold">{ciclo.finish_date}</span>
+                                </div>
+                            )}
+                            
+                            {ciclo.specie && (
+                                <div className="bg-slate-50 p-4 rounded-lg flex flex-col gap-2">
+                                    <span className="text-slate-600 flex items-center gap-2">
+                                        <Fish className="w-5 h-5" /> Especie
+                                    </span>
+                                    <span className="font-bold">
+                                        {species.find(s => s.id === ciclo.specie)?.name || `Especie #${ciclo.specie}`}
+                                    </span>
+                                </div>
+                            )}
+                            {ciclo.production_plan && (
+                                <div className="bg-slate-50 p-4 rounded-lg flex flex-col gap-2">
+                                    <span className="text-slate-600 flex items-center gap-2">
+                                        <ClipboardList className="w-5 h-5" /> Plan de Producción
+                                    </span>
+                                    <span className="font-bold">Plan #{ciclo.production_plan}</span>
+                                </div>
+                            )}
+                            {ciclo.pond && (
+                                <div className="bg-slate-50 p-4 rounded-lg flex flex-col gap-2">
+                                    <span className="text-slate-600 flex items-center gap-2">
+                                        <Map className="w-5 h-5" /> Estanque
+                                    </span>
+                                    <span className="font-bold">
+                                        {typeof ciclo.pond === 'object' ? ciclo.pond.name : `Estanque #${ciclo.pond}`}
+                                    </span>
                                 </div>
                             )}
                         </div>
