@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LogOut, Settings, UserRound, Fish, UserRoundPlus } from 'lucide-react';
@@ -89,7 +90,13 @@ export function Navbar() {
             className="flex items-center gap-2 hover:opacity-80 transition-opacity hover:cursor-pointer"
           >
 
-            <img src="/images/PongaseTrucha.png" alt="" className="w-12 h-12" />
+            <Image 
+              src="/images/PongaseTrucha.png" 
+              alt="Pongase Trucha Logo" 
+              width={48} 
+              height={48} 
+              className="w-12 h-12" 
+            />
             <span className="text-xl font-bold text-[#4F8FB3]">
               Póngase Trucha
             </span>

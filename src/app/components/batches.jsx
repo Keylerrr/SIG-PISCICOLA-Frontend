@@ -148,7 +148,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
     };
 
     fetchBatches();
-  }, [id]);
+  }, [id, cycleId, pondId]);
 
   const handleDelete = async (batchId) => {
     toast.info("Funcionalidad de eliminar lote pendiente de implementación");
