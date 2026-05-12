@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Settings, UserRound, Fish, UserRoundPlus } from 'lucide-react';
+import { LogOut, Settings, UserRound, Fish, UserRoundPlus, Package } from 'lucide-react';
 
 export function Navbar() {
   const [isLoading, setIsLoading] = useState(false);
@@ -122,9 +122,18 @@ export function Navbar() {
             </button>
 
             <button 
+              title='Inventario'
+              onClick={() => router.push('/inventory')}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-[#FF91A4]/10 rounded-lg transition-colors hover:cursor-pointer"
+            >
+              <Package className="w-5 h-5 text-[#FF91A4]" />
+              <span className="text-md font-bold text-[#FF91A4]">Inventario</span>
+            </button>
+
+            <button 
               title='Gestionar Trabajadores'
               onClick={handleSettings}
-              className="flex items-center gap-2 px-4 py-2 text-[#6ec3b1] hover:bg-[#e3fff9] rounded-lg transition-colors hover:cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 text-[#6ec3b1] hover:bg-[#6ec3b1]/10 rounded-lg transition-colors hover:cursor-pointer"
             >
               <UserRoundPlus className="w-5 h-5" />
               <span className="text-md font-bold">Trabajadores</span>

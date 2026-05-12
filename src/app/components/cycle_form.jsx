@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Toaster, toast } from 'sonner';
 
 export function CycleRegisterForm({
   op,
@@ -36,12 +37,12 @@ export function CycleRegisterForm({
   const [loadingSpecies, setLoadingSpecies] = useState(true);
   const [loadingPlans, setLoadingPlans] = useState(true);
 
-  const [specie, setSpecie] = useState(safe(specieProp))
-  const [productionPlan, setProductionPlan] = useState(safe(productionPlanProp))
-  const [name, setName] = useState(safe(nameProp))
-  const [startDate, setStartDate] = useState(safe(startDateProp))
-  const [estimatedFinishDate, setEstimatedFinishDate] = useState(safe(estimatedFinishDateProp))
-  const [state, setState] = useState(safe(stateProp))
+  const [specie, setSpecie] = useState(specieProp ? specieProp.toString() : "");
+  const [productionPlan, setProductionPlan] = useState(productionPlanProp ? productionPlanProp.toString() : "");
+  const [name, setName] = useState(safe(nameProp));
+  const [startDate, setStartDate] = useState(safe(startDateProp));
+  const [estimatedFinishDate, setEstimatedFinishDate] = useState(safe(estimatedFinishDateProp));
+  const [state, setState] = useState(safe(stateProp));
   const [comments, setComments] = useState(safe(commentsProp))
   const [minWeightG, setMinWeightG] = useState(safe(minWeightGProp))
   const [avgWeightG, setAvgWeightG] = useState(safe(avgWeightGProp))
@@ -116,56 +117,56 @@ export function CycleRegisterForm({
 
   const validate = () => {
     if (!name.trim()) {
-      alert("El nombre no puede estar vacío.");
+      toast.error("El nombre no puede estar vacío.");
       return false;
     }
     if (!specie) {
-      alert("Debe seleccionar una especie.");
+      toast.error("Debe seleccionar una especie.");
       return false;
     }
     if (!productionPlan) {
-      alert("Debe seleccionar un plan de producción.");
+      toast.error("Debe seleccionar un plan de producción.");
       return false;
     }
     if (!startDate) {
-      alert("Debe seleccionar una fecha de inicio.");
+      toast.error("Debe seleccionar una fecha de inicio.");
       return false;
     }
     const today = new Date().toISOString().split('T')[0];
     if (startDate < today) {
-      alert("La fecha de inicio no puede ser anterior a hoy.");
+      toast.error("La fecha de inicio no puede ser anterior a hoy.");
       return false;
     }
     if (op === 1 && !estimatedFinishDate) {
-      alert("Debe seleccionar una fecha estimada de finalización.");
+      toast.error("Debe seleccionar una fecha estimada de finalización.");
       return false;
     }
     if (estimatedFinishDate && estimatedFinishDate <= startDate) {
-      alert("La fecha estimada de finalización debe ser posterior a la fecha de inicio.");
+      toast.error("La fecha estimada de finalización debe ser posterior a la fecha de inicio.");
       return false;
     }
     const validStates = ["in_progress", "paused", "finished", "cancelled"];
     if (!validStates.includes(state)) {
-      alert("Debe seleccionar un estado válido.");
+      toast.error("Debe seleccionar un estado válido.");
       return false;
     }
     const minW = parseFloat(minWeightG);
     if (isNaN(minW) || minW < 0) {
-      alert("El peso mínimo debe ser un número válido mayor o igual a 0.");
+      toast.error("El peso mínimo debe ser un número válido mayor o igual a 0.");
       return false;
     }
     const avgW = parseFloat(avgWeightG);
     if (isNaN(avgW) || avgW < 0) {
-      alert("El peso promedio debe ser un número válido mayor o igual a 0.");
+      toast.error("El peso promedio debe ser un número válido mayor o igual a 0.");
       return false;
     }
     const maxW = parseFloat(maxWeightG);
     if (isNaN(maxW) || maxW < 0) {
-      alert("El peso máximo debe ser un número válido mayor o igual a 0.");
+      toast.error("El peso máximo debe ser un número válido mayor o igual a 0.");
       return false;
     }
     if (minW > avgW || avgW > maxW) {
-      alert("Los pesos deben estar en orden: mínimo <= promedio <= máximo.");
+      toast.error("Los pesos deben estar en orden: mínimo <= promedio <= máximo.");
       return false;
     }
     return true;
@@ -188,7 +189,7 @@ export function CycleRegisterForm({
         const cycles = await res.json();
         const existing = cycles.find(c => c.farm === farmProp && c.specie === parseInt(specie) && c.state === "in_progress" && c.id !== idProp);
         if (existing) {
-          alert("Ya existe un ciclo en progreso para esta granja y especie.");
+          toast.error("Ya existe un ciclo en progreso para esta granja y especie.");
           return;
         }
       }
@@ -229,14 +230,15 @@ export function CycleRegisterForm({
           errorData.production_plan?.[0] ||
           errorData.non_field_errors?.[0] || 
           `Error ${res.status}: ${res.statusText}`;
-        alert(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      window.location.reload();
+      toast.success("Ciclo creado correctamente.");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error("Error registro:", err);
-      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
+      toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 
@@ -277,14 +279,15 @@ export function CycleRegisterForm({
           errorData.production_plan?.[0] ||
           errorData.non_field_errors?.[0] || 
           `Error ${res.status}: ${res.statusText}`;
-        alert(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      window.location.reload();
+      toast.success("Ciclo actualizado correctamente.");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error("Error edición:", err);
-      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
+      toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 
@@ -308,14 +311,15 @@ export function CycleRegisterForm({
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
         const errorMsg = errorData.detail || `Error ${res.status}: ${res.statusText}`;
-        alert(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      window.location.reload();
+      toast.success("Ciclo finalizado correctamente.");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error("Error finishing cycle:", err);
-      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
+      toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 
@@ -338,19 +342,21 @@ export function CycleRegisterForm({
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
         const errorMsg = errorData.detail || `Error ${res.status}: ${res.statusText}`;
-        alert(errorMsg);
+        toast.error(errorMsg);
         return;
       }
 
-      window.location.reload();
+      toast.success("Ciclo eliminado correctamente.");
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error("Error deleting cycle:", err);
-      alert("Error de conexión. Verifica tu internet e intenta nuevamente.");
+      toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
     }
   };
 
   return (
     <FieldGroup>
+      <Toaster position="top-center" />
       <Field>
         <FieldLabel>Especie</FieldLabel>
         <Select onValueChange={setSpecie} value={specie} disabled={loadingSpecies}>
@@ -487,9 +493,6 @@ export function CycleRegisterForm({
       </Field>
 
       <Field orientation="horizontal" className="justify-end gap-3 mt-4">
-        <Button type="button" variant="outline" onClick={handleReset}>
-          Borrar
-        </Button>
         <Button 
           type="button" 
           onClick={op === 1 ? handleSubmit : handleEdit}
