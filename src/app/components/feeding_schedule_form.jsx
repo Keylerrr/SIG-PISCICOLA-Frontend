@@ -79,8 +79,14 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
       }
 
       try {
-        const feedOptions = await feedingService.getFeedingOptions();
-        setFeedForms(Array.isArray(feedOptions) ? feedOptions : []);
+        const feedResponse = await fetch("https://backend-pongase-trucha.onrender.com/api/feeding/options/", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("access")}` },
+        });
+        if (feedResponse.ok) {
+          const feedOptions = await feedResponse.json();
+          const options = feedOptions?.feeding_schedule?.feed_form;
+          setFeedForms(Array.isArray(options) ? options : []);
+        }
       } catch (error) {
         console.error("No se pudieron cargar opciones de feed_form:", error);
       }
@@ -268,8 +274,8 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
             <SelectContent>
               <SelectItem value="__NONE__">Selecciona</SelectItem>
               {feedForms.map((item) => {
-                const value = typeof item === "string" ? item : item.id?.toString() ?? item.name ?? item.value ?? "";
-                const label = typeof item === "string" ? item : item.name ?? item.label ?? value;
+                const value = item?.value ?? "";
+                const label = item?.label ?? value;
                 return <SelectItem key={value} value={value}>{label}</SelectItem>;
               })}
             </SelectContent>
