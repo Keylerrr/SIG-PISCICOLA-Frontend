@@ -93,28 +93,24 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
     const term = search.toLowerCase().trim();
     
     return batches.filter((item) => {
-      /*
-       EXPLICACIÓN DE LA COMPLEJIDAD:
-       El backend puede devolvernos dos cosas distintas dependiendo de qué endpoint consumamos:
-       1. Si consumimos /batches/, nos devuelve objetos Lote (Batch) directos.
-       2. Si consumimos /pond-batches/, nos devuelve objetos de Relación (PondBatch) que 
-          tienen el Lote anidado adentro de una propiedad llamada 'batch' (dependiendo de 
-          cómo se haya serializado en Django).
-          
-       Para evitar que la app se rompa o que los atributos salgan como "undefined", 
-       hacemos esta comprobación: si 'item' tiene la propiedad 'batch' y es un objeto, 
-       significa que es una Relación y sacamos el lote de adentro. Si no, usamos 'item' tal cual.
-      */
-      const b = typeof item.batch === 'object' && item.batch !== null ? item.batch : item;
+      let b = item;
+      if (item.pond_batch_detail?.batch) {
+        b = item.pond_batch_detail.batch;
+      } else if (typeof item.batch === 'object' && item.batch !== null) {
+        b = item.batch;
+      }
       
+      const specieName = b.specie?.name || specieMap[b.specie?.id || b.specie] || String(b.specie || "");
+
       return (
         BIO_STATE_LABELS[b.biological_state]?.toLowerCase().includes(term) ||
         STATUS_LABELS[b.status]?.toLowerCase().includes(term) ||
         b.id?.toString().includes(term) ||
+        specieName.toLowerCase().includes(term) ||
         (b.comments || "").toLowerCase().includes(term)
       );
     });
-  }, [batches, search]);
+  }, [batches, search, specieMap]);
 
   useEffect(() => {
     const fetchBatches = async () => {
@@ -174,8 +170,18 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
         )}
 
         {filteredBatches.map((item) => {
-          const b = typeof item.batch === 'object' && item.batch !== null ? item.batch : item;
+          const isCycleBatch = !!item.pond_batch_detail;
+          const isPondBatch = typeof item.batch === 'object' && item.batch !== null && !isCycleBatch;
+          
+          const b = isCycleBatch ? item.pond_batch_detail.batch : (isPondBatch ? item.batch : item);
           const displayId = b.id || item.id;
+          
+          const displayQuantity = isCycleBatch ? item.quantity : (isPondBatch ? (item.current_quantity ?? item.initial_quantity) : b.initial_quantity);
+          const displayMinWeight = isCycleBatch ? item.min_weight_g : b.min_weight_g;
+          const displayAvgWeight = isCycleBatch ? item.avg_weight_g : b.avg_weight_g;
+          const displayMaxWeight = isCycleBatch ? item.max_weight_g : b.max_weight_g;
+          const specieName = b.specie?.name || specieMap[b.specie?.id || b.specie] || String(b.specie || "");
+
           return (
           <Card
             key={item.id}
@@ -183,12 +189,12 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
           >
             <CardHeader>
               <CardTitle className="text-2xl font-bold group-hover:text-blue-600">
-                Lote #{displayId}
+                Lote #{displayId} {isCycleBatch && item.pond_batch_detail?.pond && <span className="text-sm font-normal text-slate-500 ml-2">({item.pond_batch_detail.pond.name})</span>}
               </CardTitle>
 
               <CardDescription className="flex items-center gap-2 font-bold text-lg mt-1">
                 <Fish className="w-5 h-5" />
-                {specieMap[b.specie] || b.specie} - {BIO_STATE_LABELS[b.biological_state] || b.biological_state}
+                {specieName} - {BIO_STATE_LABELS[b.biological_state] || b.biological_state}
               </CardDescription>
 
               <CardAction>
@@ -208,7 +214,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                         op={0}
                         idProp={b.id}
                         idFarmProp={id}
-                        specieProp={b.specie?.toString() || b.specie}
+                        specieProp={b.specie?.id?.toString() || b.specie?.toString() || ""}
                         biologicalStateProp={b.biological_state}
                         statusProp={b.status}
                         initialQuantityProp={b.initial_quantity}
@@ -250,12 +256,12 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
             </CardHeader>
             
             <CardContent className="text-md space-y-2">
-              <p><strong>Cant. Inicial:</strong> {b.initial_quantity}</p>
+              <p><strong>Cant. {isCycleBatch ? 'en Ciclo' : (isPondBatch ? 'Actual' : 'Inicial')}:</strong> {displayQuantity}</p>
               <div className="flex gap-2 items-center text-sm text-slate-600">
                 <Scale className="w-4 h-4" />
-                <span>Min: {b.min_weight_g}g</span> | 
-                <span>Prom: {b.avg_weight_g}g</span> | 
-                <span>Max: {b.max_weight_g}g</span>
+                <span>Min: {displayMinWeight}g</span> | 
+                <span>Prom: {displayAvgWeight}g</span> | 
+                <span>Max: {displayMaxWeight}g</span>
               </div>
               {b.comments ? (
                 <p className="text-sm text-slate-500">
@@ -275,7 +281,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                 </p>
               </div>
 
-              {!pondId && (
+              {!pondId && !cycleId && !b.pond && !item.pond && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full flex gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
@@ -298,7 +304,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                 </DialogContent>
               </Dialog>
               )}
-              {!!pondId && (
+              {!!pondId && !cycleId && !item.cycle && !b.cycle && !item.active_cycle && !b.active_cycle && !item.cycle_id && !b.cycle_id && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full flex gap-2 border-green-200 text-green-700 hover:bg-green-50">
