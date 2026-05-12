@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus } from "lucide-react";
+import { Plus, MapPin } from "lucide-react";
 import { useFlags } from "@/hooks/useFlags";
 
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import { toast } from "sonner";
 export function RegisterWorker() {
   const [workers, setWorkers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
-  const [userRole, setUserRole] = useState(null); // 👈 Para saber si es Admin o Productor
+  const [userRole, setUserRole] = useState(null); 
 
   const { flags, loading } = useFlags();
   const canAssignManager = flags?.users?.assignManager;
@@ -45,7 +45,6 @@ export function RegisterWorker() {
   const [open, setOpen] = useState(false);
   const [isLoadingWorkers, setIsLoadingWorkers] = useState(false);
 
-  // 🔥 1. Obtener perfil del usuario logueado (PRIMERO)
   useEffect(() => {
     const fetchCurrentUser = async () => {
       const token = localStorage.getItem("access");
@@ -59,7 +58,7 @@ export function RegisterWorker() {
         if (res.ok) {
           const data = await res.json();
           setCurrentUserId(data.id);
-          setUserRole(data.role?.name); // 👈 Guardar rol: "Admin" o "Productor"
+          setUserRole(data.role?.name); 
         }
       } catch (err) {
         console.error("Error cargando perfil:", err);
@@ -69,7 +68,6 @@ export function RegisterWorker() {
     fetchCurrentUser();
   }, []);
 
-  // 🔥 2. TRAER MANAGERS (solo si es Admin)
   useEffect(() => {
     if (!canAssignManager) return;
 
@@ -85,7 +83,6 @@ export function RegisterWorker() {
       .catch(console.error);
   }, [canAssignManager]);
 
-  // 🔥 3. TRAER GRANJAS
   useEffect(() => {
     if (loading) return;
 
@@ -120,32 +117,26 @@ export function RegisterWorker() {
     fetchFarms();
   }, [loading, canAssignManager, selectedManager]);
 
-  // 🔥 4. FUNCIÓN AUXILIAR: Obtener operarios vía granjas + miembros (para Productor)
   const fetchWorkersViaFarms = useCallback(async (token, productorId) => {
     try {
-      // Obtener granjas donde este productor es dueño
       const farmsRes = await fetch(
         `https://backend-pongase-trucha.onrender.com/api/farms/productor/${productorId}/`,
         { headers: { Authorization: `Bearer ${token}` }}
       );
 
       if (!farmsRes.ok) {
-        // Si no puede acceder al endpoint de farms por productor, intentar endpoint genérico
         const farmsResAlt = await fetch(
           "https://backend-pongase-trucha.onrender.com/api/farms/",
           { headers: { Authorization: `Bearer ${token}` }}
         );
         if (!farmsResAlt.ok) throw new Error("Error al cargar granjas");
         var farms = await farmsResAlt.json();
-        // Filtrar solo las granjas donde el usuario es owner (si el backend lo indica)
-        // Si no hay campo is_owner, asumimos que el backend ya filtró por permisos
       } else {
         var farms = await farmsRes.json();
       }
 
-      // Para cada granja, obtener sus miembros
       const allOperarios = [];
-      const seenUsers = new Set(); // Evitar duplicados
+      const seenUsers = new Set();
 
       for (const farm of farms) {
         const membersRes = await fetch(
@@ -155,11 +146,9 @@ export function RegisterWorker() {
         
         if (membersRes.ok) {
           const members = await membersRes.json();
-          // Filtrar solo operarios (excluir al dueño) y activos
           for (const m of members) {
             if (!m.is_owner && m.status === "active" && !seenUsers.has(m.user?.id)) {
               seenUsers.add(m.user?.id);
-              // Normalizar estructura para que coincida con el render
               allOperarios.push({
                 worker_id: m.user?.id,
                 id: m.user?.id,
@@ -182,7 +171,6 @@ export function RegisterWorker() {
     }
   }, []);
 
-  // 🔥 5. FUNCIÓN PRINCIPAL: TRAER WORKERS
   const fetchWorkers = useCallback(async (productorId = null) => {
     const token = localStorage.getItem("access");
     if (!token) return;
@@ -190,10 +178,8 @@ export function RegisterWorker() {
     setIsLoadingWorkers(true);
 
     try {
-      // Determinar qué ID usar: seleccionado o el usuario actual
       const idToUse = productorId || currentUserId;
-      
-      // Si no tenemos ID, no podemos filtrar
+
       if (!idToUse) {
         setWorkers([]);
         return;
@@ -201,9 +187,7 @@ export function RegisterWorker() {
 
       let workersData = [];
 
-      // 🎯 FLUJO SEGÚN ROL
       if (userRole === "Admin") {
-        // Admin: puede usar el endpoint directo de operarios por productor
         const url = `https://backend-pongase-trucha.onrender.com/api/users/productor/${idToUse}/operarios/`;
         
         const res = await fetch(url, {
@@ -218,11 +202,8 @@ export function RegisterWorker() {
         workersData = await res.json();
         
       } else {
-        // Productor: usar fallback vía granjas + miembros
         workersData = await fetchWorkersViaFarms(token, idToUse);
       }
-
-      // Normalizar datos para el render (asegurar campos)
       const normalized = workersData.map((w) => ({
         worker_id: w.id || w.worker_id || w.user?.id,
         id: w.id || w.worker_id || w.user?.id,
@@ -245,21 +226,18 @@ export function RegisterWorker() {
     }
   }, [currentUserId, userRole, fetchWorkersViaFarms]);
 
-  // 🔥 6. Cargar workers cuando tengamos el usuario y rol
   useEffect(() => {
     if (currentUserId && userRole && !loading) {
       fetchWorkers(selectedManager);
     }
   }, [currentUserId, userRole, loading, selectedManager, fetchWorkers]);
 
-  // 🔥 7. Recargar al cambiar de manager seleccionado
   useEffect(() => {
     if (currentUserId && userRole && selectedManager) {
       fetchWorkers(selectedManager);
     }
   }, [selectedManager, currentUserId, userRole, fetchWorkers]);
 
-  // 🔥 8. HANDLER: Submit de invitación
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -292,7 +270,6 @@ export function RegisterWorker() {
           throw new Error(errorMsg);
         }
 
-        // Recargar lista de operarios
         await fetchWorkers(selectedManager);
 
         return data;
@@ -310,7 +287,6 @@ export function RegisterWorker() {
     );
   };
 
-  // 🔥 9. Handler para cerrar modal
   const handleOpenChange = (newOpen) => {
     setOpen(newOpen);
     if (!newOpen) {
@@ -320,7 +296,6 @@ export function RegisterWorker() {
     }
   };
 
-  // 🔥 10. Render condicional mientras carga
   if (loading || (!currentUserId && !userRole)) {
     return (
       <div className="bg-white rounded-xl shadow-sm p-6 flex items-center justify-center min-h-[200px]">
@@ -457,7 +432,10 @@ export function RegisterWorker() {
               <p className="text-sm text-gray-500">{w.email}</p>
               {w.phone && <p className="text-sm">{w.phone}</p>}
               {w.farm_name && (
-                <p className="text-xs text-cyan-600 mt-1">📍 {w.farm_name}</p>
+                <p className="mt-1 flex items-center gap-1 text-xs text-cyan-600">
+                  <MapPin className="h-4 w-4" />
+                  {w.farm_name}
+                </p>
               )}
             </div>
           ))

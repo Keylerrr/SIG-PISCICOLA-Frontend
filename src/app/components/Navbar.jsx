@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Settings, User, Fish, UserRoundCog } from 'lucide-react';
+import { LogOut, Settings, UserRound, Fish, UserRoundPlus } from 'lucide-react';
 
 export function Navbar() {
   const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +99,7 @@ export function Navbar() {
 
             <div className="flex items-center gap-3 px-4 bg-slate-50 rounded-lg">
               <div className="bg-[#ffe4d2] p-2 rounded-full">
-                <User className="w-5 h-5 text-[#f4b183]" />
+                <UserRound className="w-5 h-5 text-[#f4b183]" />
               </div>
               <div className="text-left">
                 <p className="font-bold text-md text-slate-800">
@@ -116,7 +116,7 @@ export function Navbar() {
               onClick={handleSettings}
               className="flex items-center gap-2 px-4 py-2 text-[#6ec3b1] hover:bg-[#e3fff9] rounded-lg transition-colors hover:cursor-pointer"
             >
-              <UserRoundCog className="w-5 h-5" />
+              <UserRoundPlus className="w-5 h-5" />
               <span className="text-md font-bold">Trabajadores</span>
             </button>
 

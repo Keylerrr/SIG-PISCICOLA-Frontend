@@ -9,6 +9,7 @@ import { Ponds } from "@/app/components/ponds";
 import { Cycles } from "@/app/components/cycles";
 import { Batches } from "@/app/components/batches";
 import { BatchRegisterForm } from "@/app/components/batch_form";
+import { CycleRegisterForm } from "@/app/components/cycle_form";
 import { Field, FieldLabel } from "@/components/ui/field"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
@@ -77,7 +78,7 @@ export default function Granja({ params }) {
             setGranja(data);
             console.log(data)
         }).catch((err) => console.error(err));
-    }, []);
+    }, [id]);
 
         useEffect(() => {
             fetch("https://backend-pongase-trucha.onrender.com/api/cities/", {
@@ -249,14 +250,40 @@ export default function Granja({ params }) {
                         <p className="text-xl">Gestiona los ciclos de producción de la granja</p>
                     </div>
                     <div>
-                        <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
-                            variant="outline"
-                            onClick={() => {
-                                // Espacio para la funcionalidad del botón de agregar ciclo
-                            }}>
-                            <Plus />
-                            Agregar Ciclo
-                        </Button>
+                        <Dialog>
+                            <form>
+                                <DialogTrigger asChild>
+                                    <Button className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
+                                        variant="outline">
+                                        <Plus />
+                                        Agregar Ciclo
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Agregar Ciclo</DialogTitle>
+                                        <DialogDescription>
+                                            Escribe la información del ciclo que vas a agregar. Haz click en crear cuando hayas terminado.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <CycleRegisterForm
+                                        op={1}
+                                        idProp={""}
+                                        farmProp={id}
+                                        specieProp={""}
+                                        productionPlanProp={""}
+                                        nameProp={""}
+                                        startDateProp={""}
+                                        estimatedFinishDateProp={""}
+                                        stateProp={""}
+                                        commentsProp={""}
+                                        minWeightGProp={""}
+                                        avgWeightGProp={""}
+                                        maxWeightGProp={""}
+                                    />
+                                </DialogContent>
+                            </form>
+                        </Dialog>
                     </div>
                 </div>
             </div>
