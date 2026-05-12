@@ -5,6 +5,7 @@ import {
   PERMISSIONS,
 } from "@/lib/permissions";
 import { use, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button"
@@ -221,15 +222,23 @@ export default function Granja({ params }) {
                         <h1 className="text-4xl font-bold">
                             {granja.name}
                         </h1>
-                        {canManageFarm && (
-                        <Button
-                            onClick={() => router.push(`/home/granja/${id}/granja_trabajadores`)}
-                            className="flex items-center gap-2 bg-[#6ec3b1] text-white px-4 py-2 rounded-lg"
-                        >
-                            <UserCog className="w-5 h-5" />
-                            Administrar Trabajadores
-                        </Button>
-                        )}
+                        <div className="flex flex-wrap items-center gap-3">
+                          {canManageFarm && (
+                            <Button
+                              onClick={() => router.push(`/home/granja/${id}/granja_trabajadores`)}
+                              className="flex items-center gap-2 bg-[#6ec3b1] text-white px-4 py-2 rounded-lg"
+                            >
+                              <UserCog className="w-5 h-5" />
+                              Administrar Trabajadores
+                            </Button>
+                          )}
+                          <Link
+                            href={`/home/granja/${id}/alimentacion`}
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50"
+                          >
+                            Alimentación
+                          </Link>
+                        </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">
                         <div className="bg-slate-50 p-4 rounded-lg">

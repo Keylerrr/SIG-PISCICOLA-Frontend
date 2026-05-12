@@ -1,0 +1,340 @@
+"use client";
+
+import { use, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Loader2, CheckCircle2, AlertCircle, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Toaster, toast } from "sonner";
+import { feedingService } from "@/lib/feedingService";
+import { usePermissions } from "@/lib/usePermissions";
+
+function normalizeFieldErrors(fieldErrors) {
+  if (!fieldErrors) return [];
+  if (Array.isArray(fieldErrors)) {
+    return fieldErrors.map((message) => ({ message: typeof message === "string" ? message : JSON.stringify(message) }));
+  }
+  return [{ message: fieldErrors.toString() }];
+}
+
+function formatDate(value = "") {
+  return value ? value.slice(0, 10) : "";
+}
+
+export default function FeedingPlanDetail({ params }) {
+  const { id, ciclo_id, planId } = use(params);
+  const [plan, setPlan] = useState(null);
+  const [schedules, setSchedules] = useState([]);
+  const [ranges, setRanges] = useState([]);
+  const [form, setForm] = useState({ feeding_schedule: "", start_date: "", end_date: "" });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const permissions = usePermissions(id);
+
+  const canManage = permissions.canManageCycle;
+
+  const isFinished = useMemo(() => {
+    if (!plan) return false;
+    const ended = plan.state === "finished";
+    if (ended) return true;
+    if (plan.end_date) {
+      const endDate = new Date(plan.end_date);
+      return endDate < new Date();
+    }
+    return false;
+  }, [plan]);
+
+  const isInProgress = plan?.state === "in_progress";
+  const isScheduled = plan?.state === "scheduled" || (!isInProgress && !isFinished);
+
+  useEffect(() => {
+    if (permissions.loading) return;
+
+    async function loadDetail() {
+      setLoading(true);
+      setLoadError(null);
+
+      try {
+        const [planData, scheduleData, rangeData] = await Promise.all([
+          feedingService.getCycleFeedingPlanById(id, ciclo_id, planId),
+          feedingService.getFeedingSchedules(id),
+          feedingService.getOccupiedRanges(id, ciclo_id),
+        ]);
+
+        if (!planData) {
+          setLoadError("No se encontró el plan de alimentación.");
+          return;
+        }
+
+        setPlan(planData);
+        setSchedules(Array.isArray(scheduleData) ? scheduleData : []);
+        setRanges(Array.isArray(rangeData?.ranges) ? rangeData.ranges : []);
+        setForm({
+          feeding_schedule: planData.feeding_schedule?.toString() || planData.feeding_schedule_name?.toString() || "",
+          start_date: formatDate(planData.start_date),
+          end_date: formatDate(planData.end_date),
+        });
+      } catch (error) {
+        if (error.status === 401) {
+          window.location.href = "/login";
+          return;
+        }
+        if (error.status === 404) {
+          setLoadError("Plan no accesible o no existe.");
+          return;
+        }
+        setLoadError(error.message || "Error cargando datos del plan.");
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDetail();
+  }, [id, ciclo_id, planId, permissions.loading]);
+
+  const parseRanges = useMemo(() => {
+    return ranges.filter((range) => {
+      if (!plan) return true;
+      if (range.id && plan.id && range.id.toString() === plan.id.toString()) {
+        return false;
+      }
+      if (range.start_date === plan?.start_date && range.end_date === plan?.end_date) {
+        return false;
+      }
+      return true;
+    });
+  }, [ranges, plan]);
+
+  const conflictMessage = useMemo(() => {
+    if (!form.start_date || !form.end_date) return null;
+    const start = new Date(form.start_date);
+    const end = new Date(form.end_date);
+    if (start >= end) return "La fecha final debe ser posterior a la fecha de inicio.";
+
+    const conflict = parseRanges.find((range) => {
+      const rangeStart = new Date(range.start_date);
+      const rangeEnd = new Date(range.end_date);
+      return !(end < rangeStart || start > rangeEnd);
+    });
+
+    return conflict ? `Solapa con el rango ${conflict.start_date} - ${conflict.end_date}` : null;
+  }, [form.start_date, form.end_date, parseRanges]);
+
+  const setField = (field, value) => {
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setErrors({});
+
+    if (!canManage) {
+      setLoadError("No tienes permisos para modificar este plan.");
+      return;
+    }
+
+    if (!plan) return;
+    if (isFinished) return;
+
+    const newErrors = {};
+    if (!form.start_date) newErrors.start_date = ["Debe indicar la fecha de inicio."];
+    if (!form.end_date) newErrors.end_date = ["Debe indicar la fecha de fin."];
+    if (!form.feeding_schedule) newErrors.feeding_schedule = ["Debe indicar el cronograma."];
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    if (conflictMessage) {
+      setErrors({ end_date: [conflictMessage] });
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      const payload = {
+        cycle: Number(ciclo_id),
+        feeding_schedule: Number(form.feeding_schedule),
+        start_date: form.start_date,
+        end_date: form.end_date,
+      };
+
+      const response = await feedingService.updateFeedingPlan(id, ciclo_id, planId, payload);
+      if (response.status === 201) {
+        toast.success("Se creó un nuevo plan a partir de esta fecha. El plan anterior continúa vigente hasta su fecha original.");
+      } else {
+        toast.success("Plan actualizado correctamente.");
+      }
+
+      const updatedPlan = response.payload;
+      setPlan({ ...plan, ...updatedPlan });
+      setForm({
+        feeding_schedule: updatedPlan.feeding_schedule?.toString() || form.feeding_schedule,
+        start_date: formatDate(updatedPlan.start_date) || form.start_date,
+        end_date: formatDate(updatedPlan.end_date) || form.end_date,
+      });
+    } catch (error) {
+      if (error.status === 400 && error.payload && typeof error.payload === "object") {
+        setErrors(error.payload);
+      } else {
+        toast.error("No se pudo actualizar el plan.");
+        console.error(error);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 px-4 py-8">
+      <Toaster position="top-center" />
+
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <Link href={`/home/granja/${id}/ciclo/${ciclo_id}/alimentacion`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900">
+              <ArrowLeft className="w-5 h-5" /> Volver a planes
+            </Link>
+            <h1 className="mt-4 text-4xl font-bold">Plan de alimentación #{planId}</h1>
+            <p className="text-slate-600 mt-2">Edita fechas y revisa el estado del plan.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+              Estado: {plan?.state ? plan.state : "—"}
+            </span>
+            {isFinished && (
+              <span className="rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">Finalizado</span>
+            )}
+          </div>
+        </div>
+
+        {loading && (
+          <div className="rounded-xl bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-center gap-3 text-slate-600">
+              <Loader2 className="h-5 w-5 animate-spin" /> Cargando plan...
+            </div>
+          </div>
+        )}
+
+        {loadError && !loading && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-700 shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5" />
+              <div>{loadError}</div>
+            </div>
+          </div>
+        )}
+
+        {!loading && !loadError && plan && (
+          <div className="grid gap-6">
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold">Resumen del plan</h2>
+                  <p className="text-slate-600">Detalles actuales del plan de alimentación.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700">
+                  <Pencil className="w-4 h-4" /> {plan.deleted_at ? "Archivado" : "Activo"}
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-sm text-slate-500">Cronograma</p>
+                  <p className="mt-2 text-lg font-semibold">{plan.feeding_schedule_name ?? plan.feeding_schedule || "—"}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-sm text-slate-500">Ciclo</p>
+                  <p className="mt-2 text-lg font-semibold">{plan.cycle || ciclo_id}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-sm text-slate-500">Inicio</p>
+                  <p className="mt-2 text-lg font-semibold">{plan.start_date || "—"}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-4">
+                  <p className="text-sm text-slate-500">Fin</p>
+                  <p className="mt-2 text-lg font-semibold">{plan.end_date || "—"}</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center gap-3 text-slate-900">
+                <CheckCircle2 className="w-5 h-5" />
+                <h2 className="text-2xl font-semibold">Editar plan</h2>
+              </div>
+              <p className="mt-2 text-slate-600">Envía siempre todos los campos requeridos. Si el plan está en curso, solo el fin es editable.</p>
+
+              {isFinished && (
+                <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
+                  Este plan ya finalizó y no puede modificarse.
+                </div>
+              )}
+
+              <form className="mt-6 grid gap-4" onSubmit={handleSubmit}>
+                <div className="grid gap-4 lg:grid-cols-3">
+                  <Field>
+                    <FieldLabel>Cronograma</FieldLabel>
+                    <Select value={form.feeding_schedule || undefined} onValueChange={(value) => setField("feeding_schedule", value === "__NONE__" ? "" : value)} disabled={!canManage || isInProgress || isFinished}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un cronograma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__NONE__">Selecciona</SelectItem>
+                        {schedules.map((schedule) => (
+                          <SelectItem key={schedule.id} value={schedule.id.toString()}>
+                            {schedule.name || `Cronograma #${schedule.id}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FieldError errors={normalizeFieldErrors(errors.feeding_schedule)} />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Fecha de inicio</FieldLabel>
+                    <Input
+                      type="date"
+                      value={form.start_date}
+                      onChange={(event) => setField("start_date", event.target.value)}
+                      disabled={!canManage || isInProgress || isFinished}
+                    />
+                    <FieldError errors={normalizeFieldErrors(errors.start_date)} />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Fecha de fin</FieldLabel>
+                    <Input type="date" value={form.end_date} onChange={(event) => setField("end_date", event.target.value)} disabled={!canManage || isFinished} />
+                    <FieldError errors={normalizeFieldErrors(errors.end_date)} />
+                  </Field>
+                </div>
+
+                {conflictMessage && (
+                  <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                    {conflictMessage}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <Button variant="outline" type="button" onClick={() => window.location.reload()}>
+                    Recargar
+                  </Button>
+                  <Button type="submit" disabled={!canManage || isFinished || saving}>
+                    {saving ? "Guardando…" : "Guardar cambios"}
+                  </Button>
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

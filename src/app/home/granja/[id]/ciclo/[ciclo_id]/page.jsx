@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Calendar, CalendarX, Fish, ClipboardList, Map } from "lucide-react";
@@ -85,12 +86,20 @@ export default function Ciclo({ params }) {
             {ciclo && (
                 <div className="px-4 sm:px-6 lg:px-8">
                     <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-sm p-6 space-y-6">
-                        <div className="flex justify-between items-start">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <h1 className="text-4xl font-bold">
                                 {ciclo.name}
                             </h1>
-                            <div className={`px-4 py-2 rounded-lg font-bold ${STATE_COLORS[ciclo.state] || "bg-gray-100 text-gray-700"}`}>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <div className={`px-4 py-2 rounded-lg font-bold ${STATE_COLORS[ciclo.state] || "bg-gray-100 text-gray-700"}`}>
                                 {STATE_LABELS[ciclo.state] || ciclo.state}
+                              </div>
+                              <Link
+                                href={`/home/granja/${id}/ciclo/${ciclo_id}/alimentacion`}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50"
+                              >
+                                Ver planes de alimentación
+                              </Link>
                             </div>
                         </div>
 
