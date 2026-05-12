@@ -94,8 +94,8 @@ export default function Ciclo({ params }) {
                             </div>
                         </div>
 
-                        {ciclo.description?.length > 0 && (
-                            <p className="text-xl text-slate-700">{ciclo.description}</p>
+                        {ciclo.comments?.length > 0 && (
+                            <p className="text-xl text-slate-700">{ciclo.comments}</p>
                         )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xl">

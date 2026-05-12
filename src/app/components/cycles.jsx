@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Toaster, toast } from "sonner";
 import Link from "next/link";
+import { CycleRegisterForm } from "./cycle_form";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -145,10 +146,21 @@ export function Cycles({ id, search = "" }) {
                                                     Edita <span className="font-bold">{c.name}</span>
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
-                                            {/* Espacio para el formulario de edición */}
-                                            <div className="p-4 bg-slate-50 rounded text-center text-slate-500">
-                                                Formulario de edición pendiente de implementación
-                                            </div>
+                                            <CycleRegisterForm
+                                                op={2}
+                                                idProp={c.id}
+                                                farmProp={c.farm || id}
+                                                specieProp={c.specie}
+                                                productionPlanProp={c.production_plan}
+                                                nameProp={c.name}
+                                                startDateProp={c.start_date}
+                                                estimatedFinishDateProp={c.estimated_finish_date}
+                                                stateProp={c.state}
+                                                commentsProp={c.comments}
+                                                minWeightGProp={c.min_weight_g}
+                                                avgWeightGProp={c.avg_weight_g}
+                                                maxWeightGProp={c.max_weight_g}
+                                            />
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cerrar</AlertDialogCancel>
                                             </AlertDialogFooter>
@@ -180,6 +192,12 @@ export function Cycles({ id, search = "" }) {
                                 </div>
                             </CardAction>
                         </CardHeader>
+
+                        {c.comments && (
+                            <CardContent className="text-sm text-slate-500 italic pb-2">
+                                {`"${c.comments}"`}
+                            </CardContent>
+                        )}
 
                         <CardFooter>
                             <div className="w-full flex justify-between items-center">
