@@ -28,7 +28,7 @@ export default function ResetPasswordContent() {
     const [pas1, setPas1] = useState('');
     const [pas2, setPas2] = useState('');
     const searchParams = useSearchParams();
-    const uuid = searchParams.get("uuidb64");
+    const uuid = searchParams.get("uid");
     const token = searchParams.get("token");
     const [success, setSuccess] = useState(false);
     useEffect(() => {

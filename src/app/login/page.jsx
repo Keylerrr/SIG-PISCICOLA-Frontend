@@ -47,6 +47,7 @@ export default function Login() {
   const [apellidos, setApellidos] = useState("");
   const [numero, setNumero] = useState("");
   const [cedula, setCedula] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const handleRecover = async (e) => {
     e.preventDefault();
@@ -192,11 +193,31 @@ export default function Login() {
         return;
       }
 
+      const resPassword = await fetch("https://backend-pongase-trucha.onrender.com/api/auth/change-password/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          current_password: password,
+          new_password: newPassword,
+        }),
+      });
+
+      if (!resPassword.ok) {
+        console.error("Error al cambiar la contraseña");
+        // Puedes agregar manejo de error específico para la contraseña aquí si lo deseas
+        setIsLoading(false);
+        return;
+      }
+
       setOpen(false);
       setNombres("");
       setApellidos("");
       setCedula("");
       setNumero("");
+      setNewPassword("");
       await handleUser();
     } catch (error) {
       console.error(error);
@@ -249,6 +270,17 @@ export default function Login() {
                     value={numero}
                     onChange={(e) => setNumero(e.target.value)}
                     required
+                  />
+                </Field>
+                <Field>
+                  <Label>Nueva Contraseña</Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    placeholder="Mínimo 8 caracteres"
                   />
                 </Field>
               </FieldGroup>
