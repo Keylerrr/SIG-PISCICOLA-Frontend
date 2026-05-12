@@ -146,8 +146,22 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
     fetchBatches();
   }, [id, cycleId, pondId]);
 
-  const handleDelete = async (batchId) => {
-    toast.info("Funcionalidad de eliminar lote pendiente de implementación");
+  const handleDelete = async (cycleBatchId) => {
+    try {
+      const token = localStorage.getItem("access");
+      const res = await fetch(`${API_BASE}/farms/${id}/cycle-batches/${cycleBatchId}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) {
+        throw new Error("Error al desvincular el lote");
+      }
+      toast.success("Lote desvinculado del ciclo correctamente");
+      setBatches(prev => prev.filter(b => b.id !== cycleBatchId));
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al desvincular el lote");
+    }
   };
 
   if (loading) {
@@ -229,28 +243,30 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                     </AlertDialogContent>
                   </AlertDialog>
 
+                  {!!cycleId && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Trash className="text-red-600 cursor-pointer hover:text-red-700 transition-colors" />
                     </AlertDialogTrigger>
                     <AlertDialogContent className="w-[95vw] max-w-md">
                       <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar lote?</AlertDialogTitle>
+                        <AlertDialogTitle>¿Desvincular lote?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Se eliminará el lote #{b.id}
+                          Se desvinculará el lote #{displayId} del ciclo actual.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleDelete(b.id)}
+                          onClick={() => handleDelete(item.id)}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          Eliminar
+                          Desvincular
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  )}
                 </div>
               </CardAction>
             </CardHeader>
