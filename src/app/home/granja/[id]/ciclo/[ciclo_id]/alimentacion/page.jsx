@@ -97,7 +97,9 @@ export default function CycleFeeding({ params }) {
                 <CardTitle className="text-2xl font-semibold">Plan #{plan.id}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-slate-600">Cronograma: {plan.feeding_schedule_name ?? plan.feeding_schedule || "—"}</p>
+                <p className="text-sm text-slate-600">
+                  Cronograma: {(plan.feeding_schedule_name ?? plan.feeding_schedule) || "—"}
+                </p>
                 <p className="text-sm text-slate-600">Inicio: {plan.start_date || "—"}</p>
                 <p className="text-sm text-slate-600">Fin: {plan.end_date || "—"}</p>
                 <p className="text-sm text-slate-600">Ciclo: {plan.cycle || "—"}</p>
