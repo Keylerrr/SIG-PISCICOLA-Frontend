@@ -7,14 +7,22 @@ import {
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, UserCog, Package } from "lucide-react";
+import {
+  ArrowLeft,
+  UserCog,
+  Package,
+  Plus,
+  Loader2,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
 import { Ponds } from "@/app/components/ponds";
 import { Cycles } from "@/app/components/cycles";
 import { Batches } from "@/app/components/batches";
 import { BatchRegisterForm } from "@/app/components/batch_form";
 import { CycleRegisterForm } from "@/app/components/cycle_form";
+import { ProductionPlans } from "@/app/components/production_plan";
+import { ProductionPlanForm } from "@/app/components/production_plan_form";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -47,6 +55,7 @@ export default function Granja({ params }) {
   const [filter, setFilter] = useState("");
   const [searchCycle, setSearchCycle] = useState("");
   const [searchBatch, setSearchBatch] = useState("");
+  const [searchPlan, setSearchPlan] = useState("");
   const [ciudades, setCiudades] = useState([]);
 
   const router = useRouter();
@@ -183,6 +192,7 @@ export default function Granja({ params }) {
     userData?.role === "Admin" ||
     userData?.role?.name === "admin";
 
+  // El Productor tiene acceso total si es miembro de la finca
   const hasFullAccess =
     isAdmin ||
     (isProductor && myMember != null) ||
@@ -261,7 +271,6 @@ export default function Granja({ params }) {
             </h1>
 
             <div className="flex flex-wrap items-center gap-3">
-
               {canManageInventory && (
                 <Button
                   onClick={() => {
@@ -350,6 +359,7 @@ export default function Granja({ params }) {
             <h1 className="font-bold text-3xl">
               Estanques
             </h1>
+
             <p className="text-xl">
               Selecciona un estanque para ver especies y calidad del agua
             </p>
@@ -376,7 +386,8 @@ export default function Granja({ params }) {
                       </DialogTitle>
 
                       <DialogDescription>
-                        Escribe la información del estanque que vas a agregar.
+                        Escribe la información del estanque que vas a agregar. Haz
+                        click en crear cuando hayas terminado.
                       </DialogDescription>
                     </DialogHeader>
 
@@ -467,6 +478,91 @@ export default function Granja({ params }) {
         />
       </div>
 
+      {/* PLANES DE PRODUCCIÓN */}
+      <div className="mt-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto flex justify-between">
+          <div>
+            <h1 className="font-bold text-3xl">
+              Planes de Producción
+            </h1>
+
+            <p className="text-xl">
+              Define los parámetros esperados para el cultivo
+            </p>
+          </div>
+
+          {canManageCycles && (
+            <div>
+              <Dialog>
+                <form>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="text-xl flex items-center gap-2 text-white rounded-xl bg-blue-600 px-4 py-5"
+                      variant="outline"
+                    >
+                      <Plus />
+                      Nuevo Plan
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>
+                        Registrar Plan de Producción
+                      </DialogTitle>
+
+                      <DialogDescription>
+                        Complete los detalles del nuevo plan de producción.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <ProductionPlanForm
+                      op={1}
+                      farmProp={id}
+                    />
+                  </DialogContent>
+                </form>
+              </Dialog>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-4 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row gap-4 sm:items-end sm:justify-between">
+          <div className="w-full sm:flex-1">
+            <Field className="text-xl">
+              <FieldLabel
+                htmlFor="input-search-plans"
+                className="text-xl"
+              >
+                Buscar Plan
+              </FieldLabel>
+
+              <ButtonGroup>
+                <Input
+                  id="input-search-plans"
+                  placeholder="Escriba el nombre del plan..."
+                  value={searchPlan}
+                  onChange={(e) => setSearchPlan(e.target.value)}
+                />
+
+                <Button className="text-md">
+                  Buscar
+                </Button>
+              </ButtonGroup>
+            </Field>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto pb-4">
+        <ProductionPlans
+          id={id}
+          search={searchPlan}
+        />
+      </div>
+
       {/* CICLOS */}
       <div className="mt-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto flex justify-between">
@@ -501,7 +597,8 @@ export default function Granja({ params }) {
                       </DialogTitle>
 
                       <DialogDescription>
-                        Escribe la información del ciclo que vas a agregar.
+                        Escribe la información del ciclo que vas a agregar. Haz
+                        click en crear cuando hayas terminado.
                       </DialogDescription>
                     </DialogHeader>
 
@@ -599,7 +696,8 @@ export default function Granja({ params }) {
                       </DialogTitle>
 
                       <DialogDescription>
-                        Escribe la información del lote que vas a crear.
+                        Escribe la información del lote que vas a crear. Haz
+                        click en crear cuando hayas terminado.
                       </DialogDescription>
                     </DialogHeader>
 
