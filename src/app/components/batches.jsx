@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Scale, Pencil, Trash, MoveRight, Fish } from "lucide-react";
+import { Scale, Pencil, Trash, MoveRight, Fish, Link } from "lucide-react";
 import {
   Card,
   CardAction,
@@ -33,6 +33,7 @@ import {
 import { Toaster, toast } from "sonner";
 import { BatchRegisterForm } from "./batch_form";
 import { AssignPondForm } from "./assign_pond_form";
+import { AssignCycleForm } from "./assign_cycle_form";
 import { Button } from "@/components/ui/button";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
@@ -293,6 +294,32 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                     farmId={id}
                     batchId={b.id}
                     defaultQuantity={b.initial_quantity}
+                  />
+                </DialogContent>
+              </Dialog>
+              )}
+              {!!pondId && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full flex gap-2 border-green-200 text-green-700 hover:bg-green-50">
+                    <Link className="w-4 h-4" />
+                    Vincular a Ciclo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Vincular Lote #{displayId} a Ciclo</DialogTitle>
+                    <DialogDescription>
+                      Seleccione el ciclo al que desea añadir este lote. Solo se muestran los ciclos en progreso.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <AssignCycleForm 
+                    farmId={id}
+                    pondBatchId={item.id}
+                    defaultQuantity={item.current_quantity || b.initial_quantity}
+                    defaultMinWeight={b.min_weight_g || 0}
+                    defaultAvgWeight={b.avg_weight_g || 0}
+                    defaultMaxWeight={b.max_weight_g || 0}
                   />
                 </DialogContent>
               </Dialog>
