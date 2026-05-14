@@ -1,22 +1,33 @@
 # Etapa 1: build
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+# Habilitar pnpm mediante corepack
+RUN corepack enable
 
+# Copiar archivos necesarios
+COPY package.json pnpm-lock.yaml ./
+
+# Instalar dependencias exactas
+RUN pnpm install --frozen-lockfile
+
+# Copiar proyecto
 COPY . .
 
-RUN npm run build
+# Build de producción
+RUN pnpm build
 
 # Etapa 2: producción
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
+RUN corepack enable
+
+# Copiar aplicación compilada
 COPY --from=builder /app ./
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]
