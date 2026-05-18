@@ -236,7 +236,7 @@ export default function GranjaUsuarios({ params }) {
         {/* CREAR ROL */}
         <Dialog open={openRole} onOpenChange={setOpenRole}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 bg-[#6ec3b1] text-white hover:cursor-pointer">
+            <Button className="flex items-center gap-2 bg-black text-white hover:cursor-pointer">
               <NotebookPen className="w-4 h-4" />
               Crear Rol
             </Button>
