@@ -35,7 +35,7 @@ async function getBackendError(res) {
     const fieldError = Object.entries(data)
       .filter(([k]) => !["detail", "message", "non_field_errors"].includes(k))
       .find(([_, v]) => Array.isArray(v) && v.length > 0)?.[1]?.[0];
-    
+
     return fieldError || data.detail || data.message || data.non_field_errors?.[0] || `Error ${res.status}`;
   } catch {
     const raw = await res.clone().text().catch(() => "");
@@ -58,7 +58,7 @@ export function FarmRegisterForm({
   const [selectedCity, setSelectedCity] = useState(ciudadProp ?? "");
   const [direccion, setDireccion] = useState(direccionProp ?? "");
   const [totalArea, setArea] = useState(areaProp ?? "");
-  const [waterSource, setWaterSource] = useState(() => 
+  const [waterSource, setWaterSource] = useState(() =>
     isValidWaterSource(waterSourceProp) ? waterSourceProp : ""
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -234,7 +234,7 @@ export function FarmRegisterForm({
         <FieldDescription>Mínimo 3, máximo 100 caracteres.</FieldDescription>
       </Field>
 
-      {}
+      { }
       {canAssignManager && (
         <Field>
           <FieldLabel>Productor Responsable *</FieldLabel>
@@ -259,7 +259,7 @@ export function FarmRegisterForm({
         </Field>
       )}
 
-      {}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field>
           <FieldLabel>Departamento *</FieldLabel>
@@ -294,7 +294,7 @@ export function FarmRegisterForm({
             <SelectTrigger>
               <SelectValue placeholder={
                 !selectedDepartment ? "Primero seleccione departamento" :
-                ciudades.length === 0 ? "Cargando..." : "Seleccione"
+                  ciudades.length === 0 ? "Cargando..." : "Seleccione"
               } />
             </SelectTrigger>
             <SelectContent>
@@ -312,7 +312,7 @@ export function FarmRegisterForm({
         </Field>
       </div>
 
-      {}
+      { }
       <Field>
         <FieldLabel>Dirección *</FieldLabel>
         <Input
@@ -326,7 +326,7 @@ export function FarmRegisterForm({
         <FieldDescription>Máximo 200 caracteres.</FieldDescription>
       </Field>
 
-      {}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field>
           <FieldLabel>Área Total (hectáreas) *</FieldLabel>
@@ -370,7 +370,7 @@ export function FarmRegisterForm({
         </Field>
       </div>
 
-      {}
+      { }
       <Field orientation="horizontal" className="justify-end gap-3 pt-4 border-t">
         <Button type="button" variant="outline" onClick={handleReset} disabled={isSubmitting}>
           Borrar

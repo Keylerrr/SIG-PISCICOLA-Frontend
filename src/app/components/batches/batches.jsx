@@ -121,7 +121,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
         let endpoint = `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
         if (cycleId && pondId) {
           // Pond-scoped cycle batches endpoint
-          endpoint = `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/pond-batches/`;
+          endpoint = `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/`;
         } else if (cycleId) {
           // Fallback if pondId not available (legacy)
           endpoint = `${API_BASE}/farms/${id}/cycles/${cycleId}/cycle-batches/`;
@@ -156,7 +156,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
       const token = localStorage.getItem("access");
       // Use pond-scoped endpoint if we have pondId and cycleId, fallback otherwise
       const endpoint = pondId && cycleId
-        ? `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/pond-batches/${cycleBatchId}/`
+        ? `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/${cycleBatchId}/`
         : `${API_BASE}/farms/${id}/cycle-batches/${cycleBatchId}/`;
       const res = await fetch(endpoint, {
         method: "DELETE",
@@ -348,6 +348,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                     farmId={id}
                     pondId={pondId}
                     pondBatchId={item.id}
+                    defaultQuantity={displayQuantity}
                   />
                 </DialogContent>
               </Dialog>

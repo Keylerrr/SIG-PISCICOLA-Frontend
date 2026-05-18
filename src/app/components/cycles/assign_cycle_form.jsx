@@ -24,7 +24,7 @@ const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
  * @param {string} pondId        - pond ID (the batch's pond)
  * @param {number} pondBatchId   - the pond_batch record ID to assign
  */
-export function AssignCycleForm({ farmId, pondId, pondBatchId }) {
+export function AssignCycleForm({ farmId, pondId, pondBatchId, defaultQuantity }) {
   const [cycles, setCycles] = useState([]);
   const [speciesMap, setSpeciesMap] = useState({});
   const [loadingCycles, setLoadingCycles] = useState(true);
@@ -99,11 +99,12 @@ export function AssignCycleForm({ farmId, pondId, pondBatchId }) {
     const payload = {
       pond_batch: parseInt(pondBatchId),
       cycle: parseInt(cycle),
+      ...(defaultQuantity && { quantity: Number(defaultQuantity) }),
     };
 
     try {
       const res = await fetch(
-        `${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycle}/pond-batches/`,
+        `${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycle}/cycle-batches/`,
         {
           method: "POST",
           headers: {

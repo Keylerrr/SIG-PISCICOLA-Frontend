@@ -52,7 +52,7 @@ function CycleBatches({ farmId, pondId, cycleId }) {
             try {
                 const token = localStorage.getItem("access");
                 const res = await fetch(
-                    `${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/pond-batches/`,
+                    `${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 if (!res.ok) throw new Error();
@@ -114,12 +114,12 @@ function CycleCard({ c, farmId, pondId, onDelete, speciesMap }) {
     const [expanded, setExpanded] = useState(false);
 
     return (
-        <Card className="border hover:border-blue-300 hover:shadow-md transition-all duration-200">
+        <Card className="group border hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all">
             <CardHeader>
-                <CardTitle className="text-lg font-bold flex items-center justify-between gap-2">
+                <CardTitle className="text-2xl font-bold group-hover:text-blue-600 flex items-center justify-between gap-2">
                     <Link
                         href={`/home/granja/${farmId}/estanque/${pondId}/ciclo/${c.id}/`}
-                        className="hover:text-blue-600 hover:underline transition-colors truncate"
+                        className="truncate"
                     >
                         {c.name}
                     </Link>
@@ -195,7 +195,7 @@ function CycleCard({ c, farmId, pondId, onDelete, speciesMap }) {
 
             {c.comments && (
                 <CardContent className="pt-0 pb-2">
-                    <p className="text-xs text-slate-400 italic">"{c.comments}"</p>
+                    <p className="text-xs text-slate-400 italic">&quot;{c.comments}&quot;</p>
                 </CardContent>
             )}
 
@@ -205,12 +205,6 @@ function CycleCard({ c, farmId, pondId, onDelete, speciesMap }) {
                         {STATE_LABELS[c.state] ?? c.state}
                     </span>
                     <div className="flex items-center gap-2">
-                        <Link
-                            href={`/home/granja/${farmId}/estanque/${pondId}/ciclo/${c.id}/`}
-                            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 font-medium"
-                        >
-                            Ver detalle <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
                         <button
                             onClick={() => setExpanded((v) => !v)}
                             className="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 border border-slate-200 rounded px-2 py-0.5 transition-colors"
