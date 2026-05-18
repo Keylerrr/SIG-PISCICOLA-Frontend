@@ -3,12 +3,22 @@
 import { useEffect, useState } from "react";
 import { Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
 export function MovementsTab({ farmId }) {
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
+  const [typeProducts, setTypeProducts] = useState([]);
+  const [filterTypeProduct, setFilterTypeProduct] = useState("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,13 +28,15 @@ export function MovementsTab({ farmId }) {
         const token = localStorage.getItem("access");
         const headers = { Authorization: `Bearer ${token}` };
 
-        const [movRes, prodRes] = await Promise.all([
+        const [movRes, prodRes, tpRes] = await Promise.all([
           fetch(`${API_BASE}/farms/${farmId}/inventory-movements/`, { headers }),
-          fetch(`${API_BASE}/farms/${farmId}/products/`, { headers })
+          fetch(`${API_BASE}/farms/${farmId}/products/`, { headers }),
+          fetch(`${API_BASE}/type-products/`, { headers })
         ]);
 
         if (movRes.ok) setMovements(await movRes.json());
         if (prodRes.ok) setProducts(await prodRes.json());
+        if (tpRes.ok) setTypeProducts(await tpRes.json());
       } catch (err) {
         console.error("Error fetching movements:", err);
         toast.error("Error al cargar movimientos de inventario.");
@@ -33,7 +45,14 @@ export function MovementsTab({ farmId }) {
       }
     };
 
-    if (farmId) fetchData();
+    if (!farmId) return;
+    
+    // Diferir la llamada para evitar advertencias de React
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+    
+    return () => clearTimeout(timer);
   }, [farmId]);
 
   const getProductName = (id) => {
@@ -50,15 +69,40 @@ export function MovementsTab({ farmId }) {
     };
   };
 
+  const filteredMovements = movements.filter(mov => {
+    if (filterTypeProduct === "all") return true;
+    const prod = products.find(p => p.id === mov.product);
+    if (!prod) return false;
+    return prod.type_product?.toString() === filterTypeProduct;
+  });
+
   if (loading) {
     return <div className="py-8 text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600"/></div>;
   }
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-slate-800">Historial de Movimientos</h2>
-        <p className="text-sm text-slate-500">Consulta los ingresos y salidas de productos del inventario.</p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Historial de Movimientos</h2>
+          <p className="text-sm text-slate-500">Consulta los ingresos y salidas de productos del inventario.</p>
+        </div>
+
+        <div className="w-full sm:w-64">
+          <Select value={filterTypeProduct} onValueChange={setFilterTypeProduct}>
+            <SelectTrigger className="bg-white">
+              <SelectValue placeholder="Filtrar por tipo..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="all">Todos los tipos</SelectItem>
+                {typeProducts.map(tp => (
+                  <SelectItem key={tp.id} value={tp.id.toString()}>{tp.name}</SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="overflow-x-auto border border-slate-200 rounded-lg">
@@ -72,9 +116,9 @@ export function MovementsTab({ farmId }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {movements.length === 0 ? (
-              <tr><td colSpan="4" className="p-4 text-center">No hay movimientos registrados</td></tr>
-            ) : movements.map((mov) => {
+            {filteredMovements.length === 0 ? (
+              <tr><td colSpan="4" className="p-4 text-center">No hay movimientos registrados para este filtro</td></tr>
+            ) : filteredMovements.map((mov) => {
               const style = getMovementTypeStyle(mov.movement_type || mov.type);
               const date = new Date(mov.created_at || mov.date).toLocaleString();
 
