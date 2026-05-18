@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -42,7 +43,7 @@ export function BuysTab({ farmId }) {
   const [typeProducts, setTypeProducts] = useState([]);
   const [species, setSpecies] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -82,7 +83,14 @@ export function BuysTab({ farmId }) {
   };
 
   useEffect(() => {
-    if (farmId) fetchData();
+    if (!farmId) return;
+    
+    // Diferir la llamada para evitar la advertencia de "setState síncrono en effect"
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+    
+    return () => clearTimeout(timer);
   }, [farmId]);
 
   const handleSubmit = async (e) => {
@@ -137,6 +145,7 @@ export function BuysTab({ farmId }) {
       toast.success(editingId ? "Compra actualizada" : "Compra registrada");
       setIsModalOpen(false);
       fetchData();
+      router.refresh();
     } catch (error) {
       toast.error(error.message);
     }

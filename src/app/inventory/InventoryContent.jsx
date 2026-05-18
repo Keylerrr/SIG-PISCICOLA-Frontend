@@ -7,7 +7,6 @@ import { ProductsTab } from "../components/inventory/ProductsTab";
 import { SuppliersTab } from "../components/inventory/SuppliersTab";
 import { BuysTab } from "../components/inventory/BuysTab";
 import { MovementsTab } from "../components/inventory/MovementsTab";
-import { AlertsTab } from "../components/inventory/AlertsTab";
 import {
   Select,
   SelectContent,
@@ -66,7 +65,6 @@ export default function InventoryContent() {
     { id: "suppliers", name: "Proveedores", icon: Truck },
     { id: "buys", name: "Compras", icon: ShoppingCart },
     { id: "movements", name: "Movimientos", icon: ArrowRightLeft },
-    { id: "alerts", name: "Alertas", icon: Bell },
   ];
 
   if (loading) {
@@ -132,7 +130,6 @@ export default function InventoryContent() {
               {activeTab === "suppliers" && <SuppliersTab farmId={selectedFarm} />}
               {activeTab === "buys" && <BuysTab farmId={selectedFarm} />}
               {activeTab === "movements" && <MovementsTab farmId={selectedFarm} />}
-              {activeTab === "alerts" && <AlertsTab farmId={selectedFarm} />}
             </div>
           </div>
         ) : (

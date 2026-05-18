@@ -4,7 +4,10 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Settings, UserRound, Fish, UserRoundPlus, Package } from 'lucide-react';
+import { LogOut, Settings, UserRound, Fish, UserRoundPlus, Package, Bell } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AlertsTab } from './inventory/AlertsTab';
+import { useAlerts } from '@/hooks/useAlerts';
 
 export function Navbar() {
   const [isLoading, setIsLoading] = useState(false);
@@ -13,16 +16,23 @@ export function Navbar() {
     name: "Cargando...",
     role: "Usuario"
   });
+  
+  const { alerts, unreadCount, markAllAsRead, fetchAlerts, markAsRead } = useAlerts();
+  const [openAlerts, setOpenAlerts] = useState(false);
 
   useEffect(() => {
-    try {
-      const userString = localStorage.getItem("user");
-      if (userString) {
-        setUserData(JSON.parse(userString));
+    const timer = setTimeout(() => {
+      try {
+        const userString = localStorage.getItem("user");
+        if (userString) {
+          setUserData(JSON.parse(userString));
+        }
+      } catch {
+        setUserData({ name: "Cargando...", role: "Usuario" });
       }
-    } catch {
-      setUserData({ name: "Cargando...", role: "Usuario" });
-    }
+    }, 0);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const handleLogout = async (e) => {
@@ -140,6 +150,36 @@ export function Navbar() {
                   <UserRoundPlus className="w-5 h-5" />
                   <span className="text-md font-bold">Trabajadores</span>
                 </button>
+                
+                <Popover open={openAlerts} onOpenChange={setOpenAlerts}>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="relative p-2 rounded-full hover:bg-gray-100 transition-colors hover:cursor-pointer flex items-center justify-center"
+                      aria-label="Alertas"
+                    >
+                      <Bell className="w-5 h-5 text-slate-700" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-96 p-0" align="end">
+                    {alerts.length === 0 ? (
+                      <div className="p-4 text-sm text-gray-500 text-center py-8">
+                        No hay alertas activas
+                      </div>
+                    ) : (
+                      <AlertsTab 
+                        alerts={alerts}
+                        onMarkAllAsRead={markAllAsRead}
+                        onAlertRead={markAsRead}
+                        compact
+                      />
+                    )}
+                  </PopoverContent>
+                </Popover>
               </>
             )}
 
