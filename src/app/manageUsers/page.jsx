@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useFlags } from "@/hooks/useFlags";
 
-import { RegisterWorker } from "../components/RegisterWorker";
-import { RegisterManager } from "../components/RegisterManager";
+import { RegisterWorker } from "../components/users/registerWorker";
+import { RegisterManager } from "../components/users/registerManager";
 
 import { Toaster } from "sonner";
 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Toaster } from "sonner";
 import { feedingService } from "@/lib/feedingService";
 import { usePermissions } from "@/lib/usePermissions";
-import { FeedingScheduleForm } from "@/app/components/feeding_schedule_form";
+import { FeedingScheduleForm } from "@/app/components/feeding/feeding_schedule_form";
 
 const TYPES = [
   { key: "alevin", label: "Alevín" },

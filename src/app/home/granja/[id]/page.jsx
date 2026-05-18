@@ -16,17 +16,17 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Ponds } from "@/app/components/ponds";
-import { Cycles } from "@/app/components/cycles";
-import { Batches } from "@/app/components/batches";
-import { BatchRegisterForm } from "@/app/components/batch_form";
-import { CycleRegisterForm } from "@/app/components/cycle_form";
-import { ProductionPlans } from "@/app/components/production_plan";
-import { ProductionPlanForm } from "@/app/components/production_plan_form";
+import { Ponds } from "@/app/components/ponds/ponds";
+import { Cycles } from "@/app/components/cycles/cycles";
+import { Batches } from "@/app/components/batches/batches";
+import { BatchRegisterForm } from "@/app/components/batches/batch_form";
+import { CycleRegisterForm } from "@/app/components/cycles/cycle_form";
+import { ProductionPlans } from "@/app/components/production/production_plan";
+import { ProductionPlanForm } from "@/app/components/production/production_plan_form";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
-import { PondRegisterForm } from "@/app/components/pond_form";
+import { PondRegisterForm } from "@/app/components/ponds/pond_form";
 
 import {
   Select,

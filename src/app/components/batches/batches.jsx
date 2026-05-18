@@ -32,8 +32,8 @@ import {
 } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { BatchRegisterForm } from "./batch_form";
-import { AssignPondForm } from "./assign_pond_form";
-import { AssignCycleForm } from "./assign_cycle_form";
+import { AssignPondForm } from "../ponds/assign_pond_form";
+import { AssignCycleForm } from "../cycles/assign_cycle_form";
 import { Button } from "@/components/ui/button";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";

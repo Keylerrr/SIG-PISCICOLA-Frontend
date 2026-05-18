@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Toaster } from "sonner";
 import { feedingService } from "@/lib/feedingService";
 import { usePermissions } from "@/lib/usePermissions";
-import { FeedingPlanForm } from "@/app/components/feeding_plan_form";
+import { FeedingPlanForm } from "@/app/components/feeding/feeding_plan_form";
 
 const STATE_COLORS = {
   scheduled: "bg-slate-100 text-slate-700",

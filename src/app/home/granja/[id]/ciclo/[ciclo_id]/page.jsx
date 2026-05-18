@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Loader2, Calendar, CalendarX, Fish, ClipboardList, Map } from "lucide-react";
-import { Batches } from '@/app/components/batches';
+import { Batches } from '@/app/components/batches/batches';
 
 const STATE_LABELS = {
     in_progress: "En Ejecución",

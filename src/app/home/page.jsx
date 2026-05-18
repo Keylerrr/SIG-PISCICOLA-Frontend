@@ -2,8 +2,8 @@
 
 import { Plus } from "lucide-react";
 import { useState, useRef } from "react";
-import { Farms } from "../components/farms";
-import { FarmRegisterForm } from "../components/farm_form";
+import { Farms } from "../components/farms/farms";
+import { FarmRegisterForm } from "../components/farms/farm_form";
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import {

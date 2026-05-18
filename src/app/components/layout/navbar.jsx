@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LogOut, Settings, UserRound, Fish, UserRoundPlus, Package, Bell } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AlertsTab } from './inventory/AlertsTab';
+import { AlertsTab } from '../inventory/AlertsTab';
 import { useAlerts } from '@/hooks/useAlerts';
 
 export function Navbar() {

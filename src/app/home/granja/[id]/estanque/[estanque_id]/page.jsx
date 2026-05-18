@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 
 import { ArrowLeft } from "lucide-react";
 import { Loader2 } from "lucide-react";
-import { Batches } from '@/app/components/batches';
+import { Batches } from '@/app/components/batches/batches';
 export default function Estanque({ params }) {
 
     const { estanque_id } = useParams(params);
