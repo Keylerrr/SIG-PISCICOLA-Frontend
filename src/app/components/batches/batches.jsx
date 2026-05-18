@@ -118,6 +118,64 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
       setLoading(true);
       try {
         const token = localStorage.getItem("access");
+
+        if (!cycleId && pondId) {
+          // Fetch both pond-batches and batches and merge them
+          const pbRes = await fetch(`${API_BASE}/farms/${id}/pond-batches/?pond=${pondId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const bRes = await fetch(`${API_BASE}/farms/${id}/batches/?pond=${pondId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (!pbRes.ok || !bRes.ok) {
+            throw new Error(`Error fetching batches for pond`);
+          }
+          
+          const pondBatches = await pbRes.json();
+          const batches = await bRes.json();
+          
+          // Fetch cycles and their cycle-batches to find assignments
+          const cRes = await fetch(`${API_BASE}/farms/${id}/ponds/${pondId}/cycles/`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const activeCycles = cRes.ok ? await cRes.json() : [];
+          
+          const cycleBatchesPromises = (Array.isArray(activeCycles) ? activeCycles : [])
+            .filter(c => c.state === 'in_progress' || c.state === 'paused')
+            .map(c => 
+               fetch(`${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${c.id}/cycle-batches/`, { headers: { Authorization: `Bearer ${token}` } })
+               .then(r => r.ok ? r.json() : [])
+               .then(data => ({ cycle: c, cycleBatches: data }))
+            );
+          const cyclesWithBatches = await Promise.all(cycleBatchesPromises);
+          
+          const pondBatchToCycle = {};
+          cyclesWithBatches.forEach(({ cycle, cycleBatches }) => {
+              if (Array.isArray(cycleBatches)) {
+                  cycleBatches.forEach(cb => {
+                      const pbId = cb.pond_batch_detail?.id || cb.pond_batch || cb.pond_batch_id;
+                      if (pbId) {
+                          pondBatchToCycle[pbId] = cycle;
+                      }
+                  });
+              }
+          });
+          
+          const merged = (Array.isArray(pondBatches) ? pondBatches : []).map(pb => {
+            const nestedBatch = (Array.isArray(batches) ? batches : []).find(b => b.id === pb.batch);
+            return {
+              ...pb,
+              batch: nestedBatch || pb.batch,
+              assigned_cycle: pondBatchToCycle[pb.id] || null
+            };
+          });
+          
+          setBatches(merged);
+          setLoading(false);
+          return;
+        }
+
         let endpoint = `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
         if (cycleId && pondId) {
           // Pond-scoped cycle batches endpoint
@@ -125,8 +183,6 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
         } else if (cycleId) {
           // Fallback if pondId not available (legacy)
           endpoint = `${API_BASE}/farms/${id}/cycles/${cycleId}/cycle-batches/`;
-        } else if (pondId) {
-          endpoint = `${API_BASE}/farms/${id}/batches/?pond=${pondId}`;
         }
           
         const res = await fetch(endpoint, {
@@ -329,7 +385,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                 </DialogContent>
               </Dialog>
               )}
-              {!!pondId && !cycleId && !item.cycle && !b.cycle && !item.active_cycle && !b.active_cycle && !item.cycle_id && !b.cycle_id && (
+              {!!pondId && !cycleId && !item.assigned_cycle && !b.active_cycle && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" className="w-full flex gap-2 border-green-200 text-green-700 hover:bg-green-50">
@@ -352,6 +408,12 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                   />
                 </DialogContent>
               </Dialog>
+              )}
+              {!!pondId && !cycleId && (item.assigned_cycle || b.active_cycle) && (
+                <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm font-medium">
+                  <Link className="w-4 h-4" />
+                  Ciclo: {item.assigned_cycle?.name || "Asignado"}
+                </div>
               )}
             </CardFooter>
           </Card>
