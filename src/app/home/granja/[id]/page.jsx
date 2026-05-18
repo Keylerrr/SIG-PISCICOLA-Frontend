@@ -13,6 +13,7 @@ import {
   Package,
   Plus,
   Loader2,
+  Fish,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -272,15 +273,14 @@ export default function Granja({ params }) {
 
             <div className="flex flex-wrap items-center gap-3">
               {canManageInventory && (
-                <Button
+                <Button 
                   onClick={() => {
-                    localStorage.setItem("selectedFarmId", id);
-                    router.push(`/inventory?farmId=${id}`);
+                    router.push(`/home/granja/${id}/inventory`);
                   }}
-                  className="flex items-center gap-2 bg-[#FF91A4] hover:bg-[#ff7b91] text-white px-4 py-2 rounded-lg"
+                  className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl shadow-sm transition-all"
                 >
                   <Package className="w-5 h-5" />
-                  Administrar Inventario
+                  Inventario
                 </Button>
               )}
 
@@ -291,19 +291,25 @@ export default function Granja({ params }) {
                       `/home/granja/${id}/granja_trabajadores`
                     )
                   }
-                  className="flex items-center gap-2 bg-[#6ec3b1] hover:bg-[#5db4a2] text-white px-4 py-2 rounded-lg"
+                  className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 hover:-translate-y-0.5 transition-all duration-200 text-white px-5 py-2.5 rounded-xl shadow-sm"
                 >
                   <UserCog className="w-5 h-5" />
-                  Administrar Trabajadores
+                  Trabajadores
                 </Button>
               )}
 
-              <Link
-                href={`/home/granja/${id}/alimentacion`}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50"
+              <Button
+                asChild
+                className="bg-slate-900 hover:bg-slate-800 hover:-translate-y-0.5 transition-all duration-200 text-white px-5 py-2.5 rounded-xl shadow-sm"
               >
-                Alimentación
-              </Link>
+                <Link
+                  href={`/home/granja/${id}/alimentacion`}
+                  className="flex items-center gap-2"
+                >
+                  <Fish className="w-5 h-5" />
+                  Alimentación
+                </Link>
+              </Button>
             </div>
           </div>
 
