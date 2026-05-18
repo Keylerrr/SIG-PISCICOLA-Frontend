@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { LogOut, Settings, UserRound, Fish, UserRoundPlus, Package, Bell } from 'lucide-react';
+import { LogOut, Settings, UserRound, Fish, UserRoundPlus, Package, Bell, UsersRound } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlertsTab } from '../inventory/AlertsTab';
 import { useAlerts } from '@/hooks/useAlerts';
@@ -118,70 +118,62 @@ export function Navbar() {
               onClick={() => router.push('/home/perfil')}
               className="flex items-center gap-3 px-4 py-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer text-left"
             >
-              <div className="bg-[#ffe4d2] p-2 rounded-full">
-                <UserRound className="w-5 h-5 text-[#f4b183]" />
+              <div className="bg-gray-200 p-2 rounded-full">
+                <UserRound className="w-5 h-5 text-slate-700" />
               </div>
               <div>
-                <p className="font-bold text-md text-slate-800">
+                <p className="font-bold text-sm text-slate-800">
                   {userData.name}
                 </p>
-                <p className="text-sm capitalize text-slate-600">
+                <p className="text-xs capitalize text-slate-600">
                   {userData.role?.name}
                 </p>
               </div>
             </button>
 
-            {userData.role?.name?.toLowerCase() === 'productor' && (
+            {userData.role?.name?.toLowerCase() === 'productor' || 
+            userData.role?.name?.toLowerCase() === 'admin' && (
               <>
                 <button 
-                  title='Inventario'
-                  onClick={() => router.push('/inventory')}
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-[#FF91A4]/10 rounded-lg transition-colors hover:cursor-pointer"
-                >
-                  <Package className="w-5 h-5 text-[#FF91A4]" />
-                  <span className="text-md font-bold text-[#FF91A4]">Inventario</span>
-                </button>
-
-                <button 
-                  title='Gestionar Trabajadores'
+                  title='Agregar Trabajadores'
                   onClick={handleSettings}
-                  className="flex items-center gap-2 px-4 py-2 text-[#6ec3b1] hover:bg-[#6ec3b1]/10 rounded-lg transition-colors hover:cursor-pointer"
+                  className="relative p-2 rounded-full hover:bg-gray-100 transition-colors hover:cursor-pointer flex items-center justify-center"
                 >
-                  <UserRoundPlus className="w-5 h-5" />
-                  <span className="text-md font-bold">Trabajadores</span>
+                  <UsersRound className="w-5 h-5 text-slate-700" />
                 </button>
-                
-                <Popover open={openAlerts} onOpenChange={setOpenAlerts}>
-                  <PopoverTrigger asChild>
-                    <button
-                      className="relative p-2 rounded-full hover:bg-gray-100 transition-colors hover:cursor-pointer flex items-center justify-center"
-                      aria-label="Alertas"
-                    >
-                      <Bell className="w-5 h-5 text-slate-700" />
-                      {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      )}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-96 p-0" align="end">
-                    {alerts.length === 0 ? (
-                      <div className="p-4 text-sm text-gray-500 text-center py-8">
-                        No hay alertas activas
-                      </div>
-                    ) : (
-                      <AlertsTab 
-                        alerts={alerts}
-                        onMarkAllAsRead={markAllAsRead}
-                        onAlertRead={markAsRead}
-                        compact
-                      />
-                    )}
-                  </PopoverContent>
-                </Popover>
               </>
             )}
+
+          <Popover open={openAlerts} onOpenChange={setOpenAlerts}>
+              <PopoverTrigger asChild>
+                <button
+                  title='Ver Alertas'
+                  className="relative p-2 rounded-full hover:bg-gray-100 transition-colors hover:cursor-pointer flex items-center justify-center"
+                  aria-label="Alertas"
+                >
+                  <Bell className="w-5 h-5 text-slate-700" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-bold">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-96 p-0" align="end">
+                {alerts.length === 0 ? (
+                  <div className="p-4 text-sm text-gray-500 text-center py-8">
+                    No hay alertas activas
+                  </div>
+                ) : (
+                  <AlertsTab 
+                    alerts={alerts}
+                    onMarkAllAsRead={markAllAsRead}
+                    onAlertRead={markAsRead}
+                    compact
+                  />
+                )}
+              </PopoverContent>
+            </Popover>
 
             <button
               onClick={handleLogout}
