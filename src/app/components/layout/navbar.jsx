@@ -131,8 +131,8 @@ export function Navbar() {
               </div>
             </button>
 
-            {userData.role?.name?.toLowerCase() === 'productor' || 
-            userData.role?.name?.toLowerCase() === 'admin' && (
+            {(userData.role?.name?.toLowerCase() === 'productor' || 
+            userData.role?.name?.toLowerCase() === 'admin') && (
               <>
                 <button 
                   title='Agregar Trabajadores'
