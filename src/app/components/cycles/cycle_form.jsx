@@ -14,10 +14,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Toaster, toast } from 'sonner';
 
+const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
+
+/**
+ * CycleRegisterForm — pond-scoped.
+ * op=1 → create, op=2 → edit
+ * Requires farmProp and pondProp for all API calls.
+ */
 export function CycleRegisterForm({
   op,
   idProp,
   farmProp,
+  pondProp,
   specieProp,
   productionPlanProp,
   nameProp,
@@ -27,9 +35,8 @@ export function CycleRegisterForm({
   commentsProp,
   minWeightGProp,
   avgWeightGProp,
-  maxWeightGProp
+  maxWeightGProp,
 }) {
-
   const safe = (v) => v ?? "";
 
   const [species, setSpecies] = useState([]);
@@ -43,28 +50,19 @@ export function CycleRegisterForm({
   const [startDate, setStartDate] = useState(safe(startDateProp));
   const [estimatedFinishDate, setEstimatedFinishDate] = useState(safe(estimatedFinishDateProp));
   const [state, setState] = useState(safe(stateProp));
-  const [comments, setComments] = useState(safe(commentsProp))
-  const [minWeightG, setMinWeightG] = useState(safe(minWeightGProp))
-  const [avgWeightG, setAvgWeightG] = useState(safe(avgWeightGProp))
-  const [maxWeightG, setMaxWeightG] = useState(safe(maxWeightGProp))
+  const [comments, setComments] = useState(safe(commentsProp));
+  const [minWeightG, setMinWeightG] = useState(safe(minWeightGProp));
+  const [avgWeightG, setAvgWeightG] = useState(safe(avgWeightGProp));
+  const [maxWeightG, setMaxWeightG] = useState(safe(maxWeightGProp));
 
   useEffect(() => {
     const fetchSpecies = async () => {
       const token = localStorage.getItem("access");
       try {
-        const res = await fetch("https://backend-pongase-trucha.onrender.com/api/species/", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        const res = await fetch(`${API_BASE}/species/`, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
-        if (res.ok) {
-          const data = await res.json();
-          setSpecies(data);
-        } else {
-          console.error("Error fetching species:", res.statusText);
-        }
+        if (res.ok) setSpecies(await res.json());
       } catch (err) {
         console.error("Error fetching species:", err);
       } finally {
@@ -75,68 +73,32 @@ export function CycleRegisterForm({
   }, []);
 
   useEffect(() => {
+    if (!farmProp) return;
     const fetchProductionPlans = async () => {
       const token = localStorage.getItem("access");
       try {
-        const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmProp}/production-plans/`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+        const res = await fetch(`${API_BASE}/farms/${farmProp}/production-plans/`, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         });
-        if (res.ok) {
-          const data = await res.json();
-          setProductionPlans(data);
-        } else {
-          console.error("Error fetching production plans:", res.statusText);
-        }
+        if (res.ok) setProductionPlans(await res.json());
       } catch (err) {
         console.error("Error fetching production plans:", err);
       } finally {
         setLoadingPlans(false);
       }
     };
-    if (farmProp) fetchProductionPlans();
+    fetchProductionPlans();
   }, [farmProp]);
 
-  const filteredProductionPlans = productionPlans.filter(plan => plan.specie === parseInt(specie));
-
-  const handleReset = () => {
-    setSpecie("");
-    setProductionPlan("");
-    setName("");
-    setStartDate("");
-    setEstimatedFinishDate("");
-    setState("");
-    setComments("");
-    setMinWeightG("");
-    setAvgWeightG("");
-    setMaxWeightG("");
-  };
+  const filteredProductionPlans = productionPlans.filter(
+    (plan) => plan.specie === parseInt(specie)
+  );
 
   const validate = () => {
-    if (!name.trim()) {
-      toast.error("El nombre no puede estar vacío.");
-      return false;
-    }
-    if (!specie) {
-      toast.error("Debe seleccionar una especie.");
-      return false;
-    }
-    if (!productionPlan) {
-      toast.error("Debe seleccionar un plan de producción.");
-      return false;
-    }
-    if (!startDate) {
-      toast.error("Debe seleccionar una fecha de inicio.");
-      return false;
-    }
-    const today = new Date().toISOString().split('T')[0];
-    if (startDate < today) {
-      toast.error("La fecha de inicio no puede ser anterior a hoy.");
-      return false;
-    }
+    if (!name.trim()) { toast.error("El nombre no puede estar vacío."); return false; }
+    if (!specie) { toast.error("Debe seleccionar una especie."); return false; }
+    if (!productionPlan) { toast.error("Debe seleccionar un plan de producción."); return false; }
+    if (!startDate) { toast.error("Debe seleccionar una fecha de inicio."); return false; }
     if (op === 1 && !estimatedFinishDate) {
       toast.error("Debe seleccionar una fecha estimada de finalización.");
       return false;
@@ -146,96 +108,63 @@ export function CycleRegisterForm({
       return false;
     }
     const validStates = ["in_progress", "paused", "finished", "cancelled"];
-    if (!validStates.includes(state)) {
-      toast.error("Debe seleccionar un estado válido.");
-      return false;
-    }
+    if (!validStates.includes(state)) { toast.error("Debe seleccionar un estado válido."); return false; }
     const minW = parseFloat(minWeightG);
-    if (isNaN(minW) || minW < 0) {
-      toast.error("El peso mínimo debe ser un número válido mayor o igual a 0.");
-      return false;
-    }
     const avgW = parseFloat(avgWeightG);
-    if (isNaN(avgW) || avgW < 0) {
-      toast.error("El peso promedio debe ser un número válido mayor o igual a 0.");
-      return false;
-    }
     const maxW = parseFloat(maxWeightG);
-    if (isNaN(maxW) || maxW < 0) {
-      toast.error("El peso máximo debe ser un número válido mayor o igual a 0.");
-      return false;
-    }
+    if (isNaN(minW) || minW < 0) { toast.error("El peso mínimo debe ser ≥ 0."); return false; }
+    if (isNaN(avgW) || avgW < 0) { toast.error("El peso promedio debe ser ≥ 0."); return false; }
+    if (isNaN(maxW) || maxW < 0) { toast.error("El peso máximo debe ser ≥ 0."); return false; }
     if (minW > avgW || avgW > maxW) {
-      toast.error("Los pesos deben estar en orden: mínimo <= promedio <= máximo.");
+      toast.error("Los pesos deben cumplir: mínimo ≤ promedio ≤ máximo.");
       return false;
     }
     return true;
   };
 
+  const buildPayload = () => ({
+    pond: parseInt(pondProp),
+    specie: parseInt(specie),
+    production_plan: parseInt(productionPlan),
+    name: name.trim(),
+    start_date: startDate,
+    estimated_finish_date: estimatedFinishDate || undefined,
+    state,
+    comments: comments.trim(),
+    min_weight_g: parseFloat(minWeightG),
+    avg_weight_g: parseFloat(avgWeightG),
+    max_weight_g: parseFloat(maxWeightG),
+  });
+
+  const extractError = (errorData) => {
+    if (typeof errorData === "string") return errorData;
+    return (
+      errorData.detail ||
+      errorData.name?.[0] ||
+      errorData.specie?.[0] ||
+      errorData.production_plan?.[0] ||
+      errorData.pond?.[0] ||
+      errorData.non_field_errors?.[0] ||
+      Object.values(errorData).flat().join(" | ")
+    );
+  };
+
   const handleSubmit = async () => {
     if (!validate()) return;
-
-    // Check for existing in_progress cycle for same farm and specie
     const token = localStorage.getItem("access");
     try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmProp}/cycles/`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (res.ok) {
-        const cycles = await res.json();
-        const existing = cycles.find(c => c.farm === farmProp && c.specie === parseInt(specie) && c.state === "in_progress" && c.id !== idProp);
-        if (existing) {
-          toast.error("Ya existe un ciclo en progreso para esta granja y especie.");
-          return;
-        }
-      }
-    } catch (err) {
-      console.error("Error checking existing cycles:", err);
-    }
-
-    const payload = {
-      farm: farmProp,
-      specie: parseInt(specie),
-      production_plan: parseInt(productionPlan),
-      name: name.trim(),
-      start_date: startDate,
-      estimated_finish_date: estimatedFinishDate,
-      state: state,
-      comments: comments.trim(),
-      min_weight_g: parseFloat(minWeightG),
-      avg_weight_g: parseFloat(avgWeightG),
-      max_weight_g: parseFloat(maxWeightG),
-    };
-
-    try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmProp}/cycles/`, {
+      const res = await fetch(`${API_BASE}/farms/${farmProp}/ponds/${pondProp}/cycles/`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
       });
-
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
-        const errorMsg = 
-          errorData.detail || 
-          errorData.name?.[0] || 
-          errorData.specie?.[0] ||
-          errorData.production_plan?.[0] ||
-          errorData.non_field_errors?.[0] || 
-          `Error ${res.status}: ${res.statusText}`;
-        toast.error(errorMsg);
+        toast.error(extractError(errorData) || `Error ${res.status}: ${res.statusText}`);
         return;
       }
-
       toast.success("Ciclo creado correctamente.");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 1200);
     } catch (err) {
       console.error("Error registro:", err);
       toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
@@ -244,47 +173,20 @@ export function CycleRegisterForm({
 
   const handleEdit = async () => {
     if (!validate()) return;
-
     const token = localStorage.getItem("access");
-
-    const payload = {
-      farm: farmProp,
-      specie: parseInt(specie),
-      production_plan: parseInt(productionPlan),
-      name: name.trim(),
-      start_date: startDate,
-      state: state,
-      comments: comments.trim(),
-      min_weight_g: parseFloat(minWeightG),
-      avg_weight_g: parseFloat(avgWeightG),
-      max_weight_g: parseFloat(maxWeightG),
-    };
-
     try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmProp}/cycles/${idProp}/`, {
+      const res = await fetch(`${API_BASE}/farms/${farmProp}/ponds/${pondProp}/cycles/${idProp}/`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(buildPayload()),
       });
-
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
-        const errorMsg = 
-          errorData.detail || 
-          errorData.name?.[0] || 
-          errorData.specie?.[0] ||
-          errorData.production_plan?.[0] ||
-          errorData.non_field_errors?.[0] || 
-          `Error ${res.status}: ${res.statusText}`;
-        toast.error(errorMsg);
+        toast.error(extractError(errorData) || `Error ${res.status}: ${res.statusText}`);
         return;
       }
-
       toast.success("Ciclo actualizado correctamente.");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 1200);
     } catch (err) {
       console.error("Error edición:", err);
       toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
@@ -293,30 +195,22 @@ export function CycleRegisterForm({
 
   const handleFinish = async () => {
     const token = localStorage.getItem("access");
-    const payload = {
-      finish_date: new Date().toISOString().split('T')[0],
-      state: "finished",
-    };
-
     try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmProp}/cycles/${idProp}/`, {
+      const res = await fetch(`${API_BASE}/farms/${farmProp}/ponds/${pondProp}/cycles/${idProp}/`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          finish_date: new Date().toISOString().split("T")[0],
+          state: "finished",
+        }),
       });
-
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
-        const errorMsg = errorData.detail || `Error ${res.status}: ${res.statusText}`;
-        toast.error(errorMsg);
+        toast.error(extractError(errorData) || `Error ${res.status}: ${res.statusText}`);
         return;
       }
-
       toast.success("Ciclo finalizado correctamente.");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 1200);
     } catch (err) {
       console.error("Error finishing cycle:", err);
       toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
@@ -325,29 +219,18 @@ export function CycleRegisterForm({
 
   const handleDelete = async () => {
     const token = localStorage.getItem("access");
-    const payload = {
-      deleted_at: new Date().toISOString(),
-    };
-
     try {
-      const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${farmProp}/cycles/${idProp}/`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      const res = await fetch(`${API_BASE}/farms/${farmProp}/ponds/${pondProp}/cycles/${idProp}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) {
         const errorData = await res.clone().json().catch(() => ({}));
-        const errorMsg = errorData.detail || `Error ${res.status}: ${res.statusText}`;
-        toast.error(errorMsg);
+        toast.error(extractError(errorData) || `Error ${res.status}: ${res.statusText}`);
         return;
       }
-
       toast.success("Ciclo eliminado correctamente.");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => window.location.reload(), 1200);
     } catch (err) {
       console.error("Error deleting cycle:", err);
       toast.error("Error de conexión. Verifica tu internet e intenta nuevamente.");
@@ -356,6 +239,8 @@ export function CycleRegisterForm({
 
   return (
     <FieldGroup>
+      <Toaster position="top-center" />
+
       <Field>
         <FieldLabel>Especie</FieldLabel>
         <Select onValueChange={setSpecie} value={specie} disabled={loadingSpecies}>
@@ -394,9 +279,9 @@ export function CycleRegisterForm({
 
       <Field>
         <FieldLabel>Nombre del Ciclo</FieldLabel>
-        <Input 
-          value={name} 
-          onChange={(e) => setName(e.target.value)} 
+        <Input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           placeholder="Ej: Ciclo de Engorde 2026"
           required
         />
@@ -404,11 +289,10 @@ export function CycleRegisterForm({
 
       <Field>
         <FieldLabel>Fecha de Inicio</FieldLabel>
-        <Input 
+        <Input
           type="date"
-          value={startDate} 
-          onChange={(e) => setStartDate(e.target.value)} 
-          min={new Date().toISOString().split('T')[0]}
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
           required
         />
       </Field>
@@ -416,10 +300,10 @@ export function CycleRegisterForm({
       {op === 1 && (
         <Field>
           <FieldLabel>Fecha Estimada de Finalización</FieldLabel>
-          <Input 
+          <Input
             type="date"
-            value={estimatedFinishDate} 
-            onChange={(e) => setEstimatedFinishDate(e.target.value)} 
+            value={estimatedFinishDate}
+            onChange={(e) => setEstimatedFinishDate(e.target.value)}
             min={startDate}
             required
           />
@@ -445,71 +329,71 @@ export function CycleRegisterForm({
 
       <Field>
         <FieldLabel>Comentarios</FieldLabel>
-        <Input 
-          value={comments} 
-          onChange={(e) => setComments(e.target.value)} 
+        <Input
+          value={comments}
+          onChange={(e) => setComments(e.target.value)}
           placeholder="Comentarios adicionales..."
         />
       </Field>
 
-      <Field>
-        <FieldLabel>Peso Mínimo (g)</FieldLabel>
-        <Input 
-          type="number" 
-          step="0.01"
-          min="0"
-          value={minWeightG} 
-          onChange={(e) => setMinWeightG(e.target.value)} 
-          placeholder="Ej: 0.5"
-          required
-        />
-      </Field>
-
-      <Field>
-        <FieldLabel>Peso Promedio (g)</FieldLabel>
-        <Input 
-          type="number" 
-          step="0.01"
-          min="0"
-          value={avgWeightG} 
-          onChange={(e) => setAvgWeightG(e.target.value)} 
-          placeholder="Ej: 1.0"
-          required
-        />
-      </Field>
-
-      <Field>
-        <FieldLabel>Peso Máximo (g)</FieldLabel>
-        <Input 
-          type="number" 
-          step="0.01"
-          min="0"
-          value={maxWeightG} 
-          onChange={(e) => setMaxWeightG(e.target.value)} 
-          placeholder="Ej: 1.5"
-          required
-        />
-      </Field>
+      <div className="grid grid-cols-3 gap-3">
+        <Field>
+          <FieldLabel>Peso Mínimo (g)</FieldLabel>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={minWeightG}
+            onChange={(e) => setMinWeightG(e.target.value)}
+            placeholder="Ej: 0.5"
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel>Peso Promedio (g)</FieldLabel>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={avgWeightG}
+            onChange={(e) => setAvgWeightG(e.target.value)}
+            placeholder="Ej: 1.0"
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel>Peso Máximo (g)</FieldLabel>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={maxWeightG}
+            onChange={(e) => setMaxWeightG(e.target.value)}
+            placeholder="Ej: 1.5"
+            required
+          />
+        </Field>
+      </div>
 
       <Field orientation="horizontal" className="justify-end gap-3 mt-4">
-        <Button 
-          type="button" 
+        <Button
+          type="button"
           onClick={op === 1 ? handleSubmit : handleEdit}
           className="bg-blue-600 hover:bg-blue-700"
         >
-          {op === 1 ? "Crear" : "Actualizar"}
+          {op === 1 ? "Crear Ciclo" : "Actualizar"}
         </Button>
         {op === 2 && (
           <>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={handleFinish}
               className="bg-green-600 hover:bg-green-700"
             >
               Finalizar
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >

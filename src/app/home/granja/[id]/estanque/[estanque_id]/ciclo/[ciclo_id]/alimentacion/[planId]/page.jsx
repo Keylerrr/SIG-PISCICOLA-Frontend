@@ -24,7 +24,7 @@ function formatDate(value = "") {
 }
 
 export default function FeedingPlanDetail({ params }) {
-  const { id, ciclo_id, planId } = use(params);
+  const { id, estanque_id, ciclo_id, planId } = use(params);
   const [plan, setPlan] = useState(null);
   const [schedules, setSchedules] = useState([]);
   const [ranges, setRanges] = useState([]);
@@ -101,14 +101,17 @@ export default function FeedingPlanDetail({ params }) {
 
         const token = localStorage.getItem("access");
         if (token) {
-          const resCycle = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/cycles/${ciclo_id}/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
+          // Use pond-scoped endpoint for cycle name
+          const resCycle = await fetch(
+            `https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/${estanque_id}/cycles/${ciclo_id}/`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
           if (resCycle.ok) {
             const cycleData = await resCycle.json();
             setCycleName(cycleData.name || "");
@@ -235,7 +238,7 @@ export default function FeedingPlanDetail({ params }) {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href={`/home/granja/${id}/ciclo/${ciclo_id}/alimentacion`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <Link href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/${ciclo_id}/alimentacion`} className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900">
               <ArrowLeft className="w-5 h-5" /> Volver a planes
             </Link>
             <h1 className="mt-4 text-4xl font-bold">Plan de alimentación #{planId}</h1>

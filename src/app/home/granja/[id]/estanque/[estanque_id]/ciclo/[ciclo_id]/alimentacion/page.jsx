@@ -10,6 +10,8 @@ import { feedingService } from "@/lib/feedingService";
 import { usePermissions } from "@/lib/usePermissions";
 import { FeedingPlanForm } from "@/app/components/feeding/feeding_plan_form";
 
+const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
+
 const STATE_COLORS = {
   scheduled: "bg-slate-100 text-slate-700",
   in_progress: "bg-blue-100 text-blue-700",
@@ -25,7 +27,7 @@ const STATE_LABELS = {
 };
 
 export default function CycleFeeding({ params }) {
-  const { id, ciclo_id } = use(params);
+  const { id, estanque_id, ciclo_id } = use(params);
   const [plans, setPlans] = useState([]);
   const [scheduleMap, setScheduleMap] = useState({});
   const [cycleName, setCycleName] = useState("");
@@ -48,7 +50,8 @@ export default function CycleFeeding({ params }) {
         Array.isArray(schedulesData)
           ? schedulesData.reduce((map, schedule) => {
               if (schedule?.id != null) {
-                map[schedule.id.toString()] = schedule.name || schedule.title || `Cronograma #${schedule.id}`;
+                map[schedule.id.toString()] =
+                  schedule.name || schedule.title || `Cronograma #${schedule.id}`;
               }
               return map;
             }, {})
@@ -66,17 +69,21 @@ export default function CycleFeeding({ params }) {
   }, [id, ciclo_id]);
 
   useEffect(() => {
+    if (!id || !estanque_id || !ciclo_id) return;
     const loadCycleName = async () => {
       const token = localStorage.getItem("access");
       if (!token) return;
-
       try {
-        const response = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/cycles/${ciclo_id}/`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        // Use pond-scoped endpoint
+        const response = await fetch(
+          `${API_BASE}/farms/${id}/ponds/${estanque_id}/cycles/${ciclo_id}/`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (!response.ok) return;
         const data = await response.json();
         setCycleName(data.name || "");
@@ -84,20 +91,8 @@ export default function CycleFeeding({ params }) {
         console.error("Error cargando nombre del ciclo:", error);
       }
     };
-
-    if (id && ciclo_id) {
-      loadCycleName();
-    }
-  }, [id, ciclo_id]);
-
-  const getScheduleLabel = (plan) => {
-    const key = plan?.feeding_schedule?.toString();
-    return plan?.feeding_schedule_name || (key ? scheduleMap[key] : undefined) || plan?.feeding_schedule || "—";
-  };
-
-  const getCycleLabel = (plan) => {
-    return plan?.cycle_name || cycleName || plan?.cycle || "—";
-  };
+    loadCycleName();
+  }, [id, estanque_id, ciclo_id]);
 
   useEffect(() => {
     if (permissions.loading) return;
@@ -105,21 +100,48 @@ export default function CycleFeeding({ params }) {
     fetchPlans();
   }, [fetchPlans, permissions.loading, permissions.isFarmMember, permissions.canManageCycle, permissions.isAdmin]);
 
+  const getScheduleLabel = (plan) => {
+    const key = plan?.feeding_schedule?.toString();
+    return (
+      plan?.feeding_schedule_name ||
+      (key ? scheduleMap[key] : undefined) ||
+      plan?.feeding_schedule ||
+      "—"
+    );
+  };
+
+  const getCycleLabel = (plan) =>
+    plan?.cycle_name || cycleName || plan?.cycle || "—";
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <Toaster position="top-center" />
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <Link href={`/home/granja/${id}/ciclo/${ciclo_id}/`} className="text-slate-600 hover:text-slate-800 inline-flex items-center gap-2">
+            {/* Updated back link points to pond-scoped ciclo detail */}
+            <Link
+              href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/${ciclo_id}/`}
+              className="text-slate-600 hover:text-slate-800 inline-flex items-center gap-2"
+            >
               <ArrowLeft className="w-5 h-5" /> Volver al ciclo
             </Link>
             <h1 className="mt-4 text-4xl font-bold">Planes de alimentación</h1>
-            <p className="text-slate-600 mt-2">Planes asociados al ciclo seleccionado.</p>
+            {cycleName && (
+              <p className="text-slate-600 mt-1">
+                Ciclo: <span className="font-medium">{cycleName}</span>
+              </p>
+            )}
+            <p className="text-slate-500 text-sm mt-1">
+              Planes asociados al ciclo del estanque.
+            </p>
           </div>
           <div className="flex flex-wrap gap-3">
             {canManage && (
-              <Button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2">
+              <Button
+                onClick={() => setShowCreate(true)}
+                className="inline-flex items-center gap-2"
+              >
                 <Plus className="w-4 h-4" /> Nuevo plan
               </Button>
             )}
@@ -155,14 +177,23 @@ export default function CycleFeeding({ params }) {
                 <p className="text-sm text-slate-600">Ciclo: {getCycleLabel(plan)}</p>
               </CardContent>
               <CardFooter className="flex flex-wrap items-center justify-between gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATE_COLORS[plan.state] || "bg-slate-100 text-slate-700"}`}>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${STATE_COLORS[plan.state] || "bg-slate-100 text-slate-700"}`}
+                >
                   {STATE_LABELS[plan.state] || plan.state || "Desconocido"}
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/home/granja/${id}/ciclo/${ciclo_id}/alimentacion/${plan.id}`} className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  {/* Updated plan detail link to use pond-scoped path */}
+                  <Link
+                    href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/${ciclo_id}/alimentacion/${plan.id}`}
+                    className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
                     Ver plan
                   </Link>
-                  <Link href={`/home/granja/${id}/alimentacion/${plan.feeding_schedule}/`} className="text-blue-600 hover:underline">
+                  <Link
+                    href={`/home/granja/${id}/alimentacion/${plan.feeding_schedule}/`}
+                    className="text-blue-600 hover:underline text-sm"
+                  >
                     Ver cronograma
                   </Link>
                 </div>
@@ -176,7 +207,9 @@ export default function CycleFeeding({ params }) {
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold">Crear plan de alimentación</h2>
-                <p className="text-slate-600">Registra un plan nuevo y valida solapamientos para este ciclo.</p>
+                <p className="text-slate-600">
+                  Registra un plan nuevo y valida solapamientos para este ciclo.
+                </p>
               </div>
               <Button variant="outline" onClick={() => setShowCreate(false)}>
                 Cerrar

@@ -60,6 +60,7 @@ const STATUS_COLORS = {
 };
 
 export function Batches({ id, pondId, cycleId, search = "" }) {
+  // pondId is required for pond-scoped cycle assignment
   const [batches, setBatches] = useState([]);
   const [species, setSpecies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +119,11 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
       try {
         const token = localStorage.getItem("access");
         let endpoint = `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
-        if (cycleId) {
+        if (cycleId && pondId) {
+          // Pond-scoped cycle batches endpoint
+          endpoint = `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/pond-batches/`;
+        } else if (cycleId) {
+          // Fallback if pondId not available (legacy)
           endpoint = `${API_BASE}/farms/${id}/cycles/${cycleId}/cycle-batches/`;
         } else if (pondId) {
           endpoint = `${API_BASE}/farms/${id}/batches/?pond=${pondId}`;
@@ -149,15 +154,19 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
   const handleDelete = async (cycleBatchId) => {
     try {
       const token = localStorage.getItem("access");
-      const res = await fetch(`${API_BASE}/farms/${id}/cycle-batches/${cycleBatchId}/`, {
+      // Use pond-scoped endpoint if we have pondId and cycleId, fallback otherwise
+      const endpoint = pondId && cycleId
+        ? `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/pond-batches/${cycleBatchId}/`
+        : `${API_BASE}/farms/${id}/cycle-batches/${cycleBatchId}/`;
+      const res = await fetch(endpoint, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
         throw new Error("Error al desvincular el lote");
       }
       toast.success("Lote desvinculado del ciclo correctamente");
-      setBatches(prev => prev.filter(b => b.id !== cycleBatchId));
+      setBatches((prev) => prev.filter((b) => b.id !== cycleBatchId));
     } catch (error) {
       console.error(error);
       toast.error("Error al desvincular el lote");
@@ -335,13 +344,10 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
                       Seleccione el ciclo al que desea añadir este lote. Solo se muestran los ciclos en progreso.
                     </DialogDescription>
                   </DialogHeader>
-                  <AssignCycleForm 
+                  <AssignCycleForm
                     farmId={id}
+                    pondId={pondId}
                     pondBatchId={item.id}
-                    defaultQuantity={item.current_quantity || b.initial_quantity}
-                    defaultMinWeight={b.min_weight_g || 0}
-                    defaultAvgWeight={b.avg_weight_g || 0}
-                    defaultMaxWeight={b.max_weight_g || 0}
                   />
                 </DialogContent>
               </Dialog>
