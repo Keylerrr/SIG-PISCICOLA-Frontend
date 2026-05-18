@@ -25,6 +25,15 @@ import {
 import { Toaster, toast } from "sonner";
 import Link from "next/link";
 import { CycleRegisterForm } from "./cycle_form";
+import { Button } from "@/components/ui/button";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { ArrowUp, ArrowDown } from "lucide-react";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -45,6 +54,9 @@ const STATE_COLORS = {
 export function Cycles({ id, search = "" }) {
     const [ciclos, setCiclos] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [species, setSpecies] = useState([]);
+    const [selectedSpecie, setSelectedSpecie] = useState("all");
+    const [ordering, setOrdering] = useState("");
 
     const filteredCiclos = useMemo(() => {
         if (!search?.trim()) return ciclos;
@@ -53,11 +65,44 @@ export function Cycles({ id, search = "" }) {
     }, [ciclos, search]);
 
     useEffect(() => {
+        const fetchSpecies = async () => {
+            try {
+                const token = localStorage.getItem("access");
+                const res = await fetch(`${API_BASE}/species/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setSpecies(data);
+                }
+            } catch (err) {
+                console.error("Error fetching species:", err);
+            }
+        };
+        fetchSpecies();
+    }, []);
+
+    useEffect(() => {
         const fetchCiclos = async () => {
             setLoading(true);
             try {
                 const token = localStorage.getItem("access");
-                const res = await fetch(`${API_BASE}/farms/${id}/cycles/`, {
+                let url = `${API_BASE}/farms/${id}/cycles/`;
+                const params = new URLSearchParams();
+                
+                if (selectedSpecie && selectedSpecie !== "all") {
+                    params.append("specie_id", selectedSpecie);
+                }
+                if (ordering) {
+                    params.append("ordering", ordering);
+                }
+                
+                const queryString = params.toString();
+                if (queryString) {
+                    url += `?${queryString}`;
+                }
+
+                const res = await fetch(url, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
 
@@ -75,7 +120,7 @@ export function Cycles({ id, search = "" }) {
         };
 
         fetchCiclos();
-    }, [id]);
+    }, [id, selectedSpecie, ordering]);
 
     const handleDelete = async (cycleId) => {
         const token = localStorage.getItem("access");
@@ -100,12 +145,47 @@ export function Cycles({ id, search = "" }) {
 
     return (
         <>
-            {loading && (<div className="flex items-center justify-center min-h-50">
-                <p className="text-slate-500">Cargando ciclos...</p>
-            </div>)
-            }
-
             <Toaster position="top-center" />
+
+            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row gap-4 px-4 pt-4 items-center justify-between">
+                <div className="flex gap-2 items-center w-full sm:w-auto">
+                    <Select value={selectedSpecie} onValueChange={setSelectedSpecie}>
+                        <SelectTrigger className="w-[200px] bg-white border-slate-300">
+                            <SelectValue placeholder="Todas las especies" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas las especies</SelectItem>
+                            {species.map(s => (
+                                <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex gap-2 items-center">
+                    <Button 
+                        variant={ordering === "asc" ? "default" : "outline"} 
+                        onClick={() => setOrdering(ordering === "asc" ? "" : "asc")}
+                        title="Orden ascendente"
+                        className={ordering === "asc" ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-slate-700"}
+                    >
+                        <ArrowUp className="w-4 h-4 mr-2" /> Asc
+                    </Button>
+                    <Button 
+                        variant={ordering === "desc" ? "default" : "outline"} 
+                        onClick={() => setOrdering(ordering === "desc" ? "" : "desc")}
+                        title="Orden descendente"
+                        className={ordering === "desc" ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-white text-slate-700"}
+                    >
+                        <ArrowDown className="w-4 h-4 mr-2" /> Desc
+                    </Button>
+                </div>
+            </div>
+
+            {loading && (
+                <div className="flex items-center justify-center min-h-50 mt-8">
+                    <p className="text-slate-500">Cargando ciclos...</p>
+                </div>
+            )}
 
             <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
                 {filteredCiclos.length === 0 && search && (

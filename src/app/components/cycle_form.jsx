@@ -356,7 +356,6 @@ export function CycleRegisterForm({
 
   return (
     <FieldGroup>
-      <Toaster position="top-center" />
       <Field>
         <FieldLabel>Especie</FieldLabel>
         <Select onValueChange={setSpecie} value={specie} disabled={loadingSpecies}>
