@@ -147,41 +147,13 @@ export default function CicloDetalle() {
             )}
 
             <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-                {/* Breadcrumb navigation */}
-                <nav className="flex items-center gap-2 text-sm text-slate-500">
-                    <Link
-                        href={`/home/granja/${id}/`}
-                        className="hover:text-slate-800 transition-colors"
-                    >
-                        Granja
-                    </Link>
-                    <span>/</span>
-                    <Link
-                        href={`/home/granja/${id}/estanque/${estanque_id}/`}
-                        className="hover:text-slate-800 transition-colors"
-                    >
-                        {estanque?.name || `Estanque #${estanque_id}`}
-                    </Link>
-                    <span>/</span>
-                    <Link
-                        href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/`}
-                        className="hover:text-slate-800 transition-colors"
-                    >
-                        Ciclos
-                    </Link>
-                    <span>/</span>
-                    <span className="text-slate-800 font-medium truncate max-w-[200px]">
-                        {ciclo?.name || `Ciclo #${ciclo_id}`}
-                    </span>
-                </nav>
-
                 {/* Back button */}
                 <Link
-                    href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/`}
+                    href={`/home/granja/${id}/estanque/${estanque_id}/`}
                     className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    Volver a Ciclos del Estanque
+                    Volver al Estanque
                 </Link>
             </div>
 
