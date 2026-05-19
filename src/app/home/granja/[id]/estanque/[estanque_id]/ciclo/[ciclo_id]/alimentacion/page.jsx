@@ -2,10 +2,10 @@
 
 import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { feedingService } from "@/lib/feedingService";
 import { usePermissions } from "@/lib/usePermissions";
 import { FeedingPlanForm } from "@/app/components/feeding/feeding_plan_form";
@@ -33,6 +33,8 @@ export default function CycleFeeding({ params }) {
   const [cycleName, setCycleName] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [planToDelete, setPlanToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const permissions = usePermissions(id);
 
   const canManage = permissions.canManageCycle;
@@ -45,7 +47,8 @@ export default function CycleFeeding({ params }) {
         feedingService.getFeedingSchedules(id),
       ]);
 
-      setPlans(Array.isArray(plansData) ? plansData : []);
+      const allPlans = Array.isArray(plansData) ? plansData : [];
+      setPlans(allPlans.filter((p) => p.deleted_at === null || p.deleted_at === undefined));
       setScheduleMap(
         Array.isArray(schedulesData)
           ? schedulesData.reduce((map, schedule) => {
@@ -113,6 +116,21 @@ export default function CycleFeeding({ params }) {
   const getCycleLabel = (plan) =>
     plan?.cycle_name || cycleName || plan?.cycle || "—";
 
+  const handleDelete = async () => {
+    if (!planToDelete) return;
+    setDeleting(true);
+    try {
+      await feedingService.deleteFeedingPlan(id, estanque_id, ciclo_id, planToDelete.id);
+      toast.success(`Plan #${planToDelete.id} eliminado correctamente.`);
+      setPlanToDelete(null);
+      fetchPlans();
+    } catch (error) {
+      toast.error(error.message || "No se pudo eliminar el plan.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
       <Toaster position="top-center" />
@@ -158,7 +176,7 @@ export default function CycleFeeding({ params }) {
 
         {!loading && plans.length === 0 && (
           <div className="rounded-xl bg-white p-10 text-center text-slate-600 shadow-sm">
-            No hay planes de alimentación para este ciclo.
+            No hay planes de alimentación activos para este ciclo.
           </div>
         )}
 
@@ -196,6 +214,17 @@ export default function CycleFeeding({ params }) {
                   >
                     Ver cronograma
                   </Link>
+                  {canManage && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="inline-flex items-center gap-1 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                      onClick={() => setPlanToDelete(plan)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Eliminar
+                    </Button>
+                  )}
                 </div>
               </CardFooter>
             </Card>
@@ -227,6 +256,39 @@ export default function CycleFeeding({ params }) {
           </div>
         )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      {planToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-slate-800">¿Eliminar plan de alimentación?</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Estás a punto de eliminar el <span className="font-semibold">Plan #{planToDelete.id}</span>.
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setPlanToDelete(null)}
+                disabled={deleting}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-rose-600 hover:bg-rose-700 text-white"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" />Eliminando...</>
+                ) : (
+                  <><Trash2 className="w-4 h-4 mr-2" />Eliminar</>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -100,9 +100,9 @@ export const feedingService = {
     });
   },
 
-  updateFeedingPlan: async (farmId, cycleId, planId, payload) => {
+  updateFeedingPlan: async (farmId, pondId, cycleId, planId, payload) => {
     const token = getToken();
-    const response = await fetch(`${API_BASE}/farms/${farmId}/cycles/${cycleId}/feeding-plans/${planId}/`, {
+    const response = await fetch(`${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/feeding-plans/${planId}/`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -128,6 +128,23 @@ export const feedingService = {
     }
 
     return { status: response.status, payload: payloadData };
+  },
+
+  deleteFeedingPlan: async (farmId, pondId, cycleId, planId) => {
+    return apiRequest(`/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/feeding-plans/${planId}/`, {
+      method: "DELETE",
+    });
+  },
+
+  getUnits: async () => {
+    return apiRequest(`/unit/`);
+  },
+
+  updateFeedingEvent: async (farmId, pondId, cycleId, planId, eventId, payload) => {
+    return apiRequest(`/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/feeding-plans/${planId}/feeding-events/${eventId}/`, {
+      method: "PATCH",
+      body: payload,
+    });
   },
 
   getOccupiedRanges: async (farmId, cycleId) => {

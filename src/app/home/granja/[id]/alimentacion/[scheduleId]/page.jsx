@@ -2,7 +2,7 @@
 
 import { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, ChevronRight, Layers, ListChecks, Calendar, AlertCircle } from "lucide-react";
+import { ArrowLeft, Loader2, ChevronRight, Layers, ListChecks, Calendar, AlertCircle, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toaster } from "sonner";
@@ -15,6 +15,14 @@ const STATE_LABELS = {
   finished: "Finalizado",
   archived: "Archivado",
   scheduled: "Programado",
+};
+
+const STATUS_LABELS = {
+  scheduled: "Programado",
+  completed: "Completado",
+  missed: "Omitido",
+  in_progress: "En curso",
+  cancelled: "Cancelado",
 };
 
 const STATE_COLORS = {
@@ -36,6 +44,7 @@ export default function ScheduleDetail({ params }) {
   const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [loadingError, setLoadingError] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
   const permissions = usePermissions(id);
 
   const canManage = permissions.canManageCycle;
@@ -142,16 +151,25 @@ export default function ScheduleDetail({ params }) {
       <div key={event.id ?? Math.random()} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-semibold text-slate-900">{event.title || event.description || `Evento #${event.id || event.pk}`}</p>
-          <span className="text-xs uppercase tracking-[0.18em] text-slate-600">
-            {event.state ? STATE_LABELS[event.state] || event.state : "Sin estado"}
+          <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${
+            event.status === "completed" ? "bg-green-100 text-green-700" :
+            event.status === "missed" ? "bg-rose-100 text-rose-700" :
+            event.status === "in_progress" ? "bg-blue-100 text-blue-700" :
+            event.status === "cancelled" ? "bg-orange-100 text-orange-700" :
+            "bg-slate-100 text-slate-700"
+          }`}>
+            {event.status ? STATUS_LABELS[event.status] || event.status : "Sin estado"}
           </span>
         </div>
         <div className="mt-3 grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
           {event.date && <p><strong>Fecha:</strong> {event.date}</p>}
-          {event.event_date && <p><strong>Fecha del evento:</strong> {event.event_date}</p>}
+          {event.scheduled_time && <p><strong>Hora:</strong> {event.scheduled_time}</p>}
+          {event.ration_number != null && <p><strong>Ración #:</strong> {event.ration_number}</p>}
+          {event.planned_quantity != null && <p><strong>Cantidad planificada:</strong> {event.planned_quantity}</p>}
+          {event.actual_quantity != null && <p><strong>Cantidad real:</strong> {event.actual_quantity}</p>}
+          {event.completed_at && <p><strong>Completado:</strong> {event.completed_at}</p>}
           {event.pond_name && <p><strong>Estanque:</strong> {event.pond_name}</p>}
           {event.pond && !event.pond_name && <p><strong>Estanque:</strong> {typeof event.pond === "object" ? event.pond.name : event.pond}</p>}
-          {event.created_at && <p><strong>Creado:</strong> {event.created_at}</p>}
         </div>
       </div>
     );
@@ -226,19 +244,41 @@ export default function ScheduleDetail({ params }) {
             </section>
 
             <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-3 text-slate-900">
-                <ListChecks className="h-5 w-5" />
-                <h2 className="text-2xl font-semibold">Planes de alimentación asociados</h2>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3 text-slate-900">
+                  <ListChecks className="h-5 w-5" />
+                  <h2 className="text-2xl font-semibold">Planes de alimentación asociados</h2>
+                </div>
+                <button
+                  onClick={() => setShowArchived((prev) => !prev)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
+                    showArchived
+                      ? "border-rose-300 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                      : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Archive className="w-4 h-4" />
+                  {showArchived ? "Ocultar archivados" : "Mostrar archivados"}
+                  {!showArchived && plans.filter((p) => p.deleted_at !== null && p.deleted_at !== undefined).length > 0 && (
+                    <span className="ml-1 rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
+                      {plans.filter((p) => p.deleted_at !== null && p.deleted_at !== undefined).length}
+                    </span>
+                  )}
+                </button>
               </div>
               <p className="mt-2 text-slate-600">Lista de planes que usan este cronograma.</p>
 
-              {plans.length === 0 ? (
+              {plans.filter((p) => showArchived || (p.deleted_at === null || p.deleted_at === undefined)).length === 0 ? (
                 <div className="mt-6 rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-slate-600">
-                  No se encontraron planes asociados.
+                  {plans.length === 0
+                    ? "No se encontraron planes asociados."
+                    : "No hay planes activos. Activa \"Mostrar archivados\" para verlos."}
                 </div>
               ) : (
                 <div className="mt-6 grid gap-4">
-                  {plans.map((plan) => (
+                  {plans
+                    .filter((p) => showArchived || (p.deleted_at === null || p.deleted_at === undefined))
+                    .map((plan) => (
                     <Card key={plan.id} className="border-slate-200 shadow-none">
                       <CardHeader>
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
