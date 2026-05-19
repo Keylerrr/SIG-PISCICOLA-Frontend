@@ -20,7 +20,7 @@ function normalizeFieldErrors(fieldErrors) {
   return [{ message: fieldErrors.toString() }];
 }
 
-export function FeedingPlanForm({ farmId, cycleId, onSuccess }) {
+export function FeedingPlanForm({ farmId, pondId, cycleId, onSuccess }) {
   const [form, setForm] = useState({
     feeding_schedule: "",
     start_date: "",
@@ -44,17 +44,7 @@ export function FeedingPlanForm({ farmId, cycleId, onSuccess }) {
       }
     }
 
-    async function loadRanges() {
-      try {
-        const rangeData = await feedingService.getOccupiedRanges(farmId, cycleId);
-        setOccupiedRanges(Array.isArray(rangeData?.ranges) ? rangeData.ranges : []);
-      } catch (error) {
-        console.error("Error cargando rangos ocupados:", error);
-      }
-    }
-
     loadSchedules();
-    loadRanges();
   }, [farmId, cycleId]);
 
   const setField = (field, value) => {
@@ -102,7 +92,7 @@ export function FeedingPlanForm({ farmId, cycleId, onSuccess }) {
         start_date: form.start_date,
         end_date: form.end_date,
       };
-      await feedingService.createFeedingPlan(farmId, cycleId, payload);
+      await feedingService.createFeedingPlan(farmId, pondId, cycleId, payload);
       toast.success("Plan de alimentación creado.");
       setForm({ feeding_schedule: "", start_date: "", end_date: "" });
       setErrors({});

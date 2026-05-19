@@ -84,17 +84,17 @@ export const feedingService = {
     return apiRequest(`/farms/${farmId}/feeding-schedules/${scheduleId}/feeding-plans/${planId}/feeding-events/${query ? `?${query}` : ""}`);
   },
 
-  getCycleFeedingPlans: async (farmId, cycleId, feedingScheduleId) => {
+  getCycleFeedingPlans: async (farmId, pondId, cycleId, feedingScheduleId) => {
     const query = buildQuery({ feeding_schedule: feedingScheduleId });
-    return apiRequest(`/farms/${farmId}/cycles/${cycleId}/feeding-plans/${query ? `?${query}` : ""}`);
+    return apiRequest(`/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/feeding-plans/${query ? `?${query}` : ""}`);
   },
 
-  getCycleFeedingPlanById: async (farmId, cycleId, planId) => {
-    return apiRequest(`/farms/${farmId}/cycles/${cycleId}/feeding-plans/${planId}/`);
+  getCycleFeedingPlanById: async (farmId, pondId, cycleId, planId) => {
+    return apiRequest(`/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/feeding-plans/${planId}/`);
   },
 
-  createFeedingPlan: async (farmId, cycleId, payload) => {
-    return apiRequest(`/farms/${farmId}/cycles/${cycleId}/feeding-plans/`, {
+  createFeedingPlan: async (farmId, pondId, cycleId, payload) => {
+    return apiRequest(`/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/feeding-plans/`, {
       method: "POST",
       body: payload,
     });

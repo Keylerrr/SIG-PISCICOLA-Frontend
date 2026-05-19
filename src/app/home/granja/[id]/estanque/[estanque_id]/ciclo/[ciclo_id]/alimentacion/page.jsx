@@ -41,7 +41,7 @@ export default function CycleFeeding({ params }) {
     setLoading(true);
     try {
       const [plansData, schedulesData] = await Promise.all([
-        feedingService.getCycleFeedingPlans(id, ciclo_id),
+        feedingService.getCycleFeedingPlans(id, estanque_id, ciclo_id),
         feedingService.getFeedingSchedules(id),
       ]);
 
@@ -217,6 +217,7 @@ export default function CycleFeeding({ params }) {
             </div>
             <FeedingPlanForm
               farmId={id}
+              pondId={estanque_id}
               cycleId={ciclo_id}
               onSuccess={() => {
                 setShowCreate(false);

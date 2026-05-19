@@ -80,9 +80,9 @@ export default function FeedingPlanDetail({ params }) {
 
       try {
         const [planData, scheduleData, rangeData] = await Promise.all([
-          feedingService.getCycleFeedingPlanById(id, ciclo_id, planId),
+          feedingService.getCycleFeedingPlanById(id, estanque_id, ciclo_id, planId),
           feedingService.getFeedingSchedules(id),
-          feedingService.getOccupiedRanges(id, ciclo_id),
+          // feedingService.getOccupiedRanges(id, ciclo_id),
         ]);
 
         if (!planData) {
@@ -92,7 +92,7 @@ export default function FeedingPlanDetail({ params }) {
 
         setPlan(planData);
         setSchedules(Array.isArray(scheduleData) ? scheduleData : []);
-        setRanges(Array.isArray(rangeData?.ranges) ? rangeData.ranges : []);
+        // setRanges(Array.isArray(rangeData?.ranges) ? rangeData.ranges : []);
         setForm({
           feeding_schedule: planData.feeding_schedule?.toString() || planData.feeding_schedule_name?.toString() || "",
           start_date: formatDate(planData.start_date),
