@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     ArrowLeft,
     Loader2,
@@ -18,8 +18,10 @@ import {
     Layers,
     Stethoscope,
 } from "lucide-react";
+import { Toaster, toast } from "sonner";
 import { Batches } from "@/app/components/batches/batches";
 import { MonitoringSection } from "@/app/components/monitoring/MonitoringSection";
+import { HarvestModal } from "@/app/components/harvest/HarvestModal";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -51,68 +53,69 @@ export default function CicloDetalle() {
     const [species, setSpecies] = useState([]);
     const [productionPlans, setProductionPlans] = useState([]);
     const [error, setError] = useState(null);
+    const [harvestModalOpen, setHarvestModalOpen] = useState(false);
 
-    useEffect(() => {
+    const fetchData = useCallback(async () => {
         if (!id || !estanque_id || !ciclo_id) return;
 
-        async function fetchData() {
-            try {
-                const token = localStorage.getItem("access");
-                const headers = {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                };
+        try {
+            const token = localStorage.getItem("access");
+            const headers = {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            };
 
-                // Fetch ciclo (pond-scoped endpoint)
-                const resCiclo = await fetch(
-                    `${API_BASE}/farms/${id}/ponds/${estanque_id}/cycles/${ciclo_id}/`,
-                    { method: "GET", headers }
+            // Fetch ciclo (pond-scoped endpoint)
+            const resCiclo = await fetch(
+                `${API_BASE}/farms/${id}/ponds/${estanque_id}/cycles/${ciclo_id}/`,
+                { method: "GET", headers }
+            );
+            if (!resCiclo.ok) {
+                const errorData = await resCiclo.clone().json().catch(() => ({}));
+                throw new Error(
+                    errorData.detail ||
+                        errorData.message ||
+                        `Error ${resCiclo.status} al obtener el ciclo`
                 );
-                if (!resCiclo.ok) {
-                    const errorData = await resCiclo.clone().json().catch(() => ({}));
-                    throw new Error(
-                        errorData.detail ||
-                            errorData.message ||
-                            `Error ${resCiclo.status} al obtener el ciclo`
-                    );
-                }
-                const dataCiclo = await resCiclo.json();
-                setCiclo(dataCiclo);
-
-                // Fetch pond info for context
-                const resPond = await fetch(
-                    `${API_BASE}/farms/${id}/ponds/${estanque_id}/`,
-                    { method: "GET", headers }
-                );
-                if (resPond.ok) {
-                    setEstanque(await resPond.json());
-                }
-
-                // Fetch species for label resolution
-                const resSpecies = await fetch(`${API_BASE}/species/`, { headers });
-                if (resSpecies.ok) {
-                    const dataSpecies = await resSpecies.json();
-                    setSpecies(Array.isArray(dataSpecies) ? dataSpecies : []);
-                }
-
-                // Fetch production plans
-                const resPlans = await fetch(
-                    `${API_BASE}/farms/${id}/production-plans/`,
-                    { headers }
-                );
-
-                if (resPlans.ok) {
-                    const dataPlans = await resPlans.json();
-                    setProductionPlans(Array.isArray(dataPlans) ? dataPlans : []);
-                }
-            } catch (err) {
-                console.error(err);
-                setError(err.message);
             }
-        }
+            const dataCiclo = await resCiclo.json();
+            setCiclo(dataCiclo);
 
-        fetchData();
+            // Fetch pond info for context
+            const resPond = await fetch(
+                `${API_BASE}/farms/${id}/ponds/${estanque_id}/`,
+                { method: "GET", headers }
+            );
+            if (resPond.ok) {
+                setEstanque(await resPond.json());
+            }
+
+            // Fetch species for label resolution
+            const resSpecies = await fetch(`${API_BASE}/species/`, { headers });
+            if (resSpecies.ok) {
+                const dataSpecies = await resSpecies.json();
+                setSpecies(Array.isArray(dataSpecies) ? dataSpecies : []);
+            }
+
+            // Fetch production plans
+            const resPlans = await fetch(
+                `${API_BASE}/farms/${id}/production-plans/`,
+                { headers }
+            );
+
+            if (resPlans.ok) {
+                const dataPlans = await resPlans.json();
+                setProductionPlans(Array.isArray(dataPlans) ? dataPlans : []);
+            }
+        } catch (err) {
+            console.error(err);
+            setError(err.message);
+        }
     }, [id, estanque_id, ciclo_id]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
 
     const specieName = ciclo?.specie
         ? species.find((s) => s.id === ciclo.specie)?.name || `Especie #${ciclo.specie}`
@@ -125,6 +128,14 @@ export default function CicloDetalle() {
 
     return (
         <div className="min-h-screen bg-slate-50">
+            <Toaster position="top-center" richColors />
+            <HarvestModal
+                open={harvestModalOpen}
+                onOpenChange={setHarvestModalOpen}
+                ciclo={ciclo}
+                farmId={id}
+                onSuccess={fetchData}
+            />
             {/* Loading overlay */}
             {!ciclo && !error && (
                 <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
@@ -207,6 +218,13 @@ export default function CicloDetalle() {
                                                 <Stethoscope className="w-4 h-4" />
                                                 Salud y Tratamientos
                                             </Link>
+                                            <button
+                                                onClick={() => setHarvestModalOpen(true)}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition-colors"
+                                            >
+                                                <Fish className="w-4 h-4" />
+                                                Terminar ciclo y cosechar
+                                            </button>
                                         </>
                                     )}
                                 </div>
