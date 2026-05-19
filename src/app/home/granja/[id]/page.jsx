@@ -347,7 +347,16 @@ export default function Granja({ params }) {
               <div className="bg-slate-50 p-4 rounded-lg">
                 Fuente hídrica <br />
                 <p className="font-bold">
-                  {granja.water_source}
+                  {{
+                    river: "Río",
+                    stream: "Quebrada",
+                    lake: "Lago/Laguna",
+                    spring: "Manantial",
+                    reservoir: "Embalse",
+                    deep_well: "Pozo profundo",
+                    municipal: "Acueducto municipal",
+                    irrigation_canal: "Canal de riego",
+                  }[granja.water_source] || granja.water_source}
                 </p>
               </div>
             )}
