@@ -18,6 +18,7 @@ import {
     Layers,
 } from "lucide-react";
 import { Batches } from "@/app/components/batches/batches";
+import { MonitoringSection } from "@/app/components/monitoring/MonitoringSection";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -274,6 +275,13 @@ export default function CicloDetalle() {
                             </div>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Monitoreo del ciclo */}
+            {ciclo && (
+                <div className="mt-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+                    <MonitoringSection farmId={id} pondId={estanque_id} cycleId={ciclo_id} />
                 </div>
             )}
 
