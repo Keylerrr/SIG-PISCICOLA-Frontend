@@ -16,6 +16,7 @@ import {
     XCircle,
     Pause,
     Layers,
+    Stethoscope,
 } from "lucide-react";
 import { Batches } from "@/app/components/batches/batches";
 import { MonitoringSection } from "@/app/components/monitoring/MonitoringSection";
@@ -191,13 +192,22 @@ export default function CicloDetalle() {
                                         {STATE_LABELS[ciclo.state] || ciclo.state}
                                     </div>
                                     {ciclo.state === "in_progress" && (
-                                        <Link
-                                            href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/${ciclo_id}/alimentacion`}
-                                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                                        >
-                                            <Layers className="w-4 h-4" />
-                                            Planes de Alimentación
-                                        </Link>
+                                        <>
+                                            <Link
+                                                href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/${ciclo_id}/alimentacion`}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
+                                            >
+                                                <Layers className="w-4 h-4" />
+                                                Planes de Alimentación
+                                            </Link>
+                                            <Link
+                                                href={`/home/granja/${id}/estanque/${estanque_id}/ciclo/${ciclo_id}/salud`}
+                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                                            >
+                                                <Stethoscope className="w-4 h-4" />
+                                                Salud y Tratamientos
+                                            </Link>
+                                        </>
                                     )}
                                 </div>
                             </div>
