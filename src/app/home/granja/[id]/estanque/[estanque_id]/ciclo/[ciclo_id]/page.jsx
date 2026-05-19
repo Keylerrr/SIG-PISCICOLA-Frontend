@@ -48,6 +48,7 @@ export default function CicloDetalle() {
     const [ciclo, setCiclo] = useState(null);
     const [estanque, setEstanque] = useState(null);
     const [species, setSpecies] = useState([]);
+    const [productionPlans, setProductionPlans] = useState([]);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -92,6 +93,17 @@ export default function CicloDetalle() {
                     const dataSpecies = await resSpecies.json();
                     setSpecies(Array.isArray(dataSpecies) ? dataSpecies : []);
                 }
+
+                // Fetch production plans
+                const resPlans = await fetch(
+                    `${API_BASE}/farms/${id}/production-plans/`,
+                    { headers }
+                );
+
+                if (resPlans.ok) {
+                    const dataPlans = await resPlans.json();
+                    setProductionPlans(Array.isArray(dataPlans) ? dataPlans : []);
+                }
             } catch (err) {
                 console.error(err);
                 setError(err.message);
@@ -103,6 +115,11 @@ export default function CicloDetalle() {
 
     const specieName = ciclo?.specie
         ? species.find((s) => s.id === ciclo.specie)?.name || `Especie #${ciclo.specie}`
+        : null;
+
+    const productionPlanName = ciclo?.production_plan
+        ? productionPlans.find((p) => p.id === ciclo.production_plan)?.name ||
+        `Plan #${ciclo.production_plan}`
         : null;
 
     return (
@@ -257,18 +274,7 @@ export default function CicloDetalle() {
                                             <ClipboardList className="w-3.5 h-3.5" /> Plan de Producción
                                         </span>
                                         <span className="font-bold text-slate-800">
-                                            Plan #{ciclo.production_plan}
-                                        </span>
-                                    </div>
-                                )}
-
-                                {(ciclo.min_weight_g !== undefined || ciclo.avg_weight_g !== undefined) && (
-                                    <div className="bg-slate-50 p-4 rounded-xl flex flex-col gap-1">
-                                        <span className="text-xs text-slate-500 uppercase tracking-wide">
-                                            Pesos (g)
-                                        </span>
-                                        <span className="font-bold text-slate-800 text-sm">
-                                            Mín: {ciclo.min_weight_g ?? "—"}g · Prom: {ciclo.avg_weight_g ?? "—"}g · Máx: {ciclo.max_weight_g ?? "—"}g
+                                            {productionPlanName}
                                         </span>
                                     </div>
                                 )}

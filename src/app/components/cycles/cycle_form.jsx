@@ -33,9 +33,6 @@ export function CycleRegisterForm({
   estimatedFinishDateProp,
   stateProp,
   commentsProp,
-  minWeightGProp,
-  avgWeightGProp,
-  maxWeightGProp,
 }) {
   const safe = (v) => v ?? "";
 
@@ -51,9 +48,6 @@ export function CycleRegisterForm({
   const [estimatedFinishDate, setEstimatedFinishDate] = useState(safe(estimatedFinishDateProp));
   const [state, setState] = useState(safe(stateProp));
   const [comments, setComments] = useState(safe(commentsProp));
-  const [minWeightG, setMinWeightG] = useState(safe(minWeightGProp));
-  const [avgWeightG, setAvgWeightG] = useState(safe(avgWeightGProp));
-  const [maxWeightG, setMaxWeightG] = useState(safe(maxWeightGProp));
 
   useEffect(() => {
     const fetchSpecies = async () => {
@@ -109,16 +103,7 @@ export function CycleRegisterForm({
     }
     const validStates = ["in_progress", "paused", "finished", "cancelled"];
     if (!validStates.includes(state)) { toast.error("Debe seleccionar un estado válido."); return false; }
-    const minW = parseFloat(minWeightG);
-    const avgW = parseFloat(avgWeightG);
-    const maxW = parseFloat(maxWeightG);
-    if (isNaN(minW) || minW < 0) { toast.error("El peso mínimo debe ser ≥ 0."); return false; }
-    if (isNaN(avgW) || avgW < 0) { toast.error("El peso promedio debe ser ≥ 0."); return false; }
-    if (isNaN(maxW) || maxW < 0) { toast.error("El peso máximo debe ser ≥ 0."); return false; }
-    if (minW > avgW || avgW > maxW) {
-      toast.error("Los pesos deben cumplir: mínimo ≤ promedio ≤ máximo.");
-      return false;
-    }
+    
     return true;
   };
 
@@ -131,9 +116,6 @@ export function CycleRegisterForm({
     estimated_finish_date: estimatedFinishDate || undefined,
     state,
     comments: comments.trim(),
-    min_weight_g: parseFloat(minWeightG),
-    avg_weight_g: parseFloat(avgWeightG),
-    max_weight_g: parseFloat(maxWeightG),
   });
 
   const extractError = (errorData) => {
@@ -335,45 +317,6 @@ export function CycleRegisterForm({
           placeholder="Comentarios adicionales..."
         />
       </Field>
-
-      <div className="grid grid-cols-3 gap-3">
-        <Field>
-          <FieldLabel>Peso Mínimo (g)</FieldLabel>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={minWeightG}
-            onChange={(e) => setMinWeightG(e.target.value)}
-            placeholder="Ej: 0.5"
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel>Peso Promedio (g)</FieldLabel>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={avgWeightG}
-            onChange={(e) => setAvgWeightG(e.target.value)}
-            placeholder="Ej: 1.0"
-            required
-          />
-        </Field>
-        <Field>
-          <FieldLabel>Peso Máximo (g)</FieldLabel>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={maxWeightG}
-            onChange={(e) => setMaxWeightG(e.target.value)}
-            placeholder="Ej: 1.5"
-            required
-          />
-        </Field>
-      </div>
 
       <Field orientation="horizontal" className="justify-end gap-3 mt-4">
         <Button
