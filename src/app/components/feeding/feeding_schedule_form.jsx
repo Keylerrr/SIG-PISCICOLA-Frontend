@@ -5,6 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { feedingService } from "@/lib/feedingService";
 import { toast } from "sonner";
 
@@ -27,6 +37,18 @@ const TYPES = [
   { value: "breeding", label: "Reproducción" },
 ];
 
+const FIELD_LABELS = {
+  _reference: "Referencia",
+  expected_fca: "FCA esperado",
+  expected_daily_gain_g: "Ganancia diaria esperada",
+  aceptable_min_weight_g: "Peso mínimo aceptable (g)",
+  aceptable_max_weight_g: "Peso máximo aceptable (g)",
+  pellet_size_mm: "Tamaño de pellet (mm)",
+  feeding_rate_percentage: "Porcentaje de alimentación",
+  gap_between_times_per_day: "Gap entre tiempos por día",
+  gap_between_completed_day: "Gap entre días completados",
+};
+
 export function FeedingScheduleForm({ farmId, onSuccess }) {
   const [form, setForm] = useState({
     product: "",
@@ -47,6 +69,7 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [warningModal, setWarningModal] = useState({ open: false, data: null, payload: null });
   const [products, setProducts] = useState([]);
   const [species, setSpecies] = useState([]);
   const [feedForms, setFeedForms] = useState([]);
@@ -121,57 +144,86 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
       return;
     }
 
+    const payload = {
+      product: Number(form.product),
+      specie: Number(form.specie),
+      name: form.name.trim(),
+      type: form.type,
+      feeding_rate_percentage: Number(form.feeding_rate_percentage),
+      times_per_day: Number(form.times_per_day),
+      comments: form.comments.trim() || undefined,
+      aceptable_min_weight_g: form.aceptable_min_weight_g ? Number(form.aceptable_min_weight_g) : undefined,
+      aceptable_max_weight_g: form.aceptable_max_weight_g ? Number(form.aceptable_max_weight_g) : undefined,
+      feed_form: form.feed_form.trim() || undefined,
+      pellet_size_mm: form.pellet_size_mm ? Number(form.pellet_size_mm) : undefined,
+      gap_between_times_per_day: form.gap_between_times_per_day.trim() || undefined,
+      gap_between_completed_day: form.gap_between_completed_day.trim() || undefined,
+      expected_fca: form.expected_fca ? Number(form.expected_fca) : undefined,
+      expected_daily_gain_g: form.expected_daily_gain_g ? Number(form.expected_daily_gain_g) : undefined,
+    };
+
     setSaving(true);
 
     try {
-      const payload = {
-        product: Number(form.product),
-        specie: Number(form.specie),
-        name: form.name.trim(),
-        type: form.type,
-        feeding_rate_percentage: Number(form.feeding_rate_percentage),
-        times_per_day: Number(form.times_per_day),
-        comments: form.comments.trim() || undefined,
-        aceptable_min_weight_g: form.aceptable_min_weight_g ? Number(form.aceptable_min_weight_g) : undefined,
-        aceptable_max_weight_g: form.aceptable_max_weight_g ? Number(form.aceptable_max_weight_g) : undefined,
-        feed_form: form.feed_form.trim() || undefined,
-        pellet_size_mm: form.pellet_size_mm ? Number(form.pellet_size_mm) : undefined,
-        gap_between_times_per_day: form.gap_between_times_per_day.trim() || undefined,
-        gap_between_completed_day: form.gap_between_completed_day.trim() || undefined,
-        expected_fca: form.expected_fca ? Number(form.expected_fca) : undefined,
-        expected_daily_gain_g: form.expected_daily_gain_g ? Number(form.expected_daily_gain_g) : undefined,
-      };
-
       const response = await feedingService.createFeedingSchedule(farmId, payload);
-      toast.success("Cronograma creado correctamente.");
-      if (response?.warnings) {
-        toast(`Advertencia del cronograma: ${response.warnings}`);
+      handleSuccessResponse(response);
+    } catch (error) {
+      if (error.status === 400 && error.payload && typeof error.payload === "object") {
+        const rc = error.payload.requires_confirmation;
+        const isConfirm = Array.isArray(rc) ? (rc[0] === "True" || rc[0] === true) : (rc === "True" || rc === true);
+        if (isConfirm) {
+          setWarningModal({ open: true, data: error.payload, payload });
+        } else {
+          setErrors(error.payload);
+        }
+      } else {
+        toast.error("No se pudo crear el cronograma.");
+        console.error(error);
       }
-      setForm({
-        product: "",
-        specie: "",
-        name: "",
-        type: "",
-        feeding_rate_percentage: "",
-        times_per_day: "",
-        comments: "",
-        aceptable_min_weight_g: "",
-        aceptable_max_weight_g: "",
-        feed_form: "",
-        pellet_size_mm: "",
-        gap_between_times_per_day: "",
-        gap_between_completed_day: "",
-        expected_fca: "",
-        expected_daily_gain_g: "",
-      });
-      setErrors({});
-      onSuccess?.();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSuccessResponse = (response) => {
+    if (response?.warnings && Object.keys(response.warnings).length > 0) {
+      toast.success("Cronograma creado correctamente (con advertencias aprobadas).");
+    } else {
+      toast.success("Cronograma creado correctamente.");
+    }
+    setForm({
+      product: "",
+      specie: "",
+      name: "",
+      type: "",
+      feeding_rate_percentage: "",
+      times_per_day: "",
+      comments: "",
+      aceptable_min_weight_g: "",
+      aceptable_max_weight_g: "",
+      feed_form: "",
+      pellet_size_mm: "",
+      gap_between_times_per_day: "",
+      gap_between_completed_day: "",
+      expected_fca: "",
+      expected_daily_gain_g: "",
+    });
+    setErrors({});
+    onSuccess?.();
+  };
+
+  const handleConfirmSave = async () => {
+    if (!warningModal.payload) return;
+    setSaving(true);
+    setWarningModal({ open: false, data: null, payload: null });
+    try {
+      const response = await feedingService.createFeedingSchedule(farmId, warningModal.payload, true);
+      handleSuccessResponse(response);
     } catch (error) {
       if (error.status === 400 && error.payload && typeof error.payload === "object") {
         setErrors(error.payload);
       } else {
-        toast.error("No se pudo crear el cronograma.");
-        console.error(error);
+        toast.error("Error al guardar tras confirmación.");
       }
     } finally {
       setSaving(false);
@@ -292,8 +344,8 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Field>
-          <FieldLabel>Gap entre tiempos por día</FieldLabel>
-          <Input value={form.gap_between_times_per_day} onChange={(event) => setField("gap_between_times_per_day", event.target.value)} placeholder="Ej. 2h" />
+          <FieldLabel>Gap entre tiempos por día (minutos)</FieldLabel>
+          <Input value={form.gap_between_times_per_day} onChange={(event) => setField("gap_between_times_per_day", event.target.value)} placeholder="Ej. 120" />
           <FieldError errors={normalizeFieldErrors(errors.gap_between_times_per_day)} />
         </Field>
       </div>
@@ -336,6 +388,52 @@ export function FeedingScheduleForm({ farmId, onSuccess }) {
           {saving ? "Guardando…" : "Crear cronograma"}
         </Button>
       </div>
+
+      {warningModal.open && warningModal.data && (
+        <AlertDialog open={warningModal.open} onOpenChange={(open) => { if (!open) setWarningModal({ open: false, data: null, payload: null }) }}>
+          <AlertDialogContent className="max-w-sm rounded-xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-rose-600">
+                Advertencias de referencia técnica
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="text-slate-600 space-y-3 mt-4 text-sm">
+                  <p>
+                    {(() => {
+                      const msg = Array.isArray(warningModal.data.message) ? warningModal.data.message[0] : warningModal.data.message;
+                      if (!msg) return "Los siguientes valores se desvían de la referencia para esta especie y etapa:";
+                      if (msg.includes("confirm_warnings")) {
+                        return "Hay advertencias respecto a la referencia técnica. Revíselas si desea guardar de todos modos.";
+                      }
+                      return msg;
+                    })()}
+                  </p>
+                  {warningModal.data.warnings && Object.keys(warningModal.data.warnings).length > 0 && (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {Object.entries(warningModal.data.warnings).map(([key, msg]) => {
+                        const strMsg = Array.isArray(msg) ? msg[0] : msg;
+                        return (
+                          <li key={key}>
+                            <strong>{FIELD_LABELS[key] || key}:</strong> {strMsg}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                  
+                  <p className="font-semibold text-slate-800 pt-2">¿Desea guardar el cronograma de todos modos?</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Revisar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmSave} className="bg-rose-600 hover:bg-rose-700">
+                Guardar de todos modos
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </form>
   );
 }

@@ -63,9 +63,18 @@ export const feedingService = {
     return apiRequest(`/feeding/options/`);
   },
 
-  createFeedingSchedule: async (farmId, payload) => {
-    return apiRequest(`/farms/${farmId}/feeding-schedules/`, {
+  createFeedingSchedule: async (farmId, payload, confirmWarnings = false) => {
+    const qs = confirmWarnings ? "?confirm_warnings=true" : "";
+    return apiRequest(`/farms/${farmId}/feeding-schedules/${qs}`, {
       method: "POST",
+      body: payload,
+    });
+  },
+
+  updateFeedingSchedule: async (farmId, scheduleId, payload, confirmWarnings = false) => {
+    const qs = confirmWarnings ? "?confirm_warnings=true" : "";
+    return apiRequest(`/farms/${farmId}/feeding-schedules/${scheduleId}/${qs}`, {
+      method: "PATCH",
       body: payload,
     });
   },
