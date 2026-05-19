@@ -20,7 +20,7 @@ const STATE_LABELS = {
 const STATUS_LABELS = {
   scheduled: "Programado",
   completed: "Completado",
-  missed: "Omitido",
+  skipped: "Omitido",
   in_progress: "En curso",
   cancelled: "Cancelado",
 };

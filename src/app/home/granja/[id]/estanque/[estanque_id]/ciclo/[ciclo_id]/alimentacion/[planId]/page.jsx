@@ -551,7 +551,7 @@ export default function FeedingPlanDetail({ params }) {
               >
                 <option value="">Selecciona un estado</option>
                 {eventStatusOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  <option key={opt.value} value={opt.value}>{STATUS_LABELS[opt.value]}</option>
                 ))}
               </select>
             </div>
