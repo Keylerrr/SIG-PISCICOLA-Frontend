@@ -14,6 +14,7 @@ import {
   Plus,
   Loader2,
   Fish,
+  Receipt,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -278,6 +279,18 @@ export default function Granja({ params }) {
                 >
                   <Package className="w-5 h-5" />
                   Inventario
+                </Button>
+              )}
+
+              {canManageInventory && (
+                <Button
+                  onClick={() => {
+                    router.push(`/home/granja/${id}/sales`);
+                  }}
+                  className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl shadow-sm transition-all"
+                >
+                  <Receipt className="w-5 h-5" />
+                  Ventas
                 </Button>
               )}
 
