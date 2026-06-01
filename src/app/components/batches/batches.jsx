@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Scale, Pencil, Trash, MoveRight, Fish, Link } from "lucide-react";
+import { Scale, Pencil, Trash, MoveRight, Fish, Link, FileText } from "lucide-react";
+import { BatchReportModal } from "./BatchReportModal";
 import {
   Card,
   CardAction,
@@ -59,11 +60,13 @@ const STATUS_COLORS = {
   dead: "bg-red-100 text-red-700",
 };
 
-export function Batches({ id, pondId, cycleId, search = "" }) {
+export function Batches({ id, pondId, cycleId, search = "", statusFilter = null }) {
   // pondId is required for pond-scoped cycle assignment
   const [batches, setBatches] = useState([]);
   const [species, setSpecies] = useState([]);
   const [loading, setLoading] = useState(true);
+  // { batchId, batchLabel } | null
+  const [reportBatch, setReportBatch] = useState(null);
 
   useEffect(() => {
     const fetchSpecies = async () => {
@@ -88,12 +91,28 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
   }, [species]);
 
   const filteredBatches = useMemo(() => {
-    // Si no hay búsqueda, mostramos todos
-    if (!search?.trim()) return batches;
+    let result = batches;
+
+    // Filter by statusFilter ("active" | "history") when provided
+    if (statusFilter) {
+      result = result.filter((item) => {
+        let b = item;
+        if (item.pond_batch_detail?.batch) {
+          b = item.pond_batch_detail.batch;
+        } else if (typeof item.batch === 'object' && item.batch !== null) {
+          b = item.batch;
+        }
+        if (statusFilter === "active") return b.status === "active";
+        return b.status !== "active"; // history: everything else
+      });
+    }
+
+    // Si no hay búsqueda, retornamos lo ya filtrado
+    if (!search?.trim()) return result;
     
     const term = search.toLowerCase().trim();
     
-    return batches.filter((item) => {
+    return result.filter((item) => {
       let b = item;
       if (item.pond_batch_detail?.batch) {
         b = item.pond_batch_detail.batch;
@@ -111,7 +130,7 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
         (b.comments || "").toLowerCase().includes(term)
       );
     });
-  }, [batches, search, specieMap]);
+  }, [batches, search, specieMap, statusFilter]);
 
   useEffect(() => {
     const fetchBatches = async () => {
@@ -242,6 +261,23 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
       <Toaster position="top-center" />
 
       <div className="max-w-6xl mx-auto grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-6 p-4">
+        {filteredBatches.length === 0 && !search && (
+          <div className="col-span-full bg-white rounded-2xl border border-dashed border-slate-200 py-12 text-center">
+            {statusFilter === "history" ? (
+              <>
+                <span className="text-4xl mb-3 block">🗂️</span>
+                <p className="text-slate-400 font-medium">Sin historial de lotes</p>
+                <p className="text-slate-300 text-sm mt-1">Los lotes finalizados, consumidos o muertos aparecerán aquí.</p>
+              </>
+            ) : (
+              <>
+                <span className="text-4xl mb-3 block">🐟</span>
+                <p className="text-slate-400 font-medium">No hay lotes activos</p>
+                <p className="text-slate-300 text-sm mt-1">Asigna un lote a este estanque para comenzar.</p>
+              </>
+            )}
+          </div>
+        )}
         {filteredBatches.length === 0 && search && (
           <p className="text-center col-span-full text-gray-500 text-lg">
             No se encontraron lotes 😢
@@ -277,7 +313,23 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
               </CardDescription>
 
               <CardAction>
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
+                  {/* ── Generar Reporte Histórico ── */}
+                  <button
+                    title="Generar Reporte Histórico"
+                    onClick={() => {
+                      console.log("=== AUDITORÍA BACKEND: Click en Lote ===");
+                      console.log("Objeto original completo (item):", item);
+                      console.log("Objeto derivado utilizado (b):", b);
+                      console.log("Batch ID extraído:", b.id, "Tipo:", typeof b.id);
+                      console.log("Display ID:", displayId);
+                      setReportBatch({ batchId: b.id, batchLabel: `Lote #${b.id}` })
+                    }}
+                    className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </button>
+
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Pencil className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors" />
@@ -419,6 +471,15 @@ export function Batches({ id, pondId, cycleId, search = "" }) {
           </Card>
         )})}
       </div>
+
+      {/* ── Batch Report Modal (single instance, controlled by reportBatch state) ── */}
+      <BatchReportModal
+        open={!!reportBatch}
+        onClose={() => setReportBatch(null)}
+        farmId={id}
+        batchId={reportBatch?.batchId}
+        batchLabel={reportBatch?.batchLabel ?? ""}
+      />
     </>
   );
 }

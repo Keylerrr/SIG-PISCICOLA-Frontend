@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { Zap, History } from "lucide-react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, RotateCcw } from "lucide-react";
 import { Batches } from "@/app/components/batches/batches";
@@ -40,6 +41,7 @@ const TYPE_LABELS = {
 export default function Estanque() {
     const { estanque_id, id } = useParams();
     const [estanque, setEstanque] = useState(null);
+    const [batchTab, setBatchTab] = useState("active");
     const permissions = usePermissions(id);
 
     const canManage = permissions.isAdmin || permissions.canManageCycle;
@@ -138,10 +140,37 @@ export default function Estanque() {
                                 Lotes en este Estanque
                             </h2>
                             <p className="text-slate-400 text-sm mt-0.5 ml-3">
-                                Lotes actualmente asignados a este estanque.
+                                {batchTab === "active"
+                                    ? "Lotes con estado activo asignados a este estanque."
+                                    : "Historial de lotes con otros estados en este estanque."}
                             </p>
                         </div>
-                        <Batches id={id} pondId={estanque_id} />
+
+                        {/* ── Batch tab switch ── */}
+                        <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit mb-4">
+                            <button
+                                onClick={() => setBatchTab("active")}
+                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                                    batchTab === "active"
+                                        ? "bg-white text-blue-700 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-800"
+                                }`}
+                            >
+                                <Zap className="w-3.5 h-3.5" /> Activos
+                            </button>
+                            <button
+                                onClick={() => setBatchTab("history")}
+                                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                                    batchTab === "history"
+                                        ? "bg-white text-slate-800 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-800"
+                                }`}
+                            >
+                                <History className="w-3.5 h-3.5" /> Historial
+                            </button>
+                        </div>
+
+                        <Batches id={id} pondId={estanque_id} statusFilter={batchTab} />
                     </section>
                 )}
 
