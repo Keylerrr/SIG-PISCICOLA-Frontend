@@ -1,17 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Loader2, Plus, Trash2, Fish, Scale, AlertCircle, Info, CheckCircle2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, Plus, Trash2, Fish, Scale, AlertCircle, Info, CheckCircle2, Calendar, FileText, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -30,9 +21,6 @@ const EMPTY_CLASSIFICATION = () => ({
     total_weight_g: "",
 });
 
-/**
- * Recursively extracts API error messages from a Django REST Framework error response.
- */
 function extractApiErrors(data) {
     if (!data || typeof data !== "object") return ["Error desconocido del servidor."];
     const messages = [];
@@ -45,7 +33,6 @@ function extractApiErrors(data) {
                     if (typeof v === "string") {
                         messages.push(`${fieldLabel}: ${v}`);
                     } else if (typeof v === "object" && v !== null) {
-                        // nested object inside array (e.g. classifications[i])
                         process(v, `${fieldLabel}[${idx + 1}]`);
                     }
                 });
@@ -61,34 +48,32 @@ function extractApiErrors(data) {
     return messages.length > 0 ? messages : ["Error al procesar la solicitud."];
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// Sub-components
-// ──────────────────────────────────────────────────────────────────────────────
-
 function HarvestTypeSelector({ value, onChange }) {
     const options = [
         {
             id: "total",
             label: "Cosecha Total",
-            desc: "Cosechar todo el stock disponible del ciclo. El backend infiere automáticamente el conteo y peso total.",
+            desc: "Cosechar todo el stock disponible del ciclo",
             icon: "🐟",
             color: "emerald",
         },
         {
             id: "partial",
             label: "Cosecha Parcial",
-            desc: "Cosechar una parte del stock. Debes indicar la cantidad total de peces a cosechar.",
+            desc: "Cosechar una parte del stock disponible",
             icon: "🎣",
             color: "blue",
         },
     ];
 
     return (
-        <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Tipo de cosecha <span className="text-rose-500">*</span>
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="p-4 bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg border border-slate-200">
+            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <Fish className="w-4 h-4 text-slate-600" />
+                Tipo de Cosecha
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {options.map(({ id, label, desc, icon, color }) => {
                     const isSelected = value === id;
                     const borderColor =
@@ -96,17 +81,16 @@ function HarvestTypeSelector({ value, onChange }) {
                             ? color === "emerald"
                                 ? "border-emerald-500 bg-emerald-50"
                                 : "border-blue-500 bg-blue-50"
-                            : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50";
+                            : "border-slate-200 bg-white hover:border-slate-300";
 
                     return (
                         <button
                             key={id}
                             type="button"
                             onClick={() => onChange(id)}
-                            className={`text-left p-4 rounded-xl border-2 transition-all ${borderColor}`}
+                            className={`text-left p-4 rounded-lg border-2 transition-all ${borderColor}`}
                         >
-                            <div className="flex items-center gap-2 mb-1.5">
-                                {/* Radio dot */}
+                            <div className="flex items-center gap-2">
                                 <span
                                     className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
                                         isSelected
@@ -124,10 +108,12 @@ function HarvestTypeSelector({ value, onChange }) {
                                         />
                                     )}
                                 </span>
-                                <span className="text-base">{icon}</span>
-                                <span className="font-semibold text-sm text-slate-800">{label}</span>
+                                <span className="text-lg">{icon}</span>
+                                <div>
+                                    <span className="font-semibold text-sm text-slate-800 block">{label}</span>
+                                    <span className="text-xs text-slate-500">{desc}</span>
+                                </div>
                             </div>
-                            <p className="text-xs text-slate-500 ml-6 leading-relaxed">{desc}</p>
                         </button>
                     );
                 })}
@@ -138,13 +124,11 @@ function HarvestTypeSelector({ value, onChange }) {
 
 function TotalHarvestInfoBanner() {
     return (
-        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+        <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
             <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <p className="text-xs text-emerald-700 leading-relaxed">
-                <span className="font-semibold">Cosecha total:</span> el backend calculará automáticamente
-                la cantidad de peces y el peso total basándose en el stock vivo del ciclo. Si el stock
-                se agota, el ciclo quedará marcado como{" "}
-                <span className="font-semibold">Completado</span> automáticamente.
+            <p className="text-sm text-emerald-700 leading-relaxed">
+                <span className="font-semibold">Cosecha total:</span> Se calculará automáticamente
+                la cantidad de peces y el peso total basándose en el stock vivo del ciclo.
             </p>
         </div>
     );
@@ -152,46 +136,46 @@ function TotalHarvestInfoBanner() {
 
 function ClassificationRow({ cls, index, total, onChange, onRemove }) {
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+        <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+                    <Scale className="w-3 h-3 text-slate-400" />
                     Clasificación {index + 1}
                 </span>
                 {total > 1 && (
                     <button
                         type="button"
                         onClick={onRemove}
-                        title="Eliminar clasificación"
-                        className="text-slate-400 hover:text-rose-600 transition-colors rounded-md p-0.5 hover:bg-rose-50"
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-1 hover:bg-rose-50 rounded"
                     >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                     </button>
                 )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Size category */}
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Categoría <span className="text-rose-500">*</span>
+                        Categoría *
                     </label>
                     <select
                         required
                         value={cls.size_category}
                         onChange={(e) => onChange("size_category", e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
+                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     >
                         <option value="">Seleccionar...</option>
                         {SIZE_CATEGORIES.map((cat) => (
                             <option key={cat} value={cat}>
-                                {cat} — {SIZE_CATEGORY_LABELS[cat]}
+                                {SIZE_CATEGORY_LABELS[cat]}
                             </option>
                         ))}
                     </select>
                 </div>
-                {/* Fish count */}
+                
                 <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Cantidad de peces <span className="text-rose-500">*</span>
+                        Cantidad *
                     </label>
                     <input
                         type="number"
@@ -200,13 +184,13 @@ function ClassificationRow({ cls, index, total, onChange, onRemove }) {
                         placeholder="0"
                         value={cls.fish_count}
                         onChange={(e) => onChange("fish_count", e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
+                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                 </div>
-                {/* Total weight */}
+                
                 <div>
                     <label className="block text-xs font-medium text-slate-600 mb-1">
-                        Peso total (g) <span className="text-rose-500">*</span>
+                        Peso total (g) *
                     </label>
                     <input
                         type="number"
@@ -216,17 +200,13 @@ function ClassificationRow({ cls, index, total, onChange, onRemove }) {
                         placeholder="0.00"
                         value={cls.total_weight_g}
                         onChange={(e) => onChange("total_weight_g", e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
+                        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                     />
                 </div>
             </div>
         </div>
     );
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Main component
-// ──────────────────────────────────────────────────────────────────────────────
 
 export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
     const [harvestType, setHarvestType] = useState("total");
@@ -235,8 +215,32 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
     const [observations, setObservations] = useState("");
     const [classifications, setClassifications] = useState([EMPTY_CLASSIFICATION()]);
     const [submitting, setSubmitting] = useState(false);
+    const modalRef = useRef(null);
 
-    // Set today's date as default when modal opens
+    useEffect(() => {
+        if (!open) return;
+        
+        const handleEscape = (e) => {
+            if (e.key === "Escape" && !submitting) {
+                handleClose();
+            }
+        };
+        
+        document.addEventListener("keydown", handleEscape);
+        document.body.style.overflow = "hidden"; // Bloquear scroll
+        
+        return () => {
+            document.removeEventListener("keydown", handleEscape);
+            document.body.style.overflow = "";
+        };
+    }, [open, submitting]);
+
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget && !submitting) {
+            handleClose();
+        }
+    };
+
     useEffect(() => {
         if (open) {
             setDate(new Date().toISOString().split("T")[0]);
@@ -257,8 +261,6 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
         onOpenChange(false);
     };
 
-    // ── Classification helpers ────────────────────────────────────────────────
-
     const addClassification = () => {
         setClassifications((prev) => [...prev, EMPTY_CLASSIFICATION()]);
     };
@@ -272,8 +274,6 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
             prev.map((c, i) => (i === index ? { ...c, [field]: value } : c))
         );
     };
-
-    // ── Validation ────────────────────────────────────────────────────────────
 
     const validate = () => {
         if (!date) {
@@ -315,8 +315,6 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
         return true;
     };
 
-    // ── Submit ────────────────────────────────────────────────────────────────
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validate()) return;
@@ -325,7 +323,6 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
         try {
             const token = localStorage.getItem("access");
 
-            // Build payload — only send what the spec requires
             const payload = {
                 cycle: ciclo.id,
                 date,
@@ -336,18 +333,13 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
                 })),
             };
 
-            // Optional fields
             if (observations.trim()) {
                 payload.observations = observations.trim();
             }
 
-            // For partial harvest include total_fish_count; DO NOT send type
             if (harvestType === "partial") {
                 payload.total_fish_count = Number(totalFishCount);
             }
-
-            // For total harvest: omit total_fish_count, total_weight_g, and type
-            // Backend will infer them automatically
 
             const res = await fetch(`${API_BASE}/farms/${farmId}/harvests/`, {
                 method: "POST",
@@ -362,7 +354,6 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
                 toast.success("Cosecha registrada correctamente.");
                 resetForm();
                 onOpenChange(false);
-                // Refresh cycle data (handles finished-cycle state automatically)
                 onSuccess();
             } else {
                 const errorData = await res.json().catch(() => ({}));
@@ -376,104 +367,102 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
         }
     };
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     const cycleStartDate = ciclo?.start_date ?? undefined;
 
+    if (!open) return null;
+
     return (
-        <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent
-                className="max-w-2xl w-full max-h-[92vh] overflow-y-auto"
-                showCloseButton={!submitting}
+        <div 
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={handleOverlayClick}
+        >
+            {}
+            <div 
+                ref={modalRef}
+                className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95 duration-100"
+                onClick={(e) => e.stopPropagation()}
             >
-                {/* ── Header ── */}
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
-                            <Fish className="w-4 h-4 text-emerald-600" />
-                        </span>
-                        Registrar Cosecha
-                    </DialogTitle>
-                    <DialogDescription className="text-slate-500">
-                        Ciclo:{" "}
-                        <span className="font-semibold text-slate-700">{ciclo?.name}</span>
-                    </DialogDescription>
-                </DialogHeader>
+                {}
+                <div className="flex items-start justify-between p-5 border-b border-slate-200">
+                    <div>
+                        <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+                            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100">
+                                <Fish className="w-4 h-4 text-emerald-600" />
+                            </span>
+                            Registrar Cosecha
+                        </h2>
+                        <p className="text-slate-500 text-sm mt-1">
+                            Ciclo: <span className="font-semibold text-slate-700">{ciclo?.name}</span>
+                        </p>
+                    </div>
+                    
+                    {}
+                    <button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={submitting}
+                        className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg p-2 transition-colors disabled:opacity-50"
+                        aria-label="Cerrar"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
 
-                {/* ── Form ── */}
-                <form onSubmit={handleSubmit} className="space-y-5 py-1">
-                    {/* Harvest type */}
+                {/* 🔹 Formulario */}
+                <form onSubmit={handleSubmit} className="p-5 space-y-5">
                     <HarvestTypeSelector value={harvestType} onChange={setHarvestType} />
-
-                    {/* Info banner for total */}
+                    
                     {harvestType === "total" && <TotalHarvestInfoBanner />}
 
-                    {/* ── Date ── */}
-                    <div>
-                        <label
-                            htmlFor="harvest-date"
-                            className="block text-sm font-semibold text-slate-700 mb-1"
-                        >
-                            Fecha de cosecha <span className="text-rose-500">*</span>
-                        </label>
-                        <input
-                            id="harvest-date"
-                            type="date"
-                            required
-                            value={date}
-                            min={cycleStartDate}
-                            max={new Date().toISOString().split("T")[0]}
-                            onChange={(e) => setDate(e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-shadow"
-                        />
-                        {cycleStartDate && (
-                            <p className="text-xs text-slate-400 mt-1">
-                                La fecha debe estar entre el inicio del ciclo ({cycleStartDate}) y hoy.
-                            </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label className="flex items-center gap-1.5 text-sm font-medium text-slate-900 mb-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-slate-600" />
+                                Fecha de cosecha <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                required
+                                value={date}
+                                min={cycleStartDate}
+                                max={new Date().toISOString().split("T")[0]}
+                                onChange={(e) => setDate(e.target.value)}
+                                disabled={submitting}
+                                className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+                            />
+                        </div>
+
+                        {harvestType === "partial" && (
+                            <div className="md:col-span-2">
+                                <label className="flex items-center gap-1.5 text-sm font-medium text-slate-900 mb-1.5">
+                                    <Fish className="w-3.5 h-3.5 text-blue-600" />
+                                    Total de peces <span className="text-rose-500">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    required
+                                    placeholder="Ej: 200"
+                                    value={totalFishCount}
+                                    onChange={(e) => setTotalFishCount(e.target.value)}
+                                    disabled={submitting}
+                                    className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none disabled:bg-slate-50 disabled:cursor-not-allowed"
+                                />
+                            </div>
                         )}
                     </div>
 
-                    {/* ── Partial: total fish count ── */}
-                    {harvestType === "partial" && (
-                        <div>
-                            <label
-                                htmlFor="total-fish-count"
-                                className="block text-sm font-semibold text-slate-700 mb-1"
-                            >
-                                Total de peces a cosechar <span className="text-rose-500">*</span>
-                            </label>
-                            <input
-                                id="total-fish-count"
-                                type="number"
-                                min="1"
-                                required
-                                placeholder="Ej. 200"
-                                value={totalFishCount}
-                                onChange={(e) => setTotalFishCount(e.target.value)}
-                                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-shadow"
-                            />
-                            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 text-blue-400" />
-                                Debe ser menor al stock disponible para que sea registrada como parcial.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* ── Classifications ── */}
-                    <div>
-                        <div className="flex items-center justify-between mb-3">
-                            <label className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-                                <Scale className="w-4 h-4 text-slate-500" />
-                                Clasificaciones comerciales{" "}
-                                <span className="text-rose-500">*</span>
-                                <span className="ml-1 text-xs font-normal text-slate-400">
-                                    (mín. 1)
-                                </span>
+                    <div className="p-5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="text-sm font-semibold text-emerald-900 flex items-center gap-1.5">
+                                <Scale className="w-4 h-4 text-emerald-600" />
+                                Clasificaciones Comerciales <span className="text-rose-500">*</span>
                             </label>
                             <button
                                 type="button"
                                 onClick={addClassification}
-                                className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 transition-colors"
+                                disabled={submitting}
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 border border-emerald-200 bg-white hover:bg-emerald-50 rounded-md px-3 py-1.5 transition-colors disabled:opacity-50"
                             >
                                 <Plus className="w-3.5 h-3.5" />
                                 Agregar
@@ -487,20 +476,18 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
                                     cls={cls}
                                     index={idx}
                                     total={classifications.length}
-                                    onChange={(field, value) =>
-                                        updateClassification(idx, field, value)
-                                    }
+                                    onChange={(field, value) => updateClassification(idx, field, value)}
                                     onRemove={() => removeClassification(idx)}
                                 />
                             ))}
                         </div>
 
                         {classifications.length > 1 && (
-                            <div className="mt-3 rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 text-xs text-slate-500 flex items-center gap-1.5">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-                                {classifications.length} clasificaciones agregadas.
+                            <div className="mt-4 rounded-md bg-white border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                {classifications.length} clasificaciones · 
                                 Total peces:{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-emerald-900">
                                     {classifications.reduce(
                                         (acc, c) => acc + (Number(c.fish_count) || 0),
                                         0
@@ -508,52 +495,48 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
                                 </span>
                                 {" · "}
                                 Total peso:{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-emerald-900">
                                     {classifications
                                         .reduce(
                                             (acc, c) => acc + (Number(c.total_weight_g) || 0),
                                             0
                                         )
-                                        .toLocaleString("es-GT")}{" "}
+                                        .toLocaleString("es-CO")}{" "}
                                     g
                                 </span>
                             </div>
                         )}
                     </div>
 
-                    {/* ── Observations ── */}
                     <div>
-                        <label
-                            htmlFor="harvest-observations"
-                            className="block text-sm font-semibold text-slate-700 mb-1"
-                        >
-                            Observaciones{" "}
-                            <span className="font-normal text-slate-400">(opcional)</span>
+                        <label className="flex items-center gap-1.5 text-sm font-medium text-slate-900 mb-1.5">
+                            <FileText className="w-3.5 h-3.5 text-slate-600" />
+                            Observaciones <span className="font-normal text-slate-500">(opcional)</span>
                         </label>
                         <textarea
-                            id="harvest-observations"
                             rows={3}
-                            placeholder="Observaciones sobre la cosecha, condiciones del día, calidad del producto..."
+                            placeholder="Observaciones sobre la cosecha, condiciones del día..."
                             value={observations}
                             onChange={(e) => setObservations(e.target.value)}
-                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none resize-none transition-shadow"
+                            disabled={submitting}
+                            className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-none disabled:bg-slate-50 disabled:cursor-not-allowed"
                         />
                     </div>
 
-                    {/* ── Footer ── */}
-                    <DialogFooter>
-                        <Button
+                    {/* 🔹 Footer con botones */}
+                    <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                        <button
                             type="button"
-                            variant="outline"
                             onClick={handleClose}
                             disabled={submitting}
+                            className="px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[100px]"
                         >
                             Cancelar
-                        </Button>
-                        <Button
+                        </button>
+                        <button
                             type="submit"
                             disabled={submitting}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                            className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-w-[140px] flex items-center justify-center gap-2"
                         >
                             {submitting ? (
                                 <>
@@ -566,10 +549,10 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
                                     Registrar Cosecha
                                 </>
                             )}
-                        </Button>
-                    </DialogFooter>
+                        </button>
+                    </div>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </div>
     );
 }
