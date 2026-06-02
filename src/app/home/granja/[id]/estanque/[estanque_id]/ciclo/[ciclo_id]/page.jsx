@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import {
     ArrowLeft,
@@ -22,6 +22,7 @@ import { Toaster, toast } from "sonner";
 import { Batches } from "@/app/components/batches/batches";
 import { MonitoringSection } from "@/app/components/monitoring/MonitoringSection";
 import { HarvestModal } from "@/app/components/harvest/HarvestModal";
+import { HarvestHistorySection } from "@/app/components/harvest/HarvestHistorySection";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -54,6 +55,8 @@ export default function CicloDetalle() {
     const [productionPlans, setProductionPlans] = useState([]);
     const [error, setError] = useState(null);
     const [harvestModalOpen, setHarvestModalOpen] = useState(false);
+    const [harvestHistoryRefresh, setHarvestHistoryRefresh] = useState(0);
+    const router = useRouter();
 
     const fetchData = useCallback(async () => {
         if (!id || !estanque_id || !ciclo_id) return;
@@ -113,6 +116,12 @@ export default function CicloDetalle() {
         }
     }, [id, estanque_id, ciclo_id]);
 
+    const handleHarvestSuccess = useCallback(() => {
+        fetchData();
+        setHarvestHistoryRefresh((n) => n + 1);
+        router.refresh();
+    }, [fetchData, router]);
+
     useEffect(() => {
         fetchData();
     }, [fetchData]);
@@ -134,7 +143,9 @@ export default function CicloDetalle() {
                 onOpenChange={setHarvestModalOpen}
                 ciclo={ciclo}
                 farmId={id}
-                onSuccess={fetchData}
+                pondId={estanque_id}
+                cycleId={ciclo_id}
+                onSuccess={handleHarvestSuccess}
             />
             {/* Loading overlay */}
             {!ciclo && !error && (
@@ -288,6 +299,17 @@ export default function CicloDetalle() {
             {ciclo && (
                 <div className="mt-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
                     <MonitoringSection farmId={id} pondId={estanque_id} cycleId={ciclo_id} />
+                </div>
+            )}
+
+            {/* Historial de Cosechas */}
+            {ciclo && (
+                <div className="mt-10 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+                    <HarvestHistorySection
+                        farmId={id}
+                        cycleId={ciclo_id}
+                        refreshTrigger={harvestHistoryRefresh}
+                    />
                 </div>
             )}
 

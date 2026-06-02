@@ -3,6 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, Plus, Trash2, Fish, Scale, AlertCircle, Info, CheckCircle2, Calendar, FileText, X } from "lucide-react";
 import { toast } from "sonner";
+import {
+    extractApiErrors,
+    formatBiomassKg,
+    formatWeightGrams,
+    parseCycleStockFromApi,
+} from "./harvestUtils";
 
 const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
 
@@ -21,31 +27,56 @@ const EMPTY_CLASSIFICATION = () => ({
     total_weight_g: "",
 });
 
-function extractApiErrors(data) {
-    if (!data || typeof data !== "object") return ["Error desconocido del servidor."];
-    const messages = [];
+function TotalHarvestInfoBanner({ cycleStock, loadingStock }) {
+    console.log("cycleStock prop:", cycleStock);
+    return (
+        <div className="space-y-3">
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-emerald-700 leading-relaxed">
+                    <span className="font-semibold">Cosecha total:</span> Se calculará
+                    automáticamente la cantidad de peces y el peso total basándose en el
+                    stock vivo del ciclo.
+                </p>
+            </div>
 
-    const process = (obj, prefix = "") => {
-        for (const [key, value] of Object.entries(obj)) {
-            const fieldLabel = prefix ? `${prefix} → ${key}` : key;
-            if (Array.isArray(value)) {
-                value.forEach((v, idx) => {
-                    if (typeof v === "string") {
-                        messages.push(`${fieldLabel}: ${v}`);
-                    } else if (typeof v === "object" && v !== null) {
-                        process(v, `${fieldLabel}[${idx + 1}]`);
-                    }
-                });
-            } else if (typeof value === "string") {
-                messages.push(`${fieldLabel}: ${value}`);
-            } else if (typeof value === "object" && value !== null) {
-                process(value, fieldLabel);
-            }
-        }
-    };
-
-    process(data);
-    return messages.length > 0 ? messages : ["Error al procesar la solicitud."];
+            {loadingStock ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500 px-1">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Consultando stock del ciclo...
+                </div>
+            ) : cycleStock ? (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            Peso total en el ciclo
+                        </p>
+                        <p className="text-base font-bold text-slate-900">
+                            {formatWeightGrams(cycleStock.weightG)}
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            Biomasa estimada total
+                        </p>
+                        <p className="text-base font-bold text-slate-900">
+                            {formatBiomassKg(cycleStock.biomassKg)}
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+                        <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">
+                            Peces vivos
+                        </p>
+                        <p className="text-base font-bold text-slate-900">
+                            {cycleStock.fishCount != null
+                                ? Number(cycleStock.fishCount).toLocaleString("es-CO")
+                                : "—"}
+                        </p>
+                    </div>
+                </div>
+            ) : null}
+        </div>
+    );
 }
 
 function HarvestTypeSelector({ value, onChange }) {
@@ -118,18 +149,6 @@ function HarvestTypeSelector({ value, onChange }) {
                     );
                 })}
             </div>
-        </div>
-    );
-}
-
-function TotalHarvestInfoBanner() {
-    return (
-        <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <Info className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-            <p className="text-sm text-emerald-700 leading-relaxed">
-                <span className="font-semibold">Cosecha total:</span> Se calculará automáticamente
-                la cantidad de peces y el peso total basándose en el stock vivo del ciclo.
-            </p>
         </div>
     );
 }
@@ -208,13 +227,15 @@ function ClassificationRow({ cls, index, total, onChange, onRemove }) {
     );
 }
 
-export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
+export function HarvestModal({ open, onOpenChange, ciclo, farmId, pondId, cycleId, onSuccess }) {
     const [harvestType, setHarvestType] = useState("total");
     const [date, setDate] = useState("");
     const [totalFishCount, setTotalFishCount] = useState("");
     const [observations, setObservations] = useState("");
     const [classifications, setClassifications] = useState([EMPTY_CLASSIFICATION()]);
     const [submitting, setSubmitting] = useState(false);
+    const [cycleStock, setCycleStock] = useState(null);
+    const [loadingStock, setLoadingStock] = useState(false);
     const modalRef = useRef(null);
 
     useEffect(() => {
@@ -246,6 +267,72 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
             setDate(new Date().toISOString().split("T")[0]);
         }
     }, [open]);
+
+    useEffect(() => {
+        if (!open || harvestType !== "total" || !farmId || !pondId || !cycleId) {
+            setCycleStock(null);
+            return;
+        }
+
+        let mounted = true;
+        (async () => {
+            setLoadingStock(true);
+            try {
+                const token = localStorage.getItem("access");
+                const headers = {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                };
+                const baseUrl = `${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}`;
+
+                const [stateRes, statsRes] = await Promise.all([
+                    fetch(`${baseUrl}/current_state/`, { headers }),
+                    fetch(`${baseUrl}/control-stats/`, { headers }),
+                ]);
+
+                let currentState = null;
+                let latestControlStat = null;
+
+                if (stateRes.ok) {
+                    currentState = await stateRes.json();
+                }
+
+                if (statsRes.ok) {
+                    const statsList = await statsRes.json();
+                    if (Array.isArray(statsList) && statsList.length > 0) {
+                        statsList.sort(
+                            (a, b) =>
+                                new Date(b.control_date) -
+                                new Date(a.control_date)
+                        );
+                        latestControlStat = statsList[0];
+                    }
+                }
+
+                const parsed = parseCycleStockFromApi(
+                    currentState,
+                    latestControlStat
+                );
+                
+                console.log("=== HARVEST DEBUG ===");
+                console.log("currentState:", currentState);
+                console.log("latestControlStat:", latestControlStat);
+                console.log("parsed:", parsed);
+                
+                if (mounted) {
+                    setCycleStock(parsed);
+                }
+            } catch {
+                if (mounted) setCycleStock(null);
+            } finally {
+                if (mounted) setLoadingStock(false);
+            }
+        })();
+
+        return () => {
+            mounted = false;
+        };
+    }, [open, harvestType, farmId, pondId, cycleId]);
 
     const resetForm = () => {
         setHarvestType("total");
@@ -412,7 +499,12 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, onSuccess }) {
                 <form onSubmit={handleSubmit} className="p-5 space-y-5">
                     <HarvestTypeSelector value={harvestType} onChange={setHarvestType} />
                     
-                    {harvestType === "total" && <TotalHarvestInfoBanner />}
+                    {harvestType === "total" && (
+                        <TotalHarvestInfoBanner
+                            cycleStock={cycleStock}
+                            loadingStock={loadingStock}
+                        />
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
