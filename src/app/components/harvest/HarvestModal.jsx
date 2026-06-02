@@ -28,7 +28,6 @@ const EMPTY_CLASSIFICATION = () => ({
 });
 
 function TotalHarvestInfoBanner({ cycleStock, loadingStock }) {
-    console.log("cycleStock prop:", cycleStock);
     return (
         <div className="space-y-3">
             <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
@@ -313,11 +312,6 @@ export function HarvestModal({ open, onOpenChange, ciclo, farmId, pondId, cycleI
                     currentState,
                     latestControlStat
                 );
-                
-                console.log("=== HARVEST DEBUG ===");
-                console.log("currentState:", currentState);
-                console.log("latestControlStat:", latestControlStat);
-                console.log("parsed:", parsed);
                 
                 if (mounted) {
                     setCycleStock(parsed);
