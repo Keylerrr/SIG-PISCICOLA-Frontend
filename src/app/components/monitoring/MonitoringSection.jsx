@@ -6,83 +6,99 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, ListFilter } from "lucide-react";
 import { toast } from "sonner";
 import { MonitoringStatsCards } from "./MonitoringStatsCards";
+import { MonitoringCharts } from "./MonitoringCharts";
 import { BiometricsSamplingForm } from "./BiometricsSamplingForm";
-
-const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
+import { useMonitoringData } from "@/hooks/useMonitoringData";
+import {
+  resetControlStatsFetchAudit,
+  getControlStatsFetchCount,
+} from "@/lib/monitoringService";
+import { apiFetchJsonSafe } from "@/lib/apiClient";
+import { assertPathSegment } from "@/lib/apiConfig";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 export function MonitoringSection({ farmId, pondId, cycleId }) {
-    const [currentState, setCurrentState] = useState(null);
-    const [latestControlStat, setLatestControlStat] = useState(null);
     const [evaluations, setEvaluations] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [evaluationsLoading, setEvaluationsLoading] = useState(true);
+    const [evaluationsError, setEvaluationsError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [error, setError] = useState(null);
-
-    const fetchData = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const token = localStorage.getItem("access");
-            const headers = {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            };
-
-            const baseCycleUrl = `${API_BASE}/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}`;
-
-            // Fetch Current State
-            const stateRes = await fetch(`${baseCycleUrl}/current_state/`, { headers });
-            if (stateRes.ok) {
-                setCurrentState(await stateRes.json());
-            } else {
-                console.warn("Could not fetch current_state");
-            }
-
-            // Fetch Control Stats (get the latest one)
-            const controlStatsRes = await fetch(`${baseCycleUrl}/control-stats/`, { headers });
-            if (controlStatsRes.ok) {
-                const statsList = await controlStatsRes.json();
-                if (statsList.length > 0) {
-                    // Assuming they might be sorted by date, or we sort them
-                    statsList.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    setLatestControlStat(statsList[0]);
-                } else {
-                    setLatestControlStat(null);
-                }
-            }
-
-            // Fetch Evaluations
-            const evalRes = await fetch(`${baseCycleUrl}/fish-evaluations/`, { headers });
-            if (evalRes.ok) {
-                const evalsList = await evalRes.json();
-                // Sort by date descending
-                evalsList.sort((a, b) => new Date(b.evaluation_date) - new Date(a.evaluation_date));
-                setEvaluations(evalsList);
-            }
-
-        } catch (err) {
-            console.error("Error fetching monitoring data:", err);
-            setError("Error al cargar los datos de monitoreo.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [farmId, pondId, cycleId]);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const { authReady, hasToken } = useAuthReady();
 
     useEffect(() => {
-        if (farmId && pondId && cycleId) {
-            fetchData();
+        resetControlStatsFetchAudit();
+    }, [farmId, pondId, cycleId]);
+
+    const {
+        currentState,
+        latestBiomassGainKg,
+        chartSeries,
+        isLoading: monitoringLoading,
+        currentStateError,
+        controlStatsError,
+        chartsIsEmpty,
+    } = useMonitoringData(farmId, pondId, cycleId, refreshKey);
+
+    useEffect(() => {
+        if (!monitoringLoading && typeof window !== "undefined") {
+            console.log(
+                `[Monitoring AUDIT] carga completada | control-stats HTTP en esta sesión: ${getControlStatsFetchCount()}`
+            );
         }
-    }, [fetchData, farmId, pondId, cycleId]);
+    }, [monitoringLoading, refreshKey]);
+
+    const fetchEvaluations = useCallback(async () => {
+        if (!authReady || !hasToken || !farmId || !pondId || !cycleId) return;
+
+        setEvaluationsLoading(true);
+        setEvaluationsError(null);
+
+        try {
+            assertPathSegment(farmId, "farmId");
+            assertPathSegment(pondId, "pondId");
+            assertPathSegment(cycleId, "cycleId");
+
+            const result = await apiFetchJsonSafe(
+                `/farms/${farmId}/ponds/${pondId}/cycles/${cycleId}/fish-evaluations/`,
+                { source: "MonitoringSection.fetchEvaluations" }
+            );
+
+            if (result.skipped) return;
+
+            if (result.error) {
+                throw result.error;
+            }
+
+            const evalsList = Array.isArray(result.data) ? result.data : [];
+            evalsList.sort(
+                (a, b) => new Date(b.evaluation_date) - new Date(a.evaluation_date)
+            );
+            setEvaluations(evalsList);
+        } catch (err) {
+            console.error("Error fetching evaluations:", err);
+            setEvaluationsError(
+                err.message || "Error al cargar las evaluaciones."
+            );
+            setEvaluations([]);
+        } finally {
+            setEvaluationsLoading(false);
+        }
+    }, [authReady, hasToken, farmId, pondId, cycleId]);
+
+    useEffect(() => {
+        fetchEvaluations();
+    }, [fetchEvaluations, refreshKey]);
 
     const handleFormSuccess = () => {
         setIsModalOpen(false);
         toast.success("Evaluación registrada con éxito. Las métricas se han actualizado.");
-        fetchData();
+        setRefreshKey((k) => k + 1);
+        fetchEvaluations();
     };
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h2 className="text-xl font-bold text-slate-900">Monitoreo</h2>
                     <p className="text-sm text-slate-500">Métricas actuales y registro de muestreos biométricos</p>
@@ -90,7 +106,7 @@ export function MonitoringSection({ farmId, pondId, cycleId }) {
 
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 w-full sm:w-auto">
                             <Plus className="w-4 h-4" />
                             <span>Registrar Muestreo</span>
                         </Button>
@@ -110,16 +126,18 @@ export function MonitoringSection({ farmId, pondId, cycleId }) {
                 </Dialog>
             </div>
 
-            {error && (
-                <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200">
-                    {error}
-                </div>
-            )}
-
             <MonitoringStatsCards
                 currentState={currentState}
-                latestControlStat={latestControlStat}
-                isLoading={isLoading}
+                latestBiomassGainKg={latestBiomassGainKg}
+                isLoading={monitoringLoading}
+                error={currentStateError}
+            />
+
+            <MonitoringCharts
+                chartSeries={chartSeries}
+                isLoading={monitoringLoading}
+                error={controlStatsError}
+                isEmpty={chartsIsEmpty}
             />
 
             <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-8">
@@ -127,8 +145,14 @@ export function MonitoringSection({ farmId, pondId, cycleId }) {
                     <ListFilter className="w-4 h-4 text-slate-500" />
                     Últimas Evaluaciones
                 </div>
-                
-                {isLoading ? (
+
+                {evaluationsError && (
+                    <div className="p-4 text-sm text-red-700 bg-red-50 border-b border-red-100">
+                        {evaluationsError}
+                    </div>
+                )}
+
+                {evaluationsLoading ? (
                     <div className="p-8 text-center text-slate-400">Cargando evaluaciones...</div>
                 ) : evaluations.length === 0 ? (
                     <div className="p-8 text-center text-slate-500 italic">No hay evaluaciones registradas en este ciclo.</div>

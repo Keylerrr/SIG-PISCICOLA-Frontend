@@ -1,104 +1,158 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { apiFetchJsonSafe } from "@/lib/apiClient";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
-const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
+const ALERTS_CONCURRENCY = 3;
+
+async function runPool(items, limit, worker) {
+  if (!items.length) return [];
+  const results = new Array(items.length);
+  let index = 0;
+
+  async function runWorker() {
+    while (index < items.length) {
+      const current = index;
+      index += 1;
+      try {
+        results[current] = await worker(items[current], current);
+      } catch (err) {
+        results[current] = { error: err };
+      }
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    () => runWorker()
+  );
+  await Promise.all(workers);
+  return results;
+}
 
 export function useAlerts() {
   const [alerts, setAlerts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { authReady, hasToken } = useAuthReady();
+  const fetchingRef = useRef(false);
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
+    if (!authReady || !hasToken) return;
+    if (fetchingRef.current) return;
+
+    fetchingRef.current = true;
+
     try {
-      const token = localStorage.getItem("access");
-      if (!token) return;
-
-      // First fetch farms to get farm IDs
-      const farmsRes = await fetch(`${API_BASE}/farms/`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const farmsResult = await apiFetchJsonSafe("/farms/", {
+        source: "useAlerts.fetchFarms",
       });
-      if (!farmsRes.ok) return;
-      const farms = await farmsRes.json();
-      
-      if (!Array.isArray(farms)) return;
 
-      // Then fetch alerts for each farm
-      let allAlerts = [];
-      for (const farm of farms) {
-        const alertsRes = await fetch(`${API_BASE}/farms/core/${farm.id}/alerts/?is_resolved=false`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (alertsRes.ok) {
-          const farmAlerts = await alertsRes.json();
-          if (Array.isArray(farmAlerts)) {
-            // Attach farmId to each alert so we can resolve it later
-            allAlerts = [...allAlerts, ...farmAlerts.map(a => ({ ...a, farmId: farm.id }))];
-          }
+      if (farmsResult.skipped || farmsResult.error) {
+        if (farmsResult.error) {
+          console.error("[useAlerts] farms:", farmsResult.error.message);
         }
+        return;
       }
 
-      // Sort by date descending
-      allAlerts.sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
+      const farms = farmsResult.data;
+      if (!Array.isArray(farms) || farms.length === 0) {
+        setAlerts([]);
+        setUnreadCount(0);
+        return;
+      }
+
+      const farmResults = await runPool(farms, ALERTS_CONCURRENCY, async (farm) => {
+        if (!farm?.id) return [];
+
+        const alertResult = await apiFetchJsonSafe(
+          `/farms/core/${farm.id}/alerts/?is_resolved=false`,
+          { source: `useAlerts.farm.${farm.id}` }
+        );
+
+        if (alertResult.error || !Array.isArray(alertResult.data)) {
+          if (alertResult.error) {
+            console.error(
+              `[useAlerts] farm ${farm.id}:`,
+              alertResult.error.message
+            );
+          }
+          return [];
+        }
+
+        return alertResult.data.map((a) => ({ ...a, farmId: farm.id }));
+      });
+
+      const allAlerts = farmResults
+        .filter((chunk) => Array.isArray(chunk))
+        .flat();
+
+      allAlerts.sort(
+        (a, b) =>
+          new Date(b.created_at || b.date) - new Date(a.created_at || a.date)
+      );
 
       setAlerts(allAlerts);
       setUnreadCount(allAlerts.length);
     } catch (err) {
-      console.error("Error fetching alerts:", err);
+      console.error("[useAlerts] Error inesperado:", err);
+    } finally {
+      fetchingRef.current = false;
     }
-  };
+  }, [authReady, hasToken]);
 
   const markAllAsRead = async () => {
-    try {
-      const token = localStorage.getItem("access");
-      if (!token) return;
-      
-      const resolvePromises = alerts.map(alert => {
-        if (!alert.farmId) return Promise.resolve();
-        return fetch(`${API_BASE}/farms/core/${alert.farmId}/alerts/${alert.id}/resolve/`, {
-          method: "PATCH",
-          headers: { 
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}` 
-          },
-          body: JSON.stringify({})
-        });
-      });
+    if (!hasToken) return;
 
-      await Promise.all(resolvePromises);
+    try {
+      const resolveResults = await runPool(alerts, ALERTS_CONCURRENCY, async (alert) => {
+        if (!alert.farmId) return;
+        const result = await apiFetchJsonSafe(
+          `/farms/core/${alert.farmId}/alerts/${alert.id}/resolve/`,
+          {
+            method: "PATCH",
+            body: {},
+            source: "useAlerts.markAllAsRead",
+          }
+        );
+        if (result.error) {
+          console.error("[useAlerts] resolve:", result.error.message);
+        }
+      });
+      void resolveResults;
       await fetchAlerts();
     } catch (error) {
-       console.error("Error marking all as read:", error);
+      console.error("[useAlerts] markAllAsRead:", error);
     }
   };
 
   const markAsRead = async (alertId, farmId) => {
+    if (!hasToken || !farmId) return;
+
     try {
-      const token = localStorage.getItem("access");
-      if (!token || !farmId) return;
-      
-      await fetch(`${API_BASE}/farms/core/${farmId}/alerts/${alertId}/resolve/`, {
-        method: "PATCH",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({})
-      });
+      const result = await apiFetchJsonSafe(
+        `/farms/core/${farmId}/alerts/${alertId}/resolve/`,
+        {
+          method: "PATCH",
+          body: {},
+          source: "useAlerts.markAsRead",
+        }
+      );
+      if (result.error) {
+        console.error("[useAlerts] markAsRead:", result.error.message);
+        return;
+      }
       await fetchAlerts();
     } catch (error) {
-      console.error("Error marking as read:", error);
+      console.error("[useAlerts] markAsRead:", error);
     }
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchAlerts();
-    }, 0);
-    const interval = setInterval(fetchAlerts, 60000); // refresh every minute
-    
-    return () => {
-      clearTimeout(timer);
-      clearInterval(interval);
-    };
-  }, []);
+    if (!authReady || !hasToken) return;
+
+    fetchAlerts();
+    const interval = setInterval(fetchAlerts, 60000);
+    return () => clearInterval(interval);
+  }, [authReady, hasToken, fetchAlerts]);
 
   return { alerts, unreadCount, fetchAlerts, markAllAsRead, markAsRead };
 }

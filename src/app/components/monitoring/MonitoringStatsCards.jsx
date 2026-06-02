@@ -1,7 +1,12 @@
 import React from "react";
 import { Scale, TrendingUp, Activity, Skull } from "lucide-react";
 
-export function MonitoringStatsCards({ currentState, latestControlStat, isLoading }) {
+export function MonitoringStatsCards({
+    currentState,
+    latestBiomassGainKg,
+    isLoading,
+    error,
+}) {
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -18,9 +23,17 @@ export function MonitoringStatsCards({ currentState, latestControlStat, isLoadin
         );
     }
 
+    if (error) {
+        return (
+            <div className="bg-amber-50 text-amber-800 p-4 rounded-xl border border-amber-200 text-sm">
+                {error}
+            </div>
+        );
+    }
+
     const formatValue = (val, suffix = "") => {
         if (val === null || val === undefined) return "—";
-        return `${Number(val).toLocaleString(undefined, { maximumFractionDigits: 2 })}${suffix}`;
+        return `${Number(val).toLocaleString("es-CO", { maximumFractionDigits: 2 })}${suffix}`;
     };
 
     return (
@@ -33,7 +46,7 @@ export function MonitoringStatsCards({ currentState, latestControlStat, isLoadin
                     <Scale className="w-4 h-4 text-blue-500" /> Biomasa
                 </span>
                 <span className="text-2xl font-bold text-slate-900">
-                    {formatValue(latestControlStat?.biomass_kg, " kg")}
+                    {formatValue(currentState?.biomass_kg, " kg")}
                 </span>
             </div>
 
@@ -45,7 +58,7 @@ export function MonitoringStatsCards({ currentState, latestControlStat, isLoadin
                     <TrendingUp className="w-4 h-4 text-emerald-500" /> Ganancia de Biomasa
                 </span>
                 <span className="text-2xl font-bold text-slate-900">
-                    {formatValue(latestControlStat?.biomass_gain_kg, " kg")}
+                    {formatValue(latestBiomassGainKg, " kg")}
                 </span>
             </div>
 
@@ -57,7 +70,7 @@ export function MonitoringStatsCards({ currentState, latestControlStat, isLoadin
                     <Activity className="w-4 h-4 text-indigo-500" /> FCA
                 </span>
                 <span className="text-2xl font-bold text-slate-900">
-                    {formatValue(latestControlStat?.fca)}
+                    {formatValue(currentState?.fca)}
                 </span>
             </div>
 

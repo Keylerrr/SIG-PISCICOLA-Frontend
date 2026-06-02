@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Scale, Pencil, Trash, MoveRight, Fish, Link, FileText } from "lucide-react";
+import { Scale, Pencil, Trash, MoveRight, Fish, Link, FileDown } from "lucide-react";
 import { BatchReportModal } from "./BatchReportModal";
 import {
   Card,
@@ -36,8 +36,9 @@ import { BatchRegisterForm } from "./batch_form";
 import { AssignPondForm } from "../ponds/assign_pond_form";
 import { AssignCycleForm } from "../cycles/assign_cycle_form";
 import { Button } from "@/components/ui/button";
-
-const API_BASE = "https://backend-pongase-trucha.onrender.com/api";
+import { apiFetchJsonSafe, safeFetch } from "@/lib/apiClient";
+import { assertPathSegment } from "@/lib/apiConfig";
+import { useAuthReady } from "@/hooks/useAuthReady";
 
 const BIO_STATE_LABELS = {
   alevin: "Alevín",
@@ -67,24 +68,27 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
   const [loading, setLoading] = useState(true);
   // { batchId, batchLabel } | null
   const [reportBatch, setReportBatch] = useState(null);
+  const { authReady, hasToken } = useAuthReady();
 
   useEffect(() => {
+    if (!authReady || !hasToken) return;
+
     const fetchSpecies = async () => {
       try {
-        const token = localStorage.getItem("access");
-        const res = await fetch(`${API_BASE}/species/`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const result = await apiFetchJsonSafe("/species/", {
+          source: "Batches.fetchSpecies",
         });
-        if (res.ok) {
-          const data = await res.json();
-          setSpecies(Array.isArray(data) ? data : []);
+        if (result.data && Array.isArray(result.data)) {
+          setSpecies(result.data);
+        } else if (result.error) {
+          console.error("Error fetching species:", result.error.message);
         }
       } catch (err) {
         console.error("Error fetching species:", err);
       }
     };
     fetchSpecies();
-  }, []);
+  }, [authReady, hasToken]);
 
   const specieMap = useMemo(() => {
     return species.reduce((acc, curr) => ({ ...acc, [curr.id]: curr.name }), {});
@@ -133,40 +137,59 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
   }, [batches, search, specieMap, statusFilter]);
 
   useEffect(() => {
+    if (!authReady || !hasToken || !id) return;
+
     const fetchBatches = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem("access");
+        assertPathSegment(id, "farmId");
+        if (pondId) assertPathSegment(pondId, "pondId");
+        if (cycleId) assertPathSegment(cycleId, "cycleId");
 
         if (!cycleId && pondId) {
-          // Fetch both pond-batches and batches and merge them
-          const pbRes = await fetch(`${API_BASE}/farms/${id}/pond-batches/?pond=${pondId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const bRes = await fetch(`${API_BASE}/farms/${id}/batches/?pond=${pondId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (!pbRes.ok || !bRes.ok) {
-            throw new Error(`Error fetching batches for pond`);
-          }
-          
-          const pondBatches = await pbRes.json();
-          const batches = await bRes.json();
-          
-          // Fetch cycles and their cycle-batches to find assignments
-          const cRes = await fetch(`${API_BASE}/farms/${id}/ponds/${pondId}/cycles/`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const activeCycles = cRes.ok ? await cRes.json() : [];
-          
-          const cycleBatchesPromises = (Array.isArray(activeCycles) ? activeCycles : [])
-            .filter(c => c.state === 'in_progress' || c.state === 'paused')
-            .map(c => 
-               fetch(`${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${c.id}/cycle-batches/`, { headers: { Authorization: `Bearer ${token}` } })
-               .then(r => r.ok ? r.json() : [])
-               .then(data => ({ cycle: c, cycleBatches: data }))
+          const [pbResult, bResult] = await Promise.all([
+            apiFetchJsonSafe(`/farms/${id}/pond-batches/?pond=${pondId}`, {
+              source: "Batches.pondBatches",
+            }),
+            apiFetchJsonSafe(`/farms/${id}/batches/?pond=${pondId}`, {
+              source: "Batches.batchesByPond",
+            }),
+          ]);
+
+          if (pbResult.error || bResult.error) {
+            throw new Error(
+              pbResult.error?.message ||
+                bResult.error?.message ||
+                "Error fetching batches for pond"
             );
+          }
+
+          const pondBatches = pbResult.data;
+          const batches = bResult.data;
+
+          const cResult = await apiFetchJsonSafe(
+            `/farms/${id}/ponds/${pondId}/cycles/`,
+            { source: "Batches.cycles" }
+          );
+          const activeCycles = Array.isArray(cResult.data) ? cResult.data : [];
+
+          const cycleBatchesPromises = activeCycles
+            .filter((c) => c.state === "in_progress" || c.state === "paused")
+            .map(async (c) => {
+              try {
+                const cbResult = await apiFetchJsonSafe(
+                  `/farms/${id}/ponds/${pondId}/cycles/${c.id}/cycle-batches/`,
+                  { source: `Batches.cycleBatches.${c.id}` }
+                );
+                return {
+                  cycle: c,
+                  cycleBatches: Array.isArray(cbResult.data) ? cbResult.data : [],
+                };
+              } catch (err) {
+                console.error(`Error cycle-batches ${c.id}:`, err);
+                return { cycle: c, cycleBatches: [] };
+              }
+            });
           const cyclesWithBatches = await Promise.all(cycleBatchesPromises);
           
           const pondBatchToCycle = {};
@@ -195,27 +218,22 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
           return;
         }
 
-        let endpoint = `${API_BASE}/farms/${id}/batches/?sin_estanque=true`;
+        let path = `/farms/${id}/batches/?sin_estanque=true`;
         if (cycleId && pondId) {
-          // Pond-scoped cycle batches endpoint
-          endpoint = `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/`;
+          path = `/farms/${id}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/`;
         } else if (cycleId) {
-          // Fallback if pondId not available (legacy)
-          endpoint = `${API_BASE}/farms/${id}/cycles/${cycleId}/cycle-batches/`;
+          path = `/farms/${id}/cycles/${cycleId}/cycle-batches/`;
         }
-          
-        const res = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
+
+        const result = await apiFetchJsonSafe(path, {
+          source: "Batches.fetchBatches",
         });
 
-        if (!res.ok) {
-          // Extraemos información útil si el servidor nos responde con algún error 4xx o 5xx
-          const errorText = await res.text();
-          throw new Error(`Error ${res.status} al obtener lotes: ${errorText}`);
+        if (result.error) {
+          throw result.error;
         }
 
-        const data = await res.json();
-        setBatches(Array.isArray(data) ? data : []);
+        setBatches(Array.isArray(result.data) ? result.data : []);
       } catch (error) {
         console.error("Error cargando lotes:", error);
       } finally {
@@ -224,20 +242,22 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
     };
 
     fetchBatches();
-  }, [id, cycleId, pondId]);
+  }, [authReady, hasToken, id, cycleId, pondId]);
 
   const handleDelete = async (cycleBatchId) => {
     try {
-      const token = localStorage.getItem("access");
-      // Use pond-scoped endpoint if we have pondId and cycleId, fallback otherwise
-      const endpoint = pondId && cycleId
-        ? `${API_BASE}/farms/${id}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/${cycleBatchId}/`
-        : `${API_BASE}/farms/${id}/cycle-batches/${cycleBatchId}/`;
-      const res = await fetch(endpoint, {
+      const path =
+        pondId && cycleId
+          ? `/farms/${id}/ponds/${pondId}/cycles/${cycleId}/cycle-batches/${cycleBatchId}/`
+          : `/farms/${id}/cycle-batches/${cycleBatchId}/`;
+
+      const { response, error } = await safeFetch(path, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
+        source: "Batches.handleDelete",
       });
-      if (!res.ok) {
+
+      if (error) throw error;
+      if (!response?.ok) {
         throw new Error("Error al desvincular el lote");
       }
       toast.success("Lote desvinculado del ciclo correctamente");
@@ -327,7 +347,7 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
                     }}
                     className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
                   >
-                    <FileText className="w-4 h-4" />
+                    <FileDown className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer" />
                   </button>
 
                   <AlertDialog>
