@@ -75,7 +75,6 @@ export default function Login() {
       setRecoverSuccess(true);
       setOpenRecovery(false);
       setIsSending(false);
-      console.log("Correo enviado:");
     } catch (error) {
       console.error("Error en recuperación:", error);
     }
@@ -138,8 +137,6 @@ export default function Login() {
       );
 
       const data = await res.json();
-
-      console.log(data);
 
       if (!res.ok) {
         setLoginError(true);

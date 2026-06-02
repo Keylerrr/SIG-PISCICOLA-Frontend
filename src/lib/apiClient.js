@@ -32,7 +32,6 @@ function releaseRequestSlot() {
 
 function auditLog(phase, payload) {
   if (!API_AUDIT_ENABLED || typeof window === "undefined") return;
-  console.log(`[API AUDIT] ${phase}`, payload);
 }
 
 export class ApiAuthError extends Error {

@@ -113,9 +113,9 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
 
     // Si no hay búsqueda, retornamos lo ya filtrado
     if (!search?.trim()) return result;
-    
+
     const term = search.toLowerCase().trim();
-    
+
     return result.filter((item) => {
       let b = item;
       if (item.pond_batch_detail?.batch) {
@@ -123,7 +123,7 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
       } else if (typeof item.batch === 'object' && item.batch !== null) {
         b = item.batch;
       }
-      
+
       const specieName = b.specie?.name || specieMap[b.specie?.id || b.specie] || String(b.specie || "");
 
       return (
@@ -159,8 +159,8 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
           if (pbResult.error || bResult.error) {
             throw new Error(
               pbResult.error?.message ||
-                bResult.error?.message ||
-                "Error fetching batches for pond"
+              bResult.error?.message ||
+              "Error fetching batches for pond"
             );
           }
 
@@ -191,19 +191,19 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
               }
             });
           const cyclesWithBatches = await Promise.all(cycleBatchesPromises);
-          
+
           const pondBatchToCycle = {};
           cyclesWithBatches.forEach(({ cycle, cycleBatches }) => {
-              if (Array.isArray(cycleBatches)) {
-                  cycleBatches.forEach(cb => {
-                      const pbId = cb.pond_batch_detail?.id || cb.pond_batch || cb.pond_batch_id;
-                      if (pbId) {
-                          pondBatchToCycle[pbId] = cycle;
-                      }
-                  });
-              }
+            if (Array.isArray(cycleBatches)) {
+              cycleBatches.forEach(cb => {
+                const pbId = cb.pond_batch_detail?.id || cb.pond_batch || cb.pond_batch_id;
+                if (pbId) {
+                  pondBatchToCycle[pbId] = cycle;
+                }
+              });
+            }
           });
-          
+
           const merged = (Array.isArray(pondBatches) ? pondBatches : []).map(pb => {
             const nestedBatch = (Array.isArray(batches) ? batches : []).find(b => b.id === pb.batch);
             return {
@@ -212,7 +212,7 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
               assigned_cycle: pondBatchToCycle[pb.id] || null
             };
           });
-          
+
           setBatches(merged);
           setLoading(false);
           return;
@@ -307,10 +307,10 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
         {filteredBatches.map((item) => {
           const isCycleBatch = !!item.pond_batch_detail;
           const isPondBatch = typeof item.batch === 'object' && item.batch !== null && !isCycleBatch;
-          
+
           const b = isCycleBatch ? item.pond_batch_detail.batch : (isPondBatch ? item.batch : item);
           const displayId = b.id || item.id;
-          
+
           const displayQuantity = isCycleBatch ? item.quantity : (isPondBatch ? (item.current_quantity ?? item.initial_quantity) : b.initial_quantity);
           const displayMinWeight = isCycleBatch ? item.min_weight_g : b.min_weight_g;
           const displayAvgWeight = isCycleBatch ? item.avg_weight_g : b.avg_weight_g;
@@ -318,178 +318,173 @@ export function Batches({ id, pondId, cycleId, search = "", statusFilter = null 
           const specieName = b.specie?.name || specieMap[b.specie?.id || b.specie] || String(b.specie || "");
 
           return (
-          <Card
-            key={item.id}
-            className="group border hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all"
-          >
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold group-hover:text-blue-600">
-                Lote #{displayId} {isCycleBatch && item.pond_batch_detail?.pond && <span className="text-sm font-normal text-slate-500 ml-2">({item.pond_batch_detail.pond.name})</span>}
-              </CardTitle>
+            <Card
+              key={item.id}
+              className="group border hover:border-blue-500 hover:shadow-lg hover:-translate-y-1 transition-all"
+            >
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold group-hover:text-blue-600">
+                  Lote #{displayId} {isCycleBatch && item.pond_batch_detail?.pond && <span className="text-sm font-normal text-slate-500 ml-2">({item.pond_batch_detail.pond.name})</span>}
+                </CardTitle>
 
-              <CardDescription className="flex items-center gap-2 font-bold text-lg mt-1">
-                <Fish className="w-5 h-5" />
-                {specieName} - {BIO_STATE_LABELS[b.biological_state] || b.biological_state}
-              </CardDescription>
+                <CardDescription className="flex items-center gap-2 font-bold text-lg mt-1">
+                  <Fish className="w-5 h-5" />
+                  {specieName} - {BIO_STATE_LABELS[b.biological_state] || b.biological_state}
+                </CardDescription>
 
-              <CardAction>
-                <div className="flex gap-3 items-center">
-                  {/* ── Generar Reporte Histórico ── */}
-                  <button
-                    title="Generar Reporte Histórico"
-                    onClick={() => {
-                      console.log("=== AUDITORÍA BACKEND: Click en Lote ===");
-                      console.log("Objeto original completo (item):", item);
-                      console.log("Objeto derivado utilizado (b):", b);
-                      console.log("Batch ID extraído:", b.id, "Tipo:", typeof b.id);
-                      console.log("Display ID:", displayId);
-                      setReportBatch({ batchId: b.id, batchLabel: `Lote #${b.id}` })
-                    }}
-                    className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
+                <CardAction>
+                  <div className="flex gap-3 items-center">
+                    {/* ── Generar Reporte Histórico ── */}
+                    <button
+                      title="Generar Reporte Histórico"
+                      onClick={() => {
+                        setReportBatch({ batchId: b.id, batchLabel: `Lote #${b.id}` })
+                      }}
+                      className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer"
+                    >
+                      <FileDown className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer" />
+                    </button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Pencil className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors" />
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="w-[95vw] max-w-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Editar lote #{b.id}?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Edita la información del lote
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <BatchRegisterForm
+                          op={0}
+                          idProp={b.id}
+                          idFarmProp={id}
+                          specieProp={b.specie?.id?.toString() || b.specie?.toString() || ""}
+                          biologicalStateProp={b.biological_state}
+                          statusProp={b.status}
+                          initialQuantityProp={b.initial_quantity}
+                          minWeightGProp={b.min_weight_g}
+                          avgWeightGProp={b.avg_weight_g}
+                          maxWeightGProp={b.max_weight_g}
+                          commentsProp={b.comments ?? ""}
+                        />
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cerrar</AlertDialogCancel>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    {!!cycleId && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Trash className="text-red-600 cursor-pointer hover:text-red-700 transition-colors" />
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="w-[95vw] max-w-md">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Desvincular lote?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Se desvinculará el lote #{displayId} del ciclo actual.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(item.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Desvincular
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                </CardAction>
+              </CardHeader>
+
+              <CardContent className="text-md space-y-2">
+                <p><strong>Cant. {isCycleBatch ? 'en Ciclo' : (isPondBatch ? 'Actual' : 'Inicial')}:</strong> {displayQuantity}</p>
+                <div className="flex gap-2 items-center text-sm text-slate-600">
+                  <Scale className="w-4 h-4" />
+                  <span>Min: {displayMinWeight}g</span> |
+                  <span>Prom: {displayAvgWeight}g</span> |
+                  <span>Max: {displayMaxWeight}g</span>
+                </div>
+                {b.comments ? (
+                  <p className="text-sm text-slate-500">
+                    <strong>Comentarios:</strong> {b.comments}
+                  </p>
+                ) : null}
+              </CardContent>
+
+              <CardFooter className="flex flex-col gap-4 items-start">
+                <div className="w-full flex justify-between items-center">
+                  <p
+                    className={`capitalize px-3 py-1 rounded-full text-sm font-semibold ${STATUS_COLORS[b.status] || "bg-gray-100 text-gray-700"
+                      }`}
                   >
-                    <FileDown className="text-slate-400 hover:text-purple-600 transition-colors cursor-pointer" />
-                  </button>
+                    {STATUS_LABELS[b.status] || b.status}
+                  </p>
+                </div>
 
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Pencil className="text-blue-600 cursor-pointer hover:text-blue-700 transition-colors" />
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-2xl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿Editar lote #{b.id}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Edita la información del lote
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <BatchRegisterForm
-                        op={0}
-                        idProp={b.id}
-                        idFarmProp={id}
-                        specieProp={b.specie?.id?.toString() || b.specie?.toString() || ""}
-                        biologicalStateProp={b.biological_state}
-                        statusProp={b.status}
-                        initialQuantityProp={b.initial_quantity}
-                        minWeightGProp={b.min_weight_g}
-                        avgWeightGProp={b.avg_weight_g}
-                        maxWeightGProp={b.max_weight_g}
-                        commentsProp={b.comments ?? ""}
+                {!pondId && !cycleId && !b.pond && !item.pond && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full flex gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
+                        <MoveRight className="w-4 h-4" />
+                        Asignar a Estanque
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Asignar Lote #{b.id} a Estanque</DialogTitle>
+                        <DialogDescription>
+                          Seleccione el estanque de destino para este lote.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <AssignPondForm
+                        farmId={id}
+                        batchId={b.id}
+                        defaultQuantity={b.initial_quantity}
                       />
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cerrar</AlertDialogCancel>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-
-                  {!!cycleId && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Trash className="text-red-600 cursor-pointer hover:text-red-700 transition-colors" />
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-md">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>¿Desvincular lote?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Se desvinculará el lote #{displayId} del ciclo actual.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(item.id)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          Desvincular
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  )}
-                </div>
-              </CardAction>
-            </CardHeader>
-            
-            <CardContent className="text-md space-y-2">
-              <p><strong>Cant. {isCycleBatch ? 'en Ciclo' : (isPondBatch ? 'Actual' : 'Inicial')}:</strong> {displayQuantity}</p>
-              <div className="flex gap-2 items-center text-sm text-slate-600">
-                <Scale className="w-4 h-4" />
-                <span>Min: {displayMinWeight}g</span> | 
-                <span>Prom: {displayAvgWeight}g</span> | 
-                <span>Max: {displayMaxWeight}g</span>
-              </div>
-              {b.comments ? (
-                <p className="text-sm text-slate-500">
-                  <strong>Comentarios:</strong> {b.comments}
-                </p>
-              ) : null}
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4 items-start">
-              <div className="w-full flex justify-between items-center">
-                <p
-                  className={`capitalize px-3 py-1 rounded-full text-sm font-semibold ${
-                    STATUS_COLORS[b.status] || "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {STATUS_LABELS[b.status] || b.status}
-                </p>
-              </div>
-
-              {!pondId && !cycleId && !b.pond && !item.pond && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full flex gap-2 border-blue-200 text-blue-700 hover:bg-blue-50">
-                    <MoveRight className="w-4 h-4" />
-                    Asignar a Estanque
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Asignar Lote #{b.id} a Estanque</DialogTitle>
-                    <DialogDescription>
-                      Seleccione el estanque de destino para este lote.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AssignPondForm 
-                    farmId={id}
-                    batchId={b.id}
-                    defaultQuantity={b.initial_quantity}
-                  />
-                </DialogContent>
-              </Dialog>
-              )}
-              {!!pondId && !cycleId && !item.assigned_cycle && !b.active_cycle && (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="w-full flex gap-2 border-green-200 text-green-700 hover:bg-green-50">
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {!!pondId && !cycleId && !item.assigned_cycle && !b.active_cycle && (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="w-full flex gap-2 border-green-200 text-green-700 hover:bg-green-50">
+                        <Link className="w-4 h-4" />
+                        Vincular a Ciclo
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Vincular Lote #{displayId} a Ciclo</DialogTitle>
+                        <DialogDescription>
+                          Seleccione el ciclo al que desea añadir este lote. Solo se muestran los ciclos en progreso.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <AssignCycleForm
+                        farmId={id}
+                        pondId={pondId}
+                        pondBatchId={item.id}
+                        defaultQuantity={displayQuantity}
+                      />
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {!!pondId && !cycleId && (item.assigned_cycle || b.active_cycle) && (
+                  <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm font-medium">
                     <Link className="w-4 h-4" />
-                    Vincular a Ciclo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Vincular Lote #{displayId} a Ciclo</DialogTitle>
-                    <DialogDescription>
-                      Seleccione el ciclo al que desea añadir este lote. Solo se muestran los ciclos en progreso.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AssignCycleForm
-                    farmId={id}
-                    pondId={pondId}
-                    pondBatchId={item.id}
-                    defaultQuantity={displayQuantity}
-                  />
-                </DialogContent>
-              </Dialog>
-              )}
-              {!!pondId && !cycleId && (item.assigned_cycle || b.active_cycle) && (
-                <div className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm font-medium">
-                  <Link className="w-4 h-4" />
-                  Ciclo: {item.assigned_cycle?.name || "Asignado"}
-                </div>
-              )}
-            </CardFooter>
-          </Card>
-        )})}
+                    Ciclo: {item.assigned_cycle?.name || "Asignado"}
+                  </div>
+                )}
+              </CardFooter>
+            </Card>
+          )
+        })}
       </div>
 
       {/* ── Batch Report Modal (single instance, controlled by reportBatch state) ── */}

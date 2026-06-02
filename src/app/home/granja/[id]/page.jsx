@@ -101,7 +101,6 @@ export default function Granja({ params }) {
       })
       .then((data) => {
         setDepartmentos(data);
-        console.log(data);
       })
       .catch((err) => console.error(err));
   }, []);
@@ -122,7 +121,6 @@ export default function Granja({ params }) {
       })
       .then((data) => {
         setGranja(data);
-        console.log(data);
       })
       .catch((err) => console.error(err));
   }, [id]);
@@ -196,16 +194,6 @@ export default function Granja({ params }) {
     isAdmin ||
     (isProductor && myMember != null) ||
     isProductor;
-
-  console.log("Debug page.jsx Permissions:", {
-    userData,
-    isProductor,
-    isAdmin,
-    isFarmOwner,
-    myMember,
-    hasFullAccess,
-    myPermissions,
-  });
 
   const canManagePonds =
     hasFullAccess ||

@@ -9,7 +9,6 @@ function pondPath(farmId, pondId) {
 
 function auditLog(message, pondId, extra) {
   if (typeof window === "undefined") return;
-  console.log(`[POND STATUS] ${message}`, { pondId, ...extra });
 }
 
 export const pondService = {

@@ -33,13 +33,6 @@ export function getApiBaseUrl() {
 
   if (typeof window !== "undefined" && API_AUDIT_ENABLED && !window.__API_CONFIG_LOGGED__) {
     window.__API_CONFIG_LOGGED__ = true;
-    console.log("[API AUDIT] Configuración", {
-      apiBase: base,
-      fromEnv: Boolean(fromEnv),
-      envValue: process.env.NEXT_PUBLIC_API_BASE_URL ?? "(no definida)",
-      defaultUsed: !fromEnv,
-      timestamp: new Date().toISOString(),
-    });
   }
 
   return base;

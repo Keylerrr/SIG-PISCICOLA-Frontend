@@ -78,8 +78,6 @@ export default function ResetPasswordContent() {
                 setResetError(true);
                 return;
             }
-
-            console.log("Respuesta:", data);
             setSuccess(true);
         } catch (error) {
             console.error("Error en el login:", error);

@@ -125,8 +125,6 @@ export function BuysTab({ farmId }) {
         supplier: formData.supplier ? parseInt(formData.supplier) : null,
       };
 
-      console.log("Payload a enviar:", payload);
-
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: {

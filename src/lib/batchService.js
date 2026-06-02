@@ -70,12 +70,6 @@ export async function generateProductionReport(farmId, batchId, payload) {
   }
 
   const url = `${API_BASE}/farms/${farmId}/batches/${batchId}/production-report/`;
-  
-  console.log("=== AUDITORÍA BACKEND: generateProductionReport ===");
-  console.log("Farm ID en URL:", farmId, "Tipo:", typeof farmId);
-  console.log("Batch ID en URL:", batchId, "Tipo:", typeof batchId);
-  console.log("Payload enviado:", body);
-  console.log("URL generada:", url);
 
   const response = await fetch(url, {
       method: "POST",
@@ -87,9 +81,6 @@ export async function generateProductionReport(farmId, batchId, payload) {
     }
   );
 
-  console.log("Status de respuesta:", response.status);
-  console.log("Headers de respuesta:", Object.fromEntries(response.headers.entries()));
-
   if (!response.ok) {
     // Parse error body (JSON or plain text)
     let errorPayload = null;
@@ -99,8 +90,6 @@ export async function generateProductionReport(farmId, batchId, payload) {
       errorPayload = await response.text().catch(() => null);
     }
     
-    console.log("Cuerpo del error (Response Body):", errorPayload);
-
     const error = new Error(
       errorPayload?.detail ||
         errorPayload?.message ||
