@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react";
-import { Droplet, RulerDimensionLine, Pencil, Trash, Activity } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Droplet, RulerDimensionLine, Pencil, Trash, Loader2 } from "lucide-react";
 import Link from "next/link";
 import {
     Card,
@@ -11,7 +11,7 @@ import {
     CardFooter,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,23 +22,25 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Toaster, toast } from "sonner"
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Toaster, toast } from "sonner";
 import { PondRegisterForm } from "./pond_form";
+import { apiFetchJsonSafe, safeFetch } from "@/lib/apiClient";
+import { pondService, isPondSwitchOn, isPondInactive } from "@/lib/pondService";
+import { useAuthReady } from "@/hooks/useAuthReady";
+import { assertPathSegment } from "@/lib/apiConfig";
 
 export function Ponds({ id, search, filter }) {
-    const [estanques, setEstanques] = useState([])
-    const [disabledPonds, setDisabledPonds] = useState({})
+    const [estanques, setEstanques] = useState([]);
+    const [togglingIds, setTogglingIds] = useState(() => new Set());
+    const togglingLockRef = useRef(new Set());
+    const { authReady, hasToken } = useAuthReady();
+
     const filteredEstanques = estanques.filter((e) =>
         e.name.toLowerCase().includes((search || "").toLowerCase().trim())
     );
 
-    const togglePondDisabled = (pondId) => {
-        setDisabledPonds(prev => ({
-            ...prev,
-            [pondId]: !prev[pondId]
-        }));
-    };
     const statusStyles = {
         active: "bg-green-100 text-green-700",
         inactive: "bg-red-100 text-red-700",
@@ -52,68 +54,137 @@ export function Ponds({ id, search, filter }) {
         cleaning: "En Limpieza",
     };
 
-    useEffect(() => {
-        async function fetchEstanques() {
-            try {
-                const token = localStorage.getItem("access")
-                const res = await fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    },
-                })
+    const updatePondInList = useCallback((pondId, updates) => {
+        setEstanques((prev) =>
+            prev.map((p) => (p.id === pondId ? { ...p, ...updates } : p))
+        );
+    }, []);
 
-                if (!res.ok) {
-                    const errorData = await res.clone().json().catch(() => ({}));
-                    throw new Error(errorData.detail || errorData.message || `Error ${res.status} al obtener estanques`);
-                }
-                
-                const data = await res.json();
-                if (filter && filter !== "all") {
-                    setEstanques(data.filter(pond => pond.status === filter));
-                } else {
-                    setEstanques(data);
-                }
-            } catch (error) {
-                console.error(error)
+    const fetchEstanques = useCallback(async () => {
+        if (!authReady || !hasToken || !id) return;
+
+        try {
+            assertPathSegment(id, "farmId");
+            const result = await apiFetchJsonSafe(`/farms/${id}/ponds/`, {
+                source: "Ponds.fetchEstanques",
+            });
+
+            if (result.error) {
+                console.error("Error al obtener estanques:", result.error.message);
+                return;
             }
+
+            const data = Array.isArray(result.data) ? result.data : [];
+            if (filter && filter !== "all") {
+                setEstanques(data.filter((pond) => pond.status === filter));
+            } else {
+                setEstanques(data);
+            }
+        } catch (error) {
+            console.error(error);
         }
+    }, [authReady, hasToken, id, filter]);
+
+    useEffect(() => {
         fetchEstanques();
-    }, [id, filter]);
+    }, [fetchEstanques]);
+
+    const setToggling = useCallback((pondId, isToggling) => {
+        setTogglingIds((prev) => {
+            const next = new Set(prev);
+            if (isToggling) next.add(pondId);
+            else next.delete(pondId);
+            return next;
+        });
+        if (isToggling) togglingLockRef.current.add(pondId);
+        else togglingLockRef.current.delete(pondId);
+    }, []);
+
+    const handleStatusToggle = async (pond, checked) => {
+        if (togglingLockRef.current.has(pond.id)) return;
+
+        const previousStatus = pond.status;
+        const nextStatus = checked ? "active" : "inactive";
+
+        if (checked && isPondSwitchOn(previousStatus)) return;
+        if (!checked && previousStatus === "inactive") return;
+
+        setToggling(pond.id, true);
+        updatePondInList(pond.id, { status: nextStatus });
+
+        try {
+            const responseData = checked
+                ? await pondService.activate(id, pond.id)
+                : await pondService.inactivate(id, pond.id);
+
+            const resolvedStatus = responseData?.status ?? nextStatus;
+            updatePondInList(pond.id, {
+                ...responseData,
+                status: resolvedStatus,
+            });
+
+            toast.success(
+                checked
+                    ? `Estanque "${pond.name}" activado correctamente`
+                    : `Estanque "${pond.name}" inactivado correctamente`
+            );
+        } catch (err) {
+            updatePondInList(pond.id, { status: previousStatus });
+            toast.error(
+                err.message ||
+                    (checked
+                        ? "No se pudo activar el estanque"
+                        : "No se pudo inactivar el estanque")
+            );
+        } finally {
+            setToggling(pond.id, false);
+        }
+    };
 
     const handleDelete = async (ide) => {
-        const token = localStorage.getItem("access");
         await toast.promise(
-            fetch(`https://backend-pongase-trucha.onrender.com/api/farms/${id}/ponds/${ide}/`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-            }).then(async (res) => {
-                let data = null;
-                try {
-                    data = await res.json();
-                } catch { }
+            (async () => {
+                const { response, error } = await safeFetch(
+                    `/farms/${id}/ponds/${ide}/`,
+                    {
+                        method: "DELETE",
+                        source: "Ponds.handleDelete",
+                    }
+                );
 
-                if (!res.ok) {
-                    const errorMsg = data?.detail || data?.message || data?.non_field_errors?.[0] || `Error ${res.status} al eliminar`;
+                if (error) throw error;
+
+                let data = null;
+                if (response) {
+                    try {
+                        const text = await response.text();
+                        data = text ? JSON.parse(text) : null;
+                    } catch {
+                        data = null;
+                    }
+                }
+
+                if (!response?.ok) {
+                    const errorMsg =
+                        data?.detail ||
+                        data?.message ||
+                        data?.non_field_errors?.[0] ||
+                        `Error ${response?.status} al eliminar`;
                     throw new Error(errorMsg);
                 }
 
                 return data;
-            }),
+            })(),
             {
                 loading: "Eliminando estanque...",
                 success: (data) => {
-                    setEstanques(prev => prev.filter(e => e.id !== ide));
+                    setEstanques((prev) => prev.filter((e) => e.id !== ide));
                     return data?.message || "Estanque eliminada correctamente";
                 },
                 error: (err) => err.message || "Error al eliminar estanque",
             }
         );
-    }
+    };
 
     return (
         <>
@@ -124,106 +195,134 @@ export function Ponds({ id, search, filter }) {
                         No se encontraron estanques 😢
                     </p>
                 )}
-                {filteredEstanques.map((e) => (
-                    <div key={e.id}>
-                        <Card className={`group border border-gray-200 hover:border-blue-500 hover:shadow-lg ${disabledPonds[e.id] ? "bg-gray-200" : ""} hover:-translate-y-1 transition-all duration-200`}>
-                            <CardHeader>
-                                <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
-                                    <Link href={`/home/granja/${id}/estanque/${e.id}/`}>
-                                        {e.name}
-                                    </Link>
-                                </CardTitle>
-                                <CardDescription className="gap-2 font-bold text-lg flex items-center">Código: {e.code}</CardDescription>
-                                <CardAction>
-                                    <div className="flex items-center gap-3">
-                                        <AlertDialog>
-                                            {!disabledPonds[e.id] && (
+                {filteredEstanques.map((e) => {
+                    const switchOn = isPondSwitchOn(e.status);
+                    const isToggling = togglingIds.has(e.id);
+                    const isInactive = isPondInactive(e.status);
+
+                    return (
+                        <div key={e.id}>
+                            <Card
+                                className={`group border border-gray-200 hover:border-blue-500 hover:shadow-lg ${
+                                    isInactive ? "bg-gray-50 opacity-90" : ""
+                                } hover:-translate-y-1 transition-all duration-200`}
+                            >
+                                <CardHeader>
+                                    <CardTitle className="font-bold text-2xl group-hover:text-blue-600">
+                                        <Link href={`/home/granja/${id}/estanque/${e.id}/`}>
+                                            {e.name}
+                                        </Link>
+                                    </CardTitle>
+                                    <CardDescription className="gap-2 font-bold text-lg flex items-center">
+                                        Código: {e.code}
+                                    </CardDescription>
+                                    <CardAction>
+                                        <div className="flex items-center gap-3">
+                                            <AlertDialog>
+                                                {!isInactive && (
+                                                    <AlertDialogTrigger asChild>
+                                                        <Pencil className="cursor-pointer text-blue-600" />
+                                                    </AlertDialogTrigger>
+                                                )}
+
+                                                <AlertDialogContent className="sm:max-w-2xl">
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            ¿Editar estanque?
+                                                        </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Cambie los datos a continuación para editar la
+                                                            informacio del estanque{" "}
+                                                            <span className="font-bold">{e.name}</span>.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <PondRegisterForm
+                                                        op={0}
+                                                        idProp={e.id}
+                                                        idFarmProp={id}
+                                                        nombreProp={e.name}
+                                                        estadoProp={e.status}
+                                                        typeProp={e.type}
+                                                        capacidadProp={e.capacity}
+                                                        areaProp={e.area}
+                                                        volumenProp={e.volume}
+                                                        profundidadProp={e.depth}
+                                                        descripcionProp={e.description}
+                                                    />
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+
+                                            <AlertDialog>
                                                 <AlertDialogTrigger asChild>
-                                                    <Pencil className={`cursor-pointer ${disabledPonds[e.id] ? "text-gray-400 cursor-not-allowed" : "text-blue-600"}`} />
-                                                </AlertDialogTrigger>)}
-
-
-                                            <AlertDialogContent className="sm:max-w-2xl">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        ¿Editar estanque?
-                                                    </AlertDialogTitle>
-
-                                                    <AlertDialogDescription>
-                                                        Cambie los datos a continuación para editar la informacio del estanque{" "}
-                                                        <span className="font-bold">{e.name}</span>.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <PondRegisterForm
-                                                    op={0}
-                                                    idProp={e.id}
-                                                    idFarmProp={id}
-                                                    nombreProp={e.name}
-                                                    estadoProp={e.status}
-                                                    typeProp={e.type}
-                                                    capacidadProp={e.capacity}
-                                                    areaProp={e.area}
-                                                    volumenProp={e.volume}
-                                                    profundidadProp={e.depth}
-                                                    descripcionProp={e.description}
-                                                />
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>
-                                                        Cancelar
-                                                    </AlertDialogCancel>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Trash className="text-red-600 cursor-pointer" />
-                                            </AlertDialogTrigger>
-
-                                            <AlertDialogContent className="sm:max-w-2xl">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>
-                                                        ¿Eliminar estanque?
-                                                    </AlertDialogTitle>
-
-                                                    <AlertDialogDescription>
-                                                        Esta acción no se puede deshacer. Se eliminará el estanque: {" "}
-                                                        <span className="font-bold">{e.name}</span>.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>
-                                                        Cancelar
-                                                    </AlertDialogCancel>
-
-                                                    <AlertDialogAction
-                                                        onClick={() => handleDelete(e.id)}
-                                                        className="bg-red-600 hover:bg-red-700"
-                                                    >
-                                                        Eliminar
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                                    <Trash className="text-red-600 cursor-pointer" />
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent className="sm:max-w-2xl">
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>
+                                                            ¿Eliminar estanque?
+                                                        </AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta acción no se puede deshacer. Se eliminará el
+                                                            estanque:{" "}
+                                                            <span className="font-bold">{e.name}</span>.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction
+                                                            onClick={() => handleDelete(e.id)}
+                                                            className="bg-red-600 hover:bg-red-700"
+                                                        >
+                                                            Eliminar
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </CardAction>
+                                </CardHeader>
+                                <CardContent className="text-lg font-bold">
+                                    <p className="flex gap-2">
+                                        <Droplet /> Volumen:{" "}
+                                        <span className="text-blue-500">{e.volume} m³</span>
+                                    </p>
+                                    <p className="flex gap-2">
+                                        <RulerDimensionLine /> Área:{" "}
+                                        <span className="text-blue-500">{e.area} m²</span>
+                                    </p>
+                                </CardContent>
+                                <CardFooter className="flex items-center justify-between gap-4">
+                                    <p
+                                        className={`whitespace-nowrap capitalize px-3 py-1 rounded-full text-sm font-semibold
+                                        ${statusStyles[e.status] || "bg-gray-100 text-gray-700"}`}
+                                    >
+                                        {statusLabels[e.status] || e.status}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        {isToggling && (
+                                            <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                                        )}
+                                        <Switch
+                                            checked={switchOn}
+                                            disabled={isToggling}
+                                            onCheckedChange={(checked) =>
+                                                handleStatusToggle(e, checked)
+                                            }
+                                            aria-label={
+                                                switchOn
+                                                    ? "Inactivar estanque"
+                                                    : "Activar estanque"
+                                            }
+                                        />
                                     </div>
-                                </CardAction>
-                            </CardHeader>
-                            <CardContent className="text-lg font-bold">
-                                <p className="flex gap-2"><Droplet /> Volumen: <span className="text-blue-500">{e.volume} m³</span></p>
-                                <p className="flex gap-2"><RulerDimensionLine /> Área: <span className="text-blue-500">{e.area} m²</span></p>
-                            </CardContent>
-                            <CardFooter className="flex items-center justify-between gap-4">
-                                <p className={`whitespace-nowrap capitalize px-3 py-1 rounded-full text-sm font-semibold
-                                        ${statusStyles[e.status] || "bg-gray-100 text-gray-700"}`}>
-                                    {statusLabels[e.status]}
-                                </p>
-                                <div className={`inline-flex h-6 w-11 items-center rounded-full transition-colors ${disabledPonds[e.id] ? "bg-red-500" : "bg-green-500"} cursor-pointer`} onClick={() => togglePondDisabled(e.id)}>
-                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${disabledPonds[e.id] ? "translate-x-6" : "translate-x-1"}`} />
-                                </div>
-                            </CardFooter>
-                        </Card>
-                    </div>
-                ))}
+                                </CardFooter>
+                            </Card>
+                        </div>
+                    );
+                })}
             </div>
         </>
     );
