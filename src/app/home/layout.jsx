@@ -1,5 +1,6 @@
 import "../globals.css";
 import { Navbar } from "../components/layout/navbar";
+import { Breadcrumbs } from "../components/layout/Breadcrumbs";
 
 export const metadata = {
   title: "Póngase Trucha",
@@ -13,6 +14,7 @@ export default function HomeLayout({ children }) {
   return (
     <>
       <Navbar />
+      <Breadcrumbs />
       {children}
     </>
   );
