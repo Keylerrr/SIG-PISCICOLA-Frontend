@@ -119,6 +119,7 @@ export function getClassificationLabel(classification) {
   if (!classification) return "—";
   if (typeof classification === "object") {
     return (
+      classification.display_name ||  // ← agregar esta línea
       classification.name ||
       classification.label ||
       classification.size_category ||

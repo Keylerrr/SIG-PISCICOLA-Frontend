@@ -204,7 +204,7 @@ export const salesService = {
 
   getHarvestClassifications: async (farmId, harvestId) => {
     const data = await apiRequest(
-      `/farms/${farmId}/harvests/${harvestId}/classifications/`
+      `/farms/${farmId}/harvests/${harvestId}/classifications/?only_available=true`
     );
     return parseList(data);
   },
